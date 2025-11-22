@@ -1,0 +1,19 @@
+[project]
+name = "budget-management-backend"
+version = "1.0.0"
+description = "FastAPI backend for budget management application"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi==0.115.0",
+    "uvicorn[standard]==0.32.0",
+    "sqlalchemy==2.0.36",
+    "pydantic==2.9.2",
+    "python-multipart==0.0.12",
+    "openpyxl==3.1.5",
+    "pandas==2.3.3",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+

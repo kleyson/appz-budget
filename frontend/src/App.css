@@ -1,0 +1,479 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--dracula-bg);
+  color: var(--dracula-foreground);
+}
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  background: linear-gradient(135deg, var(--dracula-purple) 0%, var(--dracula-pink) 100%);
+  color: var(--dracula-foreground);
+  padding: 1.5rem 2rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.app-header h1 {
+  margin-bottom: 1rem;
+  font-size: 2rem;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.tabs button {
+  padding: 0.5rem 1.5rem;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--dracula-foreground);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.95rem;
+}
+
+.tabs button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.tabs button.active {
+  background: var(--dracula-purple);
+  color: var(--dracula-foreground);
+  font-weight: 600;
+}
+
+.filters {
+  background: var(--dracula-current-line);
+  padding: 1rem 2rem;
+  display: flex;
+  gap: 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filter-group label {
+  font-weight: 500;
+  color: var(--dracula-foreground);
+}
+
+.filter-group select,
+.filter-group input {
+  padding: 0.5rem;
+  border: 1px solid var(--dracula-comment);
+  border-radius: 4px;
+  font-size: 0.95rem;
+  background-color: var(--dracula-bg);
+  color: var(--dracula-foreground);
+}
+
+.filter-group select:focus,
+.filter-group input:focus {
+  outline: none;
+  border-color: var(--dracula-purple);
+}
+
+.app-main {
+  flex: 1;
+  padding: 2rem;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.expense-list,
+.category-summary,
+.charts-container,
+.excel-import,
+.category-management,
+.period-management {
+  background: var(--dracula-current-line);
+  border-radius: 8px;
+  padding: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  color: var(--dracula-foreground);
+}
+
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.list-header h2 {
+  color: var(--dracula-foreground);
+  font-size: 1.5rem;
+}
+
+.list-header button {
+  padding: 0.75rem 1.5rem;
+  background: var(--dracula-purple);
+  color: var(--dracula-foreground);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.list-header button:hover {
+  background: var(--dracula-pink);
+  transform: translateY(-1px);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+table thead {
+  background: var(--dracula-bg);
+}
+
+table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--dracula-purple);
+  border-bottom: 2px solid var(--dracula-comment);
+}
+
+table td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--dracula-comment);
+  color: var(--dracula-foreground);
+}
+
+table tbody tr:hover {
+  background: var(--dracula-bg);
+}
+
+table button {
+  padding: 0.4rem 0.8rem;
+  margin-right: 0.5rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+table button:first-of-type {
+  background: var(--dracula-cyan);
+  color: var(--dracula-bg);
+}
+
+table button:first-of-type:hover {
+  background: var(--dracula-green);
+}
+
+table button:last-of-type {
+  background: var(--dracula-red);
+  color: var(--dracula-foreground);
+}
+
+table button:last-of-type:hover {
+  background: #ff6b6b;
+}
+
+.positive {
+  color: var(--dracula-green);
+  font-weight: 600;
+}
+
+.negative {
+  color: var(--dracula-red);
+  font-weight: 600;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: var(--dracula-comment);
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: var(--dracula-comment);
+}
+
+/* Modal styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: var(--dracula-current-line);
+  border-radius: 8px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid var(--dracula-comment);
+}
+
+.modal-content h2 {
+  margin-bottom: 1.5rem;
+  color: var(--dracula-purple);
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: var(--dracula-foreground);
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--dracula-comment);
+  border-radius: 4px;
+  font-size: 1rem;
+  font-family: inherit;
+  color: var(--dracula-foreground);
+  background-color: var(--dracula-bg);
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--dracula-purple);
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: var(--dracula-comment);
+}
+
+.form-group textarea {
+  resize: vertical;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 2rem;
+}
+
+.form-actions button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.form-actions button[type="button"] {
+  background: var(--dracula-comment);
+  color: var(--dracula-foreground);
+}
+
+.form-actions button[type="button"]:hover {
+  background: var(--dracula-current-line);
+}
+
+.form-actions button[type="submit"] {
+  background: var(--dracula-purple);
+  color: var(--dracula-foreground);
+}
+
+.form-actions button[type="submit"]:hover {
+  background: var(--dracula-pink);
+}
+
+.form-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Charts */
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 2rem;
+  margin-top: 1.5rem;
+}
+
+.chart-card {
+  background: var(--dracula-bg);
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--dracula-comment);
+}
+
+.chart-card h3 {
+  margin-bottom: 1rem;
+  color: var(--dracula-purple);
+}
+
+/* Chart styling for Dracula theme */
+.chart-card .recharts-cartesian-axis-tick-value,
+.chart-card .recharts-legend-item-text {
+  fill: var(--dracula-foreground);
+  color: var(--dracula-foreground);
+}
+
+.chart-card .recharts-cartesian-grid line {
+  stroke: var(--dracula-comment);
+  opacity: 0.3;
+}
+
+.chart-card .recharts-tooltip-wrapper {
+  background-color: var(--dracula-current-line);
+  border: 1px solid var(--dracula-comment);
+  border-radius: 4px;
+}
+
+.chart-card .recharts-tooltip-label {
+  color: var(--dracula-purple);
+}
+
+.no-data {
+  text-align: center;
+  padding: 3rem;
+  color: var(--dracula-comment);
+}
+
+/* Import */
+.excel-import h2 {
+  margin-bottom: 1.5rem;
+  color: var(--dracula-purple);
+}
+
+.import-controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.import-controls input[type="file"] {
+  flex: 1;
+  padding: 0.5rem;
+  background-color: var(--dracula-bg);
+  color: var(--dracula-foreground);
+  border: 1px solid var(--dracula-comment);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.import-controls input[type="file"]::file-selector-button {
+  background-color: var(--dracula-purple);
+  color: var(--dracula-foreground);
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  margin-right: 1rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.import-controls input[type="file"]::file-selector-button:hover {
+  background-color: var(--dracula-pink);
+}
+
+.import-controls button {
+  padding: 0.75rem 1.5rem;
+  background: var(--dracula-purple);
+  color: var(--dracula-foreground);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.import-controls button:hover:not(:disabled) {
+  background: var(--dracula-pink);
+}
+
+.import-controls button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.import-message {
+  padding: 1rem;
+  border-radius: 4px;
+  margin-top: 1rem;
+}
+
+.import-message.success {
+  background: rgba(80, 250, 123, 0.2);
+  color: var(--dracula-green);
+  border: 1px solid var(--dracula-green);
+}
+
+.import-message.error {
+  background: rgba(255, 85, 85, 0.2);
+  color: var(--dracula-red);
+  border: 1px solid var(--dracula-red);
+}
+
+/* Category and Period Management */
+.form-section {
+  background: var(--dracula-bg);
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--dracula-comment);
+}
+
+.error-message {
+  background: rgba(255, 85, 85, 0.2);
+  color: var(--dracula-red);
+  border: 1px solid var(--dracula-red);
+  padding: 0.75rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
