@@ -1,0 +1,63 @@
+{
+  "expo": {
+    "name": "Appz Budget",
+    "slug": "appz-budget",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "scheme": "appz-budget",
+    "description": "A modern budget management app for tracking expenses and income. Manage your monthly budget, categorize expenses, track income sources, and visualize your spending patterns.",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "wtf.appz.budget",
+      "buildNumber": "1",
+      "privacyManifests": {
+        "NSPrivacyAccessedAPITypes": []
+      },
+      "infoPlist": {
+        "NSPrivacyTrackingUsageDescription": "This app does not track you across other apps and websites."
+      },
+      "config": {
+        "usesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "wtf.appz.budget",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "35d4ff39-bf59-4af6-abea-128b6ff1744c"
+      },
+      "supportUrl": "https://github.com/kleyson/appz-budget/issues"
+    },
+    "owner": "kleyson",
+    "plugins": [
+      "expo-font",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableProguardInReleaseBuilds": true
+          }
+        }
+      ]
+    ]
+  }
+}

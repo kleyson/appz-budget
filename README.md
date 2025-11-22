@@ -1,178 +1,126 @@
-# Budget Management Application
+# Appz Budget 💰
 
-A full-stack budget management application built with FastAPI, React, and SQLite. This application helps you track expenses, manage budgets by category, and visualize your spending patterns.
+A modern, self-hosted budget management application for tracking expenses and income.
+
+## 🚀 Try the Demo
+
+You can try Appz Budget without installing anything:
+
+- **Demo URL**: [https://budget.appz.wtf/](https://budget.appz.wtf/)
+- **Demo Credentials**:
+  - Email: `admin@email.com`
+  - Password: `admin`
+
+> **Note**: The demo is reset periodically. Any data you enter may be lost.
 
 ## Features
 
-- ✅ Add, edit, and delete expenses
-- ✅ Track expenses by category and period
-- ✅ Category summary with budget vs actual comparisons
-- ✅ Interactive charts and visualizations
-- ✅ Import data from Excel files
-- ✅ Filter expenses by period and category
-- ✅ Real-time budget status indicators (✅/🔴)
+- 📊 **Monthly Budget Tracking** - Track expenses and income by month
+- 💵 **Income Management** - Manage different income types and sources
+- 📈 **Visual Analytics** - Charts and summaries for better insights
+- 🎨 **Category & Period Management** - Organize expenses with custom categories and periods
+- 🔐 **User Authentication** - Secure login and user management
+- 📱 **Responsive Design** - Works on desktop and mobile devices
+- 🌙 **Dark Mode** - Built-in dark theme support
 
-## Tech Stack
+## Quick Start with Docker
 
-### Backend
-- **FastAPI** - Modern Python web framework
-- **SQLAlchemy** - ORM for database operations
-- **SQLite** - Lightweight database
-- **Pandas** - Excel file processing
-
-### Frontend
-- **React** - UI library
-- **TanStack Query** - Data fetching and caching
-- **Recharts** - Chart library
-- **Axios** - HTTP client
-- **Vite** - Build tool
-
-## Project Structure
-
-```
-.
-├── backend/
-│   ├── main.py           # FastAPI application
-│   ├── database.py       # Database configuration
-│   ├── models.py         # SQLAlchemy models
-│   ├── schemas.py        # Pydantic schemas
-│   └── pyproject.toml    # Python dependencies (uv)
-├── frontend/
-│   ├── src/
-│   │   ├── api/          # API client
-│   │   ├── components/   # React components
-│   │   ├── hooks/        # Custom React hooks
-│   │   └── App.jsx       # Main app component
-│   └── package.json      # Node dependencies
-└── README.md
-```
-
-## Setup Instructions
+The easiest way to run Appz Budget is using Docker Compose. No need to clone the repository!
 
 ### Prerequisites
 
-- Python 3.13+ (or 3.12)
-- Node.js 18+ and npm
-- uv (Python package manager)
+- Docker and Docker Compose installed
+- At least 512MB of available RAM
 
-### Backend Setup
+### Installation
 
-1. Navigate to the backend directory:
+1. **Download the docker-compose.yml file:**
+
+   ```bash
+   wget https://raw.githubusercontent.com/kleyson/appz-budget/main/docker-compose.yml
+   ```
+
+2. **Create a `.env` file (optional but recommended):**
+
+   ```bash
+   cat > .env << EOF
+   API_KEY=your-secret-api-key-change-this
+   PORT=8000
+   DATABASE_URL=sqlite:///./data/budget.db
+   EOF
+   ```
+
+   **Important:** Change `your-secret-api-key-change-this` to a strong, random API key!
+
+3. **Start the application:**
+
+   ```bash
+   docker-compose up -d
+   ```
+
+4. **Access the application:**
+   - Open your browser to `http://localhost:8000`
+   - Default admin credentials (if seeded):
+     - Email: `admin@email.com`
+     - Password: `admin`
+
+### Environment Variables
+
+You can customize the application using environment variables in a `.env` file or directly in `docker-compose.yml`:
+
+- `API_KEY` - Secret API key for backend authentication (required, change the default!)
+- `DATABASE_URL` - Database connection string (default: `sqlite:///./data/budget.db`)
+- `PORT` - Port to expose the application (default: `8000`)
+
+### Data Persistence
+
+The application uses Docker volumes to persist data:
+
+- Database is stored in the `budget-data` volume
+- Data persists across container restarts
+
+### Updating
+
+To update to the latest version:
+
 ```bash
-cd backend
+docker-compose pull
+docker-compose up -d
 ```
 
-2. Activate the virtual environment:
+### Stopping the Application
+
 ```bash
-source ../.venv/bin/activate
+docker-compose down
 ```
 
-3. Install dependencies:
+To also remove the data volume (⚠️ this will delete all your data):
+
 ```bash
-uv sync
+docker-compose down -v
 ```
 
-4. Run the backend server:
-```bash
-python main.py
-```
+## Manual Installation
 
-The API will be available at `http://localhost:8000`
+For development or manual setup, see [PROJECT_NOTES.md](PROJECT_NOTES.md) for detailed instructions.
 
-### Frontend Setup
+## License
 
-1. Navigate to the frontend directory:
-```bash
-cd frontend
-```
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-2. Install dependencies:
-```bash
-npm install
-```
+## Contributing
 
-3. Start the development server:
-```bash
-npm run dev
-```
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-The frontend will be available at `http://localhost:5173` (or another port if 5173 is busy)
+## 🚧 Next Features
 
-## Usage
+Upcoming features planned for future releases:
 
-### Adding Expenses
+- [ ] Add SMTP configuration for forgot password
+- [ ] Chat with AI about your finances with BYOAK/Service
 
-1. Click on the "Expenses" tab
-2. Click "+ Add Expense"
-3. Fill in the expense details:
-   - Expense Name
-   - Period (e.g., "Fixed/1st Period")
-   - Category (e.g., "Groceries", "Subscriptions")
-   - Budget amount
-   - Actual Cost
-   - Optional notes
-4. Click "Create"
+## Support
 
-### Viewing Summary
+If you find this project useful, consider supporting its development:
 
-1. Click on the "Summary" tab
-2. View category summaries with budget vs actual comparisons
-3. Use filters to view specific periods
-
-### Viewing Charts
-
-1. Click on the "Charts" tab
-2. View visualizations of your budget data:
-   - Budget vs Actual bar chart
-   - Budget distribution pie chart
-
-### Importing from Excel
-
-1. Click on the "Import" tab
-2. Select your Excel file (must have columns: Expense details, Period, Category, Budget, Cost, Notes)
-3. Click "Import"
-4. Your expenses will be imported into the database
-
-## API Endpoints
-
-- `GET /api/expenses` - Get all expenses (optional filters: period, category)
-- `POST /api/expenses` - Create a new expense
-- `GET /api/expenses/{id}` - Get a specific expense
-- `PUT /api/expenses/{id}` - Update an expense
-- `DELETE /api/expenses/{id}` - Delete an expense
-- `GET /api/categories` - Get all categories
-- `GET /api/categories/summary` - Get category summary with totals
-- `GET /api/periods` - Get all periods
-- `POST /api/import/excel` - Import expenses from Excel file
-
-## Database
-
-The application uses SQLite and creates a `budget.db` file in the backend directory on first run. The database schema includes:
-
-- **expenses** table with columns:
-  - id (primary key)
-  - expense_name
-  - period
-  - category
-  - budget
-  - cost
-  - notes
-
-## Development
-
-### Backend Development
-
-The backend uses FastAPI with automatic API documentation available at:
-- Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
-
-### Frontend Development
-
-The frontend uses Vite for fast development with hot module replacement. TanStack Query DevTools are included for debugging queries.
-
-## Notes
-
-- The application replicates the functionality of your Excel budget spreadsheet
-- Budget status indicators (✅/🔴) show green when budget >= cost, red otherwise
-- Category summaries automatically calculate totals using SUMIF-like logic
-- All calculations are performed server-side for accuracy
+<a href="https://www.buymeacoffee.com/kleyson" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: 41px !important;width: 174px !important;box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;-webkit-box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;" ></a>

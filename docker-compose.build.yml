@@ -1,0 +1,34 @@
+version: "3.8"
+
+services:
+  budget-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_API_KEY: ${VITE_API_KEY:-your-secret-api-key-change-this}
+    image: appz-budget:latest
+    container_name: appz-budget
+    ports:
+      - "${PORT:-8000}:8000"
+    environment:
+      - API_KEY=${API_KEY:-your-secret-api-key-change-this}
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///./data/budget.db}
+      # ENV defaults to production if not set
+    volumes:
+      # Persist database
+      - budget-data:/app/backend/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "wtf.appz.budget.description=Appz Budget - Personal Budget Management"
+      - "wtf.appz.budget.version=1.0.0"
+
+volumes:
+  budget-data:
+    driver: local

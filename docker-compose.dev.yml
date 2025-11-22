@@ -1,0 +1,28 @@
+version: "3.8"
+
+# Development docker-compose for local development
+# Usage: docker-compose -f docker-compose.dev.yml up
+
+services:
+  budget-app-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_API_KEY: ${VITE_API_KEY:-dev-api-key}
+    ports:
+      - "8000:8000"
+    environment:
+      - API_KEY=${API_KEY:-dev-api-key}
+      - DATABASE_URL=sqlite:///./data/budget.db
+      - ENV=development
+    volumes:
+      # Mount source code for development (if needed)
+      - ./backend:/app/backend:ro
+      # Persist database
+      - budget-data-dev:/app/backend/data
+    restart: unless-stopped
+
+volumes:
+  budget-data-dev:
+    driver: local

@@ -1,0 +1,76 @@
+name: Run Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "mobile/**"
+      - ".github/workflows/test.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "mobile/**"
+      - ".github/workflows/test.yml"
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    # This job must pass for PRs to be mergeable (when branch protection is enabled)
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: |
+          uv sync --extra test
+
+      - name: Run backend tests
+        working-directory: ./backend
+        env:
+          API_KEY: test-api-key-12345
+        run: |
+          uv run python -m pytest tests/ --cov=. --cov-report=xml --cov-report=term || exit 1
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: |
+          npm ci
+
+      - name: Run frontend lint
+        working-directory: ./frontend
+        continue-on-error: true
+        run: |
+          npm run lint || echo "Linting issues found (non-blocking)"
+
+      - name: Build frontend
+        working-directory: ./frontend
+        env:
+          VITE_API_KEY: test-api-key
+        run: |
+          npm run build || exit 1

@@ -4,19 +4,44 @@ __pycache__/
 *$py.class
 *.so
 .Python
+*.egg-info/
+dist/
+build/
 .venv/
 venv/
-ENV/
 env/
+ENV/
 *.db
 *.sqlite
 *.sqlite3
 
 # Node
 node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+frontend/dist/
+frontend/.env
+frontend/.env.local
+
+# Expo
+.expo/
 dist/
-dist-ssr/
-*.local
+web-build/
+expo-env.d.ts
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
 
 # IDE
 .vscode/
@@ -28,6 +53,51 @@ dist-ssr/
 # OS
 .DS_Store
 Thumbs.db
+*.pem
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+.hypothesis/
 
 # Logs
 *.log
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Excel files (optional - uncomment if you don't want to track them)
+# *.xlsx
+# *.xls
+
+# Docker
+.dockerignore
+
+# Build artifacts
+backend/static/
+backend/htmlcov/
+
+# Sensitive files - DO NOT COMMIT
+# Service account keys and API keys
+google-play-service-account.json
+google-play-key.json
+*-key.json
+*-service-account.json
+api-key.json
+**/google-play*.json
+**/*-service-account*.json
+
+# EAS config with real credentials (use eas.json.template instead)
+mobile/eas.json
+eas.json
+
+# TypeScript
+*.tsbuildinfo
+
+# Generated native folders
+/ios
+/android
