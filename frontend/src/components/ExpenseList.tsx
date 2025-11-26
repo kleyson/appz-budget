@@ -102,14 +102,17 @@ export const ExpenseList = ({
   }
 
   return (
-    <div className="mx-4 my-4">
+    <div className="mx-2 sm:mx-4 my-4 overflow-x-hidden">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Expense List</h3>
+        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
+          Expense List
+        </h3>
         <button
           onClick={() => setShowForm(true)}
-          className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors shadow-sm"
+          className="px-3 py-1.5 sm:px-4 sm:py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm sm:text-base rounded-lg font-medium transition-colors shadow-sm"
         >
-          + Add Expense
+          <span className="hidden sm:inline">+ Add Expense</span>
+          <span className="sm:hidden">+ Add</span>
         </button>
       </div>
 
@@ -123,180 +126,313 @@ export const ExpenseList = ({
         />
       )}
 
-      <div className="mt-4">
+      <div className="mt-4 overflow-x-hidden">
         {!expenses || expenses.length === 0 ? (
           <div className="text-center py-12 text-gray-500 dark:text-gray-400">
             <p className="text-lg">No expenses found.</p>
             <p className="text-sm mt-2">Add your first expense to get started!</p>
           </div>
         ) : (
-          <div className="overflow-hidden">
-            <table className="w-full table-fixed">
-              <thead className="bg-gray-50 dark:bg-gray-900">
-                <tr>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/5">
-                    Expense
-                  </th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/12">
-                    Period
-                  </th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/8">
-                    Category
-                  </th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/12">
-                    Budget
-                  </th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/12">
-                    Cost
-                  </th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/8">
-                    Status
-                  </th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/12">
-                    Details
-                  </th>
-                  <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/8">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {expenses?.map((expense) => (
-                  <React.Fragment key={expense.id}>
-                    <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                      <td className="px-3 py-4 text-sm font-medium text-gray-900 dark:text-white truncate">
-                        {expense.expense_name}
-                      </td>
-                      <td className="px-3 py-4 text-sm whitespace-nowrap truncate">
-                        <span
-                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                          style={{
-                            backgroundColor: getPeriodColor(expense.period),
-                            color: isDarkColor(getPeriodColor(expense.period))
-                              ? '#ffffff'
-                              : '#111827',
-                          }}
-                        >
-                          {expense.period}
-                        </span>
-                      </td>
-                      <td className="px-3 py-4 text-sm">
-                        <span
-                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                          style={{
-                            backgroundColor: getCategoryColor(expense.category),
-                            color: isDarkColor(getCategoryColor(expense.category))
-                              ? '#ffffff'
-                              : '#111827',
-                          }}
-                        >
-                          {expense.category}
-                        </span>
-                      </td>
-                      <td
-                        className={`px-3 py-4 text-sm ${
-                          expense.budget === 0
-                            ? 'text-gray-400 dark:text-gray-500'
-                            : 'text-gray-900 dark:text-white'
-                        }`}
-                      >
-                        ${expense.budget.toFixed(2)}
-                      </td>
-                      <td
-                        className={`px-3 py-4 text-sm ${
-                          expense.cost === 0
-                            ? 'text-gray-400 dark:text-gray-500'
-                            : 'text-gray-900 dark:text-white'
-                        }`}
-                      >
-                        ${expense.cost.toFixed(2)}
-                      </td>
-                      <td className="px-3 py-4 text-sm">
-                        {getStatusBadge(expense.budget, expense.cost)}
-                      </td>
-                      <td className="px-3 py-4 text-sm font-medium">
-                        {(expense.purchases && expense.purchases.length > 0) || expense.notes ? (
-                          <button
-                            onClick={() => togglePurchases(expense.id)}
-                            className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 underline cursor-pointer"
-                          >
-                            {expense.purchases && expense.purchases.length > 0
-                              ? `${expense.purchases.length} ${
-                                  expense.purchases.length === 1 ? 'purchase' : 'purchases'
-                                }`
-                              : 'Details'}
-                          </button>
-                        ) : (
-                          <span className="text-gray-400 dark:text-gray-500">-</span>
-                        )}
-                      </td>
-                      <td className="px-3 py-4 text-sm font-medium text-right">
-                        <div className="flex items-center justify-end gap-3">
-                          <button
-                            onClick={() => setEditingExpense(expense)}
-                            className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDelete(expense.id)}
-                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                    {((expense.purchases && expense.purchases.length > 0) || expense.notes) &&
-                      expandedPurchases.has(expense.id) && (
-                        <tr className="bg-gray-50 dark:bg-gray-900/30">
-                          <td colSpan={8} className="px-3 py-3">
-                            <div className="text-xs text-gray-600 dark:text-gray-400 space-y-3">
-                              {expense.purchases && expense.purchases.length > 0 && (
-                                <div>
-                                  <div className="font-medium mb-1">Purchases:</div>
-                                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                                    {expense.purchases.map((purchase, idx) => (
-                                      <div
-                                        key={idx}
-                                        className="flex justify-between items-center bg-white dark:bg-gray-800 px-2 py-1 rounded border border-gray-200 dark:border-gray-700"
-                                      >
-                                        <span className="text-gray-700 dark:text-gray-300">
-                                          {purchase.name}
-                                        </span>
-                                        <span
-                                          className={`font-medium ml-2 ${
-                                            purchase.amount === 0
-                                              ? 'text-gray-400 dark:text-gray-500'
-                                              : 'text-gray-900 dark:text-white'
-                                          }`}
-                                        >
-                                          ${purchase.amount.toFixed(2)}
-                                        </span>
-                                      </div>
-                                    ))}
-                                  </div>
+          <>
+            {/* Mobile/Tablet: 2-column grid */}
+            <div className="lg:hidden grid grid-cols-2 gap-2 sm:gap-3 w-full">
+              {expenses?.map((expense) => (
+                <div
+                  key={expense.id}
+                  className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2 sm:p-3 space-y-2 min-w-0"
+                >
+                  <div className="font-medium text-sm text-gray-900 dark:text-white truncate">
+                    {expense.expense_name}
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    <span
+                      className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                      style={{
+                        backgroundColor: getPeriodColor(expense.period),
+                        color: isDarkColor(getPeriodColor(expense.period)) ? '#ffffff' : '#111827',
+                      }}
+                    >
+                      {expense.period}
+                    </span>
+                    <span
+                      className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                      style={{
+                        backgroundColor: getCategoryColor(expense.category),
+                        color: isDarkColor(getCategoryColor(expense.category))
+                          ? '#ffffff'
+                          : '#111827',
+                      }}
+                    >
+                      {expense.category}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-gray-500 dark:text-gray-400">Budget:</span>
+                    <span
+                      className={
+                        expense.budget === 0
+                          ? 'text-gray-400 dark:text-gray-500'
+                          : 'text-gray-900 dark:text-white font-medium'
+                      }
+                    >
+                      ${expense.budget.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-gray-500 dark:text-gray-400">Cost:</span>
+                    <span
+                      className={
+                        expense.cost === 0
+                          ? 'text-gray-400 dark:text-gray-500'
+                          : 'text-gray-900 dark:text-white font-medium'
+                      }
+                    >
+                      ${expense.cost.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-center">
+                    {getStatusBadge(expense.budget, expense.cost)}
+                  </div>
+                  {((expense.purchases && expense.purchases.length > 0) || expense.notes) && (
+                    <button
+                      onClick={() => togglePurchases(expense.id)}
+                      className="w-full text-xs text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 underline"
+                    >
+                      {expense.purchases && expense.purchases.length > 0
+                        ? `${expense.purchases.length} ${
+                            expense.purchases.length === 1 ? 'purchase' : 'purchases'
+                          }`
+                        : 'Details'}
+                    </button>
+                  )}
+                  {((expense.purchases && expense.purchases.length > 0) || expense.notes) &&
+                    expandedPurchases.has(expense.id) && (
+                      <div className="text-xs text-gray-600 dark:text-gray-400 space-y-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                        {expense.purchases && expense.purchases.length > 0 && (
+                          <div>
+                            <div className="font-medium mb-1">Purchases:</div>
+                            <div className="space-y-1">
+                              {expense.purchases.map((purchase, idx) => (
+                                <div
+                                  key={idx}
+                                  className="flex justify-between items-center bg-gray-50 dark:bg-gray-900 px-2 py-1 rounded"
+                                >
+                                  <span className="text-gray-700 dark:text-gray-300 truncate">
+                                    {purchase.name}
+                                  </span>
+                                  <span
+                                    className={`font-medium ml-2 ${
+                                      purchase.amount === 0
+                                        ? 'text-gray-400 dark:text-gray-500'
+                                        : 'text-gray-900 dark:text-white'
+                                    }`}
+                                  >
+                                    ${purchase.amount.toFixed(2)}
+                                  </span>
                                 </div>
-                              )}
-                              {expense.notes && (
-                                <div>
-                                  <div className="font-medium mb-1">Notes:</div>
-                                  <div className="bg-white dark:bg-gray-800 px-3 py-2 rounded border border-gray-200 dark:border-gray-700">
-                                    <span className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                                      {expense.notes}
-                                    </span>
-                                  </div>
-                                </div>
-                              )}
+                              ))}
                             </div>
-                          </td>
-                        </tr>
-                      )}
-                  </React.Fragment>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                          </div>
+                        )}
+                        {expense.notes && (
+                          <div>
+                            <div className="font-medium mb-1">Notes:</div>
+                            <div className="bg-gray-50 dark:bg-gray-900 px-2 py-1 rounded">
+                              <span className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words">
+                                {expense.notes}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  <div className="flex gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                    <button
+                      onClick={() => setEditingExpense(expense)}
+                      className="flex-1 text-xs px-2 py-1 text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 border border-primary-300 dark:border-primary-700 rounded"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(expense.id)}
+                      className="flex-1 text-xs px-2 py-1 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 border border-red-300 dark:border-red-700 rounded"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop: Table */}
+            <div className="hidden lg:block overflow-hidden">
+              <table className="w-full table-fixed">
+                <thead className="bg-gray-50 dark:bg-gray-900">
+                  <tr>
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/5">
+                      Expense
+                    </th>
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/12">
+                      Period
+                    </th>
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/8">
+                      Category
+                    </th>
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/12">
+                      Budget
+                    </th>
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/12">
+                      Cost
+                    </th>
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/8">
+                      Status
+                    </th>
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/12">
+                      Details
+                    </th>
+                    <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/8">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  {expenses?.map((expense) => (
+                    <React.Fragment key={expense.id}>
+                      <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                        <td className="px-3 py-4 text-sm font-medium text-gray-900 dark:text-white truncate">
+                          {expense.expense_name}
+                        </td>
+                        <td className="px-3 py-4 text-sm whitespace-nowrap truncate">
+                          <span
+                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                            style={{
+                              backgroundColor: getPeriodColor(expense.period),
+                              color: isDarkColor(getPeriodColor(expense.period))
+                                ? '#ffffff'
+                                : '#111827',
+                            }}
+                          >
+                            {expense.period}
+                          </span>
+                        </td>
+                        <td className="px-3 py-4 text-sm">
+                          <span
+                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                            style={{
+                              backgroundColor: getCategoryColor(expense.category),
+                              color: isDarkColor(getCategoryColor(expense.category))
+                                ? '#ffffff'
+                                : '#111827',
+                            }}
+                          >
+                            {expense.category}
+                          </span>
+                        </td>
+                        <td
+                          className={`px-3 py-4 text-sm ${
+                            expense.budget === 0
+                              ? 'text-gray-400 dark:text-gray-500'
+                              : 'text-gray-900 dark:text-white'
+                          }`}
+                        >
+                          ${expense.budget.toFixed(2)}
+                        </td>
+                        <td
+                          className={`px-3 py-4 text-sm ${
+                            expense.cost === 0
+                              ? 'text-gray-400 dark:text-gray-500'
+                              : 'text-gray-900 dark:text-white'
+                          }`}
+                        >
+                          ${expense.cost.toFixed(2)}
+                        </td>
+                        <td className="px-3 py-4 text-sm">
+                          {getStatusBadge(expense.budget, expense.cost)}
+                        </td>
+                        <td className="px-3 py-4 text-sm font-medium">
+                          {(expense.purchases && expense.purchases.length > 0) || expense.notes ? (
+                            <button
+                              onClick={() => togglePurchases(expense.id)}
+                              className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 underline cursor-pointer"
+                            >
+                              {expense.purchases && expense.purchases.length > 0
+                                ? `${expense.purchases.length} ${
+                                    expense.purchases.length === 1 ? 'purchase' : 'purchases'
+                                  }`
+                                : 'Details'}
+                            </button>
+                          ) : (
+                            <span className="text-gray-400 dark:text-gray-500">-</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-4 text-sm font-medium text-right">
+                          <div className="flex items-center justify-end gap-3">
+                            <button
+                              onClick={() => setEditingExpense(expense)}
+                              className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDelete(expense.id)}
+                              className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                      {((expense.purchases && expense.purchases.length > 0) || expense.notes) &&
+                        expandedPurchases.has(expense.id) && (
+                          <tr className="bg-gray-50 dark:bg-gray-900/30">
+                            <td colSpan={8} className="px-3 py-3">
+                              <div className="text-xs text-gray-600 dark:text-gray-400 space-y-3">
+                                {expense.purchases && expense.purchases.length > 0 && (
+                                  <div>
+                                    <div className="font-medium mb-1">Purchases:</div>
+                                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                                      {expense.purchases.map((purchase, idx) => (
+                                        <div
+                                          key={idx}
+                                          className="flex justify-between items-center bg-white dark:bg-gray-800 px-2 py-1 rounded border border-gray-200 dark:border-gray-700"
+                                        >
+                                          <span className="text-gray-700 dark:text-gray-300">
+                                            {purchase.name}
+                                          </span>
+                                          <span
+                                            className={`font-medium ml-2 ${
+                                              purchase.amount === 0
+                                                ? 'text-gray-400 dark:text-gray-500'
+                                                : 'text-gray-900 dark:text-white'
+                                            }`}
+                                          >
+                                            ${purchase.amount.toFixed(2)}
+                                          </span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                                {expense.notes && (
+                                  <div>
+                                    <div className="font-medium mb-1">Notes:</div>
+                                    <div className="bg-white dark:bg-gray-800 px-3 py-2 rounded border border-gray-200 dark:border-gray-700">
+                                      <span className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                                        {expense.notes}
+                                      </span>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </div>

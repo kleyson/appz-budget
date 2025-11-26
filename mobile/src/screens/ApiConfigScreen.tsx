@@ -30,7 +30,7 @@ export const ApiConfigScreen = ({
   const { isDark } = useTheme();
   const { apiUrl, apiKey, setApiUrl, setApiKey } = useApiConfig();
   // Default API key for dev mode
-  const defaultApiKey = __DEV__ ? "your-secret-api-key-change-this" : "";
+  const defaultApiKey = "your-secret-api-key-change-this";
   const defaultApiUrl = "https://budget.appz.wtf";
   const [url, setUrl] = useState(apiUrl || defaultApiUrl);
   const [key, setKey] = useState(apiKey || defaultApiKey);
@@ -44,7 +44,7 @@ export const ApiConfigScreen = ({
     }
     if (apiKey) {
       setKey(apiKey);
-    } else if (__DEV__ && !apiKey) {
+    } else if (!apiKey) {
       // Pre-fill with default key in dev mode if no key is set
       setKey(defaultApiKey);
     }
@@ -93,7 +93,7 @@ export const ApiConfigScreen = ({
     try {
       await setApiUrl(finalUrl);
       // Save API key (use default in dev if empty)
-      const keyToSave = key.trim() || (__DEV__ ? defaultApiKey : "");
+      const keyToSave = key.trim() || defaultApiKey;
       if (keyToSave) {
         await setApiKey(keyToSave);
       }

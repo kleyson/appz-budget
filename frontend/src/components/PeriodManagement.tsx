@@ -92,18 +92,19 @@ export const PeriodManagement = () => {
   }
 
   return (
-    <div className="mx-4 my-4">
+    <div className="mx-2 sm:mx-4 my-4 overflow-x-hidden">
       <div className="mb-6 flex items-center justify-between">
-        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Periods</h3>
+        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">Periods</h3>
         <button
           onClick={() => {
             setShowForm(true);
             setEditingPeriod(null);
             setFormData({ name: '', color: generateRandomColor() });
           }}
-          className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors shadow-sm"
+          className="px-3 py-1.5 sm:px-4 sm:py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm sm:text-base rounded-lg font-medium transition-colors shadow-sm"
         >
-          + Add Period
+          <span className="hidden sm:inline">+ Add Period</span>
+          <span className="sm:hidden">+ Add</span>
         </button>
       </div>
 
@@ -180,31 +181,22 @@ export const PeriodManagement = () => {
         </div>
       )}
 
-      <div className="overflow-x-auto">
+      <div>
         {!periods || periods.length === 0 ? (
           <div className="text-center py-12 text-gray-500 dark:text-gray-400">
             <p className="text-lg">No periods found.</p>
             <p className="text-sm mt-2">Add your first period to get started!</p>
           </div>
         ) : (
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-900">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Period Name
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+          <>
+            {/* Mobile/Tablet: 2-column grid */}
+            <div className="lg:hidden grid grid-cols-2 gap-2 sm:gap-3 w-full">
               {periods.map((period) => (
-                <tr
+                <div
                   key={period.id}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                  className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2 sm:p-3 space-y-2 min-w-0"
                 >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <div className="flex justify-center">
                     <span
                       className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
                       style={{
@@ -214,25 +206,75 @@ export const PeriodManagement = () => {
                     >
                       {period.name}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  </div>
+                  <div className="flex gap-2">
                     <button
                       onClick={() => handleEdit(period)}
-                      className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 mr-4"
+                      className="flex-1 text-xs px-2 py-1 text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 border border-primary-300 dark:border-primary-700 rounded"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(period.id, period.name)}
-                      className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                      className="flex-1 text-xs px-2 py-1 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 border border-red-300 dark:border-red-700 rounded"
                     >
                       Delete
                     </button>
-                  </td>
-                </tr>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+
+            {/* Desktop: Table */}
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 dark:bg-gray-900">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Period Name
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  {periods.map((period) => (
+                    <tr
+                      key={period.id}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <span
+                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                          style={{
+                            backgroundColor: period.color,
+                            color: isDarkColor(period.color) ? '#ffffff' : '#111827',
+                          }}
+                        >
+                          {period.name}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button
+                          onClick={() => handleEdit(period)}
+                          className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 mr-4"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(period.id, period.name)}
+                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </div>

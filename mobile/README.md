@@ -25,11 +25,13 @@ A React Native mobile application built with Expo for managing your personal bud
 ## Installation
 
 1. Navigate to the mobile directory:
+
 ```bash
 cd mobile
 ```
 
 2. Install dependencies:
+
 ```bash
 npm install
 ```
@@ -39,7 +41,9 @@ npm install
 Before running the app, you need to configure the API base URL. Edit `src/api/client.ts` and update the `API_BASE_URL` constant:
 
 ```typescript
-const API_BASE_URL = __DEV__ ? 'http://localhost:8000' : 'https://your-production-api.com';
+const API_BASE_URL = __DEV__
+  ? "http://localhost:8000"
+  : "https://your-production-api.com";
 ```
 
 For iOS Simulator, use `http://localhost:8000` for local development.
@@ -49,21 +53,25 @@ For physical devices, use your computer's local IP address (e.g., `http://192.16
 ## Running the App
 
 ### Start the Expo development server:
+
 ```bash
 npm start
 ```
 
 ### Run on iOS:
+
 ```bash
 npm run ios
 ```
 
 ### Run on Android:
+
 ```bash
 npm run android
 ```
 
 ### Run on Web:
+
 ```bash
 npm run web
 ```
@@ -116,15 +124,16 @@ mobile/
 ## Troubleshooting
 
 ### API Connection Issues
+
 - Make sure your backend server is running
 - Check that the API_BASE_URL is correctly configured
 - For physical devices, ensure your device and computer are on the same network
 
 ### Build Issues
+
 - Clear the Expo cache: `npx expo start -c`
 - Delete `node_modules` and reinstall: `rm -rf node_modules && npm install`
 
 ## License
 
 Same as the main project.
-

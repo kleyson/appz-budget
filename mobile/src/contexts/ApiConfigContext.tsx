@@ -61,7 +61,7 @@ export const ApiConfigProvider = ({ children }: ApiConfigProviderProps) => {
         updateApiBaseUrl(urlToUse);
       }
       // Use default API key in dev mode if no key is stored
-      const defaultKey = __DEV__ ? "your-secret-api-key-change-this" : null;
+      const defaultKey = "your-secret-api-key-change-this";
       setApiKeyState(storedKey || defaultKey);
     } catch (error) {
       console.error("Error loading API config:", error);

@@ -139,24 +139,27 @@ export const MonthlyBudget = () => {
   ];
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-x-hidden">
       {/* Header with filters */}
-      <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Monthly Budget</h2>
-          <div className="flex items-center gap-3">
+      <div className="p-4 lg:p-6 border-b border-gray-200 dark:border-gray-700 overflow-x-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+            Monthly Budget
+          </h2>
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setIsCreateMonthModalOpen(true)}
               className="
-                px-4 py-2 bg-green-600 hover:bg-green-700
-                text-white font-medium rounded-lg
+                px-2 py-1.5 sm:px-3 sm:py-2 bg-green-600 hover:bg-green-700
+                text-white text-sm font-medium rounded-lg
                 transition-colors
-                flex items-center gap-2
+                flex items-center gap-1.5
               "
               title="Create a new empty month"
             >
               <span>➕</span>
-              <span>Create Month</span>
+              <span className="hidden sm:inline">Create Month</span>
+              <span className="sm:hidden">Create</span>
             </button>
             {selectedMonthId && (
               <>
@@ -164,29 +167,37 @@ export const MonthlyBudget = () => {
                   onClick={handleDeleteMonth}
                   disabled={deleteMonthMutation.isPending}
                   className="
-                    px-4 py-2 bg-red-600 hover:bg-red-700
-                    text-white font-medium rounded-lg
+                    px-2 py-1.5 sm:px-3 sm:py-2 bg-red-600 hover:bg-red-700
+                    text-white text-sm font-medium rounded-lg
                     transition-colors disabled:opacity-50 disabled:cursor-not-allowed
-                    flex items-center gap-2
+                    flex items-center gap-1.5
                   "
                   title="Delete this month and all associated expenses and incomes"
                 >
                   <span>🗑️</span>
-                  <span>{deleteMonthMutation.isPending ? 'Deleting...' : 'Delete Month'}</span>
+                  <span className="hidden sm:inline">
+                    {deleteMonthMutation.isPending ? 'Deleting...' : 'Delete Month'}
+                  </span>
+                  <span className="sm:hidden">
+                    {deleteMonthMutation.isPending ? '...' : 'Delete'}
+                  </span>
                 </button>
                 <button
                   onClick={handleCloneToNextMonth}
                   disabled={cloneMutation.isPending}
                   className="
-                    px-4 py-2 bg-primary-600 hover:bg-primary-700
-                    text-white font-medium rounded-lg
+                    px-2 py-1.5 sm:px-3 sm:py-2 bg-primary-600 hover:bg-primary-700
+                    text-white text-sm font-medium rounded-lg
                     transition-colors disabled:opacity-50 disabled:cursor-not-allowed
-                    flex items-center gap-2
+                    flex items-center gap-1.5
                   "
                   title="Clone all expenses and incomes from this month to the next month"
                 >
                   <span>📋</span>
-                  <span>{cloneMutation.isPending ? 'Cloning...' : 'Clone to Next Month'}</span>
+                  <span className="hidden sm:inline">
+                    {cloneMutation.isPending ? 'Cloning...' : 'Clone to Next Month'}
+                  </span>
+                  <span className="sm:hidden">{cloneMutation.isPending ? '...' : 'Clone'}</span>
                 </button>
               </>
             )}
@@ -210,14 +221,14 @@ export const MonthlyBudget = () => {
         </div>
 
         {/* Tabs */}
-        <div className="border-b border-gray-200 dark:border-gray-700">
-          <nav className="flex space-x-8" aria-label="Tabs">
+        <div className="border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
+          <nav className="flex space-x-4 sm:space-x-8 min-w-max sm:min-w-0" aria-label="Tabs">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`
-                  flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm
+                  flex items-center gap-1.5 sm:gap-2 py-3 sm:py-4 px-2 sm:px-1 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap
                   transition-colors
                   ${
                     activeTab === tab.id
@@ -226,7 +237,7 @@ export const MonthlyBudget = () => {
                   }
                 `}
               >
-                <span className="text-lg">{tab.icon}</span>
+                <span className="text-base sm:text-lg">{tab.icon}</span>
                 <span>{tab.label}</span>
               </button>
             ))}
@@ -235,7 +246,7 @@ export const MonthlyBudget = () => {
       </div>
 
       {/* Tab Content */}
-      <div className="mx-0">
+      <div className="mx-0 overflow-x-hidden">
         {activeTab === 'list' && (
           <ExpenseList
             periodFilter={selectedPeriod || null}

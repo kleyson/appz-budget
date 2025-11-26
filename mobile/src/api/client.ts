@@ -35,7 +35,7 @@ import type {
 // API base URL - will be set dynamically from AsyncStorage
 let API_BASE_URL = "";
 // Default API key for development mode
-const DEFAULT_API_KEY = __DEV__ ? "your-secret-api-key-change-this" : "";
+const DEFAULT_API_KEY = "your-secret-api-key-change-this";
 let API_KEY = DEFAULT_API_KEY;
 const CLIENT_PLATFORM = "Mobile";
 const CLIENT_VERSION = "1.0.0";
@@ -75,7 +75,7 @@ Promise.all([
   updateApiBaseUrl(urlToUse);
   if (storedKey) {
     updateApiKey(storedKey);
-  } else if (__DEV__ && DEFAULT_API_KEY) {
+  } else if (DEFAULT_API_KEY) {
     // Use default API key in dev mode if no key is stored
     updateApiKey(DEFAULT_API_KEY);
   }

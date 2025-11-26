@@ -96,56 +96,73 @@ export const Charts = ({}: ChartsProps) => {
   const gridColor = theme === 'dark' ? '#4b5563' : '#e5e7eb';
 
   return (
-    <div className="mx-4 my-4">
-      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Budget Analysis</h3>
-      <div className="flex flex-col gap-6">
-        <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+    <div className="mx-2 sm:mx-4 my-4">
+      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6 px-2">
+        Budget Analysis
+      </h3>
+      <div className="flex flex-col gap-4 sm:gap-6">
+        <div className="bg-gray-50 dark:bg-gray-900/50 p-3 sm:p-6 rounded-lg border border-gray-200 dark:border-gray-700">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">
             Budget vs Actual by Category
           </h3>
-          <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke={gridColor} opacity={0.3} />
-              <XAxis
-                dataKey="name"
-                angle={-45}
-                textAnchor="end"
-                height={100}
-                stroke={textColor}
-                fontSize={12}
-              />
-              <YAxis stroke={textColor} fontSize={12} />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend wrapperStyle={{ color: textColor }} />
-              <Bar dataKey="budget" fill="#8b5cf6" name="Budget" />
-              <Bar dataKey="total" fill="#10b981" name="Actual" />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="w-full overflow-x-auto">
+            <ResponsiveContainer width="100%" height={300} minHeight={250}>
+              <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 60 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke={gridColor} opacity={0.3} />
+                <XAxis
+                  dataKey="name"
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                  stroke={textColor}
+                  fontSize={10}
+                  interval={0}
+                />
+                <YAxis stroke={textColor} fontSize={11} />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend wrapperStyle={{ color: textColor }} />
+                <Bar dataKey="budget" fill="#8b5cf6" name="Budget" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="total" fill="#10b981" name="Actual" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
-        <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <div className="bg-gray-50 dark:bg-gray-900/50 p-3 sm:p-6 rounded-lg border border-gray-200 dark:border-gray-700">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">
             Budget Distribution
           </h3>
-          <ResponsiveContainer width="100%" height={400}>
-            <PieChart>
-              <Pie
-                data={chartData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`}
-                outerRadius={120}
-                fill="#8884d8"
-                dataKey="budget"
-              >
-                {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={getCategoryColor(entry.name)} />
-                ))}
-              </Pie>
-              <Tooltip content={<CustomTooltip />} />
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="w-full overflow-x-auto">
+            <ResponsiveContainer width="100%" height={300} minHeight={250}>
+              <PieChart>
+                <Pie
+                  data={chartData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => {
+                    const percentage = ((percent ?? 0) * 100).toFixed(0);
+                    // Only show label if percentage is significant
+                    return parseFloat(percentage) >= 5 ? `${name}: ${percentage}%` : '';
+                  }}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="budget"
+                >
+                  {chartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={getCategoryColor(entry.name)} />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+                <Legend
+                  wrapperStyle={{ color: textColor }}
+                  formatter={(value) => (
+                    <span style={{ color: textColor, fontSize: '12px' }}>{value}</span>
+                  )}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
     </div>
