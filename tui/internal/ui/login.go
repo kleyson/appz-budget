@@ -70,6 +70,10 @@ func NewLoginModel(client *api.Client, cfg *config.Config) LoginModel {
 	apiKeyInput.EchoCharacter = '•'
 	apiKeyInput.SetValue(cfg.APIKey)
 
+	// Ensure client uses the current config values
+	client.SetBaseURL(cfg.APIBaseURL)
+	client.SetAPIKey(cfg.APIKey)
+
 	return LoginModel{
 		client:         client,
 		config:         cfg,

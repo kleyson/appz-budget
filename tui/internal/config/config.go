@@ -104,6 +104,7 @@ func deobfuscateKey(obfuscated string) (string, error) {
 
 // Load loads configuration from file and environment variables
 // Environment variables take precedence over file settings
+// If no config file exists, it will be created with default values
 func Load() *Config {
 	cfg := &Config{
 		APIBaseURL: DefaultAPIURL,
@@ -111,10 +112,19 @@ func Load() *Config {
 		Version:    loadVersion(),
 	}
 
-	// Load from file first
-	if fileCfg, err := loadFromFile(); err == nil {
-		cfg.APIBaseURL = fileCfg.APIURL
-		cfg.APIKey = fileCfg.APIKey
+	// Try to load from file
+	fileCfg, err := loadFromFile()
+	if err != nil {
+		// Config file doesn't exist or is invalid - create it with defaults
+		cfg.Save()
+	} else {
+		// Use values from file
+		if fileCfg.APIURL != "" {
+			cfg.APIBaseURL = fileCfg.APIURL
+		}
+		if fileCfg.APIKey != "" {
+			cfg.APIKey = fileCfg.APIKey
+		}
 	}
 
 	// Environment variables override file settings

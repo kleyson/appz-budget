@@ -1,8 +1,10 @@
 package config
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -194,5 +196,182 @@ func TestConfigSaveAndLoad(t *testing.T) {
 		if err == nil && len(data) > 0 {
 			t.Logf("Config file exists and is readable: %d bytes", len(data))
 		}
+	}
+}
+
+func TestLoadCreatesConfigFileOnFirstLaunch(t *testing.T) {
+	// Save original environment variables
+	originalURL := os.Getenv("BUDGET_API_URL")
+	originalKey := os.Getenv("BUDGET_API_KEY")
+	defer func() {
+		os.Setenv("BUDGET_API_URL", originalURL)
+		os.Setenv("BUDGET_API_KEY", originalKey)
+	}()
+
+	// Clear environment variables
+	os.Unsetenv("BUDGET_API_URL")
+	os.Unsetenv("BUDGET_API_KEY")
+
+	// Create a temporary directory for config
+	tmpDir := t.TempDir()
+
+	// Override the config directory by temporarily changing HOME
+	originalHome := os.Getenv("HOME")
+	if runtime.GOOS == "windows" {
+		originalHome = os.Getenv("USERPROFILE")
+	}
+	defer func() {
+		if runtime.GOOS == "windows" {
+			os.Setenv("USERPROFILE", originalHome)
+		} else {
+			os.Setenv("HOME", originalHome)
+		}
+	}()
+
+	// Set a temporary home directory
+	if runtime.GOOS == "windows" {
+		os.Setenv("USERPROFILE", tmpDir)
+	} else {
+		os.Setenv("HOME", tmpDir)
+	}
+
+	// Get the expected config path
+	configPath, err := getConfigPath()
+	if err != nil {
+		t.Fatalf("getConfigPath() error = %v", err)
+	}
+
+	// Ensure config file doesn't exist
+	os.Remove(configPath)
+	os.RemoveAll(filepath.Dir(configPath))
+
+	// Load config - this should create the config file
+	cfg := Load()
+
+	// Verify config file was created
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		t.Fatalf("Config file was not created at %v", configPath)
+	}
+
+	// Verify Load() returns config with defaults
+	if cfg.APIBaseURL != DefaultAPIURL {
+		t.Errorf("Expected APIBaseURL %v, got %v", DefaultAPIURL, cfg.APIBaseURL)
+	}
+	if cfg.APIKey != DefaultAPIKey {
+		t.Errorf("Expected APIKey %v, got %v", DefaultAPIKey, cfg.APIKey)
+	}
+
+	// Verify the config file contains default values by reading it directly
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("Failed to read config file: %v", err)
+	}
+
+	var fileCfg configFile
+	if err := json.Unmarshal(data, &fileCfg); err != nil {
+		t.Fatalf("Failed to parse config file JSON: %v", err)
+	}
+
+	// Verify default API URL
+	if fileCfg.APIURL != DefaultAPIURL {
+		t.Errorf("Expected API URL %v, got %v", DefaultAPIURL, fileCfg.APIURL)
+	}
+
+	// Verify default API key (deobfuscated)
+	if fileCfg.APIKey == "" {
+		t.Error("API key should not be empty")
+	}
+	deobfuscatedKey, err := deobfuscateKey(fileCfg.APIKey)
+	if err != nil {
+		t.Fatalf("Failed to deobfuscate API key: %v (obfuscated value: %v)", err, fileCfg.APIKey)
+	}
+	if deobfuscatedKey != DefaultAPIKey {
+		t.Errorf("Expected API key %v, got %v", DefaultAPIKey, deobfuscatedKey)
+	}
+
+	// Reload config to verify file was written correctly and can be loaded
+	cfg2 := Load()
+	if cfg2.APIBaseURL != DefaultAPIURL {
+		t.Errorf("Expected APIBaseURL %v on second load, got %v", DefaultAPIURL, cfg2.APIBaseURL)
+	}
+	if cfg2.APIKey != DefaultAPIKey {
+		t.Errorf("Expected APIKey %v on second load, got %v", DefaultAPIKey, cfg2.APIKey)
+	}
+}
+
+func TestLoadReadsExistingConfigFile(t *testing.T) {
+	// Save original environment variables
+	originalURL := os.Getenv("BUDGET_API_URL")
+	originalKey := os.Getenv("BUDGET_API_KEY")
+	defer func() {
+		os.Setenv("BUDGET_API_URL", originalURL)
+		os.Setenv("BUDGET_API_KEY", originalKey)
+	}()
+
+	// Clear environment variables
+	os.Unsetenv("BUDGET_API_URL")
+	os.Unsetenv("BUDGET_API_KEY")
+
+	// Create a temporary directory for config
+	tmpDir := t.TempDir()
+
+	// Override the config directory
+	originalHome := os.Getenv("HOME")
+	if runtime.GOOS == "windows" {
+		originalHome = os.Getenv("USERPROFILE")
+	}
+	defer func() {
+		if runtime.GOOS == "windows" {
+			os.Setenv("USERPROFILE", originalHome)
+		} else {
+			os.Setenv("HOME", originalHome)
+		}
+	}()
+
+	if runtime.GOOS == "windows" {
+		os.Setenv("USERPROFILE", tmpDir)
+	} else {
+		os.Setenv("HOME", tmpDir)
+	}
+
+	// Get the expected config path
+	configPath, err := getConfigPath()
+	if err != nil {
+		t.Fatalf("getConfigPath() error = %v", err)
+	}
+
+	// Create config directory
+	configDir := filepath.Dir(configPath)
+	if err := os.MkdirAll(configDir, 0700); err != nil {
+		t.Fatalf("Failed to create config directory: %v", err)
+	}
+
+	// Create a config file with custom values
+	customURL := "https://custom.example.com"
+	customKey := "custom-api-key-123"
+
+	fileCfg := configFile{
+		APIURL: customURL,
+		APIKey: obfuscateKey(customKey),
+	}
+
+	data, err := json.MarshalIndent(fileCfg, "", "  ")
+	if err != nil {
+		t.Fatalf("Failed to marshal config: %v", err)
+	}
+
+	if err := os.WriteFile(configPath, data, 0600); err != nil {
+		t.Fatalf("Failed to write config file: %v", err)
+	}
+
+	// Load config - should read from file
+	cfg := Load()
+
+	// Verify config was loaded from file
+	if cfg.APIBaseURL != customURL {
+		t.Errorf("Expected APIBaseURL %v, got %v", customURL, cfg.APIBaseURL)
+	}
+	if cfg.APIKey != customKey {
+		t.Errorf("Expected APIKey %v, got %v", customKey, cfg.APIKey)
 	}
 }

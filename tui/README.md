@@ -42,8 +42,38 @@ A Terminal User Interface for Appz Budget, built with [Bubble Tea](https://githu
 
 ### Prerequisites
 
-- Go 1.22 or later
+- Go 1.22 or later (for building from source)
 - A running Appz Budget backend server
+
+### Download Pre-built Binary
+
+Download the latest release from [GitHub Releases](https://github.com/appz/budget/releases).
+
+#### Linux (AMD64)
+
+```bash
+wget -O - https://github.com/appz/budget/releases/latest/download/budget-tui-linux-amd64.tar.gz | tar -xz && sudo mv budget-tui-linux-amd64 /usr/local/bin/budget-tui && sudo chmod +x /usr/local/bin/budget-tui
+```
+
+#### Linux (ARM64)
+
+```bash
+wget -O - https://github.com/appz/budget/releases/latest/download/budget-tui-linux-arm64.tar.gz | tar -xz && sudo mv budget-tui-linux-arm64 /usr/local/bin/budget-tui && sudo chmod +x /usr/local/bin/budget-tui
+```
+
+#### macOS (AMD64 / Intel)
+
+```bash
+wget -O - https://github.com/appz/budget/releases/latest/download/budget-tui-darwin-amd64.tar.gz | tar -xz && sudo mv budget-tui-darwin-amd64 /usr/local/bin/budget-tui && sudo chmod +x /usr/local/bin/budget-tui
+```
+
+#### macOS (ARM64 / Apple Silicon)
+
+```bash
+wget -O - https://github.com/appz/budget/releases/latest/download/budget-tui-darwin-arm64.tar.gz | tar -xz && sudo mv budget-tui-darwin-arm64 /usr/local/bin/budget-tui && sudo chmod +x /usr/local/bin/budget-tui
+```
+
+**Note:** If you prefer user-specific installation (no sudo), replace `/usr/local/bin` with `~/.local/bin` (Linux) or ensure `~/.local/bin` is in your PATH.
 
 ### Build from Source
 
@@ -68,11 +98,11 @@ export BUDGET_API_KEY=your-api-key
 
 The TUI can be configured via environment variables:
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `BUDGET_API_URL` | Backend API URL | `https://budget.appz.wtf` |
-| `BUDGET_API_KEY` | API key for authentication | `your-secret-api-key-change-this` |
-| `BUDGET_CLIENT_INFO` | Client identification string | `TUI/<version>` |
+| Variable             | Description                  | Default                           |
+| -------------------- | ---------------------------- | --------------------------------- |
+| `BUDGET_API_URL`     | Backend API URL              | `https://budget.appz.wtf`         |
+| `BUDGET_API_KEY`     | API key for authentication   | `your-secret-api-key-change-this` |
+| `BUDGET_CLIENT_INFO` | Client identification string | `TUI/<version>`                   |
 
 The version is automatically read from the `VERSION` file in the project root.
 
@@ -80,43 +110,43 @@ The version is automatically read from the `VERSION` file in the project root.
 
 ### Global
 
-| Key | Action |
-|-----|--------|
-| `1-4` | Switch between tabs (Summary/Expenses/Income/Settings) |
-| `[` / `]` | Previous / Next month |
-| `r` | Refresh data |
-| `?` | Toggle help screen |
-| `L` | Logout |
-| `q` / `Ctrl+C` | Quit |
+| Key            | Action                                                 |
+| -------------- | ------------------------------------------------------ |
+| `1-4`          | Switch between tabs (Summary/Expenses/Income/Settings) |
+| `[` / `]`      | Previous / Next month                                  |
+| `r`            | Refresh data                                           |
+| `?`            | Toggle help screen                                     |
+| `L`            | Logout                                                 |
+| `q` / `Ctrl+C` | Quit                                                   |
 
 ### Navigation
 
-| Key | Action |
-|-----|--------|
-| `↑` / `k` | Move up |
-| `↓` / `j` | Move down |
-| `Tab` | Next field / section |
+| Key         | Action                   |
+| ----------- | ------------------------ |
+| `↑` / `k`   | Move up                  |
+| `↓` / `j`   | Move down                |
+| `Tab`       | Next field / section     |
 | `Shift+Tab` | Previous field / section |
-| `Enter` | Select / Edit |
-| `Esc` | Cancel / Back |
+| `Enter`     | Select / Edit            |
+| `Esc`       | Cancel / Back            |
 
 ### Actions
 
-| Key | Action |
-|-----|--------|
-| `n` | Create new item |
-| `e` | Edit selected item |
-| `d` | Delete selected item |
-| `p` | Filter by period |
+| Key | Action                             |
+| --- | ---------------------------------- |
+| `n` | Create new item                    |
+| `e` | Edit selected item                 |
+| `d` | Delete selected item               |
+| `p` | Filter by period                   |
 | `g` | Filter by category (expenses only) |
 
 ### Forms
 
-| Key | Action |
-|-----|--------|
+| Key       | Action                        |
+| --------- | ----------------------------- |
 | `←` / `→` | Change selection in dropdowns |
-| `Ctrl+S` | Save form |
-| `Esc` | Cancel |
+| `Ctrl+S`  | Save form                     |
+| `Esc`     | Cancel                        |
 
 ## Development
 
@@ -185,4 +215,3 @@ The TUI uses a modern dark theme inspired by [Catppuccin Mocha](https://github.c
 ## License
 
 Same license as the main Appz Budget project.
-
