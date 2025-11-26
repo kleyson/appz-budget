@@ -1,8 +1,3 @@
-version: "3.8"
-
-# Development docker-compose for local development
-# Usage: docker-compose -f docker-compose.dev.yml up
-
 services:
   budget-app-dev:
     build:

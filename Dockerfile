@@ -5,6 +5,9 @@ FROM node:22-alpine AS frontend-builder
 
 WORKDIR /app
 
+# Copy VERSION file first (needed for frontend build)
+COPY VERSION ./VERSION
+
 # Copy only package files for better caching
 COPY frontend/package.json frontend/package-lock.json ./frontend/
 
