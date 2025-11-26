@@ -49,9 +49,11 @@ const getApiKey = (): string => {
   return import.meta.env.VITE_API_KEY || '';
 };
 
+import { APP_VERSION } from '../utils/version';
+
 const API_KEY = getApiKey();
 const CLIENT_PLATFORM = import.meta.env.VITE_CLIENT_PLATFORM || 'Web';
-const CLIENT_VERSION = import.meta.env.VITE_CLIENT_VERSION || '2.0';
+const CLIENT_VERSION = APP_VERSION;
 const CLIENT_INFO = `${CLIENT_PLATFORM}/${CLIENT_VERSION}`;
 
 export const apiClient = axios.create({

@@ -19,7 +19,67 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  build-tui:
+    name: Build TUI for ${{ matrix.goos }}/${{ matrix.goarch }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            binary_name: budget-tui-linux-amd64
+          - goos: linux
+            goarch: arm64
+            binary_name: budget-tui-linux-arm64
+          - goos: darwin
+            goarch: amd64
+            binary_name: budget-tui-darwin-amd64
+          - goos: darwin
+            goarch: arm64
+            binary_name: budget-tui-darwin-arm64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25.4"
+
+      - name: Get version from VERSION file
+        id: version_tag
+        run: |
+          VERSION=$(cat VERSION | tr -d '[:space:]')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Build TUI binary
+        working-directory: ./tui
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+        run: |
+          go build -ldflags="-s -w" \
+            -o ../${{ matrix.binary_name }} \
+            .
+
+      - name: Compress binary
+        run: |
+          tar -czf ${{ matrix.binary_name }}.tar.gz ${{ matrix.binary_name }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.binary_name }}
+          path: |
+            ${{ matrix.binary_name }}
+            ${{ matrix.binary_name }}.tar.gz
+          retention-days: 30
+
   build-and-push:
+    needs: build-tui
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -79,11 +139,27 @@ jobs:
           git push origin "${{ steps.version_tag.outputs.version }}"
         continue-on-error: true
 
+      - name: Download TUI artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: tui-artifacts
+
+      - name: Prepare TUI release assets
+        run: |
+          mkdir -p release-assets
+          # Copy all binaries and archives from artifact directories
+          find tui-artifacts -type f -name "budget-tui-*" -exec cp {} release-assets/ \;
+          cd release-assets
+          # Create checksums for all files
+          sha256sum budget-tui-* > checksums.txt
+          ls -lah
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.version_tag.outputs.version }}
           name: Release ${{ steps.version_tag.outputs.version }}
+          files: release-assets/*
           body: |
             ## Release ${{ steps.version_tag.outputs.version }}
 
@@ -107,6 +183,38 @@ jobs:
             ```bash
             wget https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/docker-compose.yml
             docker-compose up -d
+            ```
+
+            ### TUI Downloads
+
+            Terminal User Interface binaries are available for:
+
+            - **Linux AMD64**: `budget-tui-linux-amd64.tar.gz`
+            - **Linux ARM64**: `budget-tui-linux-arm64.tar.gz`
+            - **macOS AMD64**: `budget-tui-darwin-amd64.tar.gz`
+            - **macOS ARM64**: `budget-tui-darwin-arm64.tar.gz`
+
+            #### Installation
+
+            1. Download the appropriate archive for your platform
+            2. Extract the archive:
+               ```bash
+               tar -xzf budget-tui-<platform>-<arch>.tar.gz
+               ```
+            3. Make it executable:
+               ```bash
+               chmod +x budget-tui-<platform>-<arch>
+               ```
+            4. Move to a directory in your PATH (optional):
+               ```bash
+               sudo mv budget-tui-<platform>-<arch> /usr/local/bin/budget-tui
+               ```
+
+            #### Verification
+
+            Verify the checksums:
+            ```bash
+            sha256sum -c checksums.txt
             ```
           draft: false
           prerelease: ${{ inputs.prerelease }}

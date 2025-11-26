@@ -1,4 +1,4 @@
-.PHONY: help install dev backend frontend backend-dev frontend-dev test clean migrate verify version
+.PHONY: help install dev backend frontend backend-dev frontend-dev test clean migrate verify version tui tui-build tui-run tui-clean tui-test tui-lint tui-fmt
 
 # Default API key for development
 DEFAULT_API_KEY ?= your-secret-api-key-change-this
@@ -14,6 +14,8 @@ install: ## Install all dependencies
 	cd backend && uv sync
 	@echo "Installing frontend dependencies..."
 	cd frontend && npm install
+	@echo "Installing TUI dependencies..."
+	cd tui && make install
 	@echo "Done!"
 
 dev: ## Start both backend and frontend in development mode
@@ -106,10 +108,44 @@ clean: ## Clean build artifacts and caches
 	rm -rf frontend/node_modules frontend/dist frontend/.vite
 	rm -rf mobile/node_modules mobile/.expo mobile/.vite
 	rm -f backend/budget.db backend/test.db
+	@$(MAKE) tui-clean
 	@echo "Done!"
 
 build: ## Build frontend for production
 	cd frontend && npm run build
+
+tui: ## Build TUI binary
+	cd tui && make build
+
+tui-build: ## Build TUI binary
+	cd tui && make build
+
+tui-build-all: ## Build TUI for all platforms
+	cd tui && make build-all
+
+tui-run: ## Run TUI application
+	cd tui && make run
+
+tui-clean: ## Clean TUI build artifacts
+	cd tui && make clean
+
+tui-test: ## Run TUI tests
+	cd tui && make test
+
+tui-lint: ## Lint TUI code
+	cd tui && make lint
+
+tui-fmt: ## Format TUI code
+	cd tui && make fmt
+
+tui-fmt-check: ## Check TUI code formatting
+	cd tui && make fmt-check
+
+tui-vet: ## Run go vet on TUI code
+	cd tui && make vet
+
+tui-check: ## Run all TUI checks (fmt-check, vet, lint)
+	cd tui && make check
 
 docker-build: ## Build Docker image
 	docker build -t budget-manager:latest .
@@ -185,6 +221,18 @@ verify: ## Run all linting, type checking, formatting checks, and tests
 	@echo "7. Frontend: Running tests..."
 	@$(MAKE) test-frontend || (echo "❌ Frontend tests failed" && exit 1)
 	@echo "✅ Frontend tests passed"
+	@echo ""
+	@echo "8. TUI: Checking formatting..."
+	@$(MAKE) tui-fmt-check || (echo "❌ TUI formatting check failed" && exit 1)
+	@echo "✅ TUI formatting OK"
+	@echo ""
+	@echo "9. TUI: Linting..."
+	@$(MAKE) tui-lint || (echo "❌ TUI linting failed" && exit 1)
+	@echo "✅ TUI linting OK"
+	@echo ""
+	@echo "10. TUI: Running tests..."
+	@$(MAKE) tui-test || (echo "❌ TUI tests failed" && exit 1)
+	@echo "✅ TUI tests passed"
 	@echo ""
 	@echo "=========================================="
 	@echo "✅ All checks passed!"

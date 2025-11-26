@@ -38,11 +38,13 @@ function getVersion(): string {
     const versionFile = join(__dirname, '../VERSION')
     if (existsSync(versionFile)) {
       const version = readFileSync(versionFile, 'utf-8').trim()
+      console.log(`📦 Building frontend with version: ${version}`)
       return version || '1.0.0'
     }
   } catch (error) {
     console.warn('Failed to read VERSION file:', error)
   }
+  console.warn('⚠️  VERSION file not found, using default: 1.0.0')
   return '1.0.0'
 }
 
@@ -54,6 +56,7 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(getVersion()),
   },
+  envPrefix: 'VITE_',
   build: {
     outDir: '../backend/public',
     emptyOutDir: true,
