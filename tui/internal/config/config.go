@@ -116,7 +116,10 @@ func Load() *Config {
 	fileCfg, err := loadFromFile()
 	if err != nil {
 		// Config file doesn't exist or is invalid - create it with defaults
-		cfg.Save()
+		if saveErr := cfg.Save(); saveErr != nil {
+			// Log error but continue with defaults
+			_ = saveErr
+		}
 	} else {
 		// Use values from file
 		if fileCfg.APIURL != "" {

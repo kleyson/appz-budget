@@ -1071,7 +1071,7 @@ func (s SettingsView) renderUsersList(width, height int) string {
 			name = *user.FullName
 		}
 
-		active := "No"
+		var active string
 		if user.IsActive {
 			active = SuccessStyle.Render("Yes")
 		} else {

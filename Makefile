@@ -231,7 +231,11 @@ verify: ## Run all linting, type checking, formatting checks, and tests
 	@echo "✅ TUI formatting OK"
 	@echo ""
 	@echo "9. TUI: Linting..."
-	@$(MAKE) tui-lint || (echo "❌ TUI linting failed" && exit 1)
+	@if ! command -v golangci-lint >/dev/null 2>&1; then \
+		echo "❌ golangci-lint is not installed. Please run: cd tui && make tools"; \
+		exit 1; \
+	fi
+	@cd tui && golangci-lint run --out-format=colored-line-number ./... || (echo "❌ TUI linting failed" && exit 1)
 	@echo "✅ TUI linting OK"
 	@echo ""
 	@echo "10. TUI: Running tests..."

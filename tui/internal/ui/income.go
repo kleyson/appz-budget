@@ -643,14 +643,14 @@ func (v IncomeView) renderForm(width, height int) string {
 	budgetInput := v.formInputs[0].View()
 	amountInput := v.formInputs[1].View()
 	if v.formFocus == 0 {
-		budgetInput = InputFocusedStyle.Copy().Width(18).Render(budgetInput)
+		budgetInput = InputFocusedStyle.Width(18).Render(budgetInput)
 	} else {
-		budgetInput = InputStyle.Copy().Width(18).Render(budgetInput)
+		budgetInput = InputStyle.Width(18).Render(budgetInput)
 	}
 	if v.formFocus == 1 {
-		amountInput = InputFocusedStyle.Copy().Width(18).Render(amountInput)
+		amountInput = InputFocusedStyle.Width(18).Render(amountInput)
 	} else {
-		amountInput = InputStyle.Copy().Width(18).Render(amountInput)
+		amountInput = InputStyle.Width(18).Render(amountInput)
 	}
 	b.WriteString(budgetInput + "  " + amountInput)
 	b.WriteString("\n\n")

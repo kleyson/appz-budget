@@ -35,13 +35,11 @@ vet:
 
 # Run linter (install with: make tools)
 lint:
-	@if command -v golangci-lint >/dev/null 2>&1; then \
-		golangci-lint run ./...; \
-	else \
-		echo "golangci-lint not installed. Run 'make tools' to install it."; \
-		echo "Falling back to go vet..."; \
-		go vet ./...; \
+	@if ! command -v golangci-lint >/dev/null 2>&1; then \
+		echo "❌ golangci-lint is not installed. Please run: make tools"; \
+		exit 1; \
 	fi
+	@golangci-lint run --out-format=colored-line-number ./...
 
 # Format code
 fmt:

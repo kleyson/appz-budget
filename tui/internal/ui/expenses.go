@@ -699,14 +699,14 @@ func (e ExpensesView) renderForm(width, height int) string {
 	budgetInput := e.formInputs[1].View()
 	costInput := e.formInputs[2].View()
 	if e.formFocus == 1 {
-		budgetInput = InputFocusedStyle.Copy().Width(18).Render(budgetInput)
+		budgetInput = InputFocusedStyle.Width(18).Render(budgetInput)
 	} else {
-		budgetInput = InputStyle.Copy().Width(18).Render(budgetInput)
+		budgetInput = InputStyle.Width(18).Render(budgetInput)
 	}
 	if e.formFocus == 2 {
-		costInput = InputFocusedStyle.Copy().Width(18).Render(costInput)
+		costInput = InputFocusedStyle.Width(18).Render(costInput)
 	} else {
-		costInput = InputStyle.Copy().Width(18).Render(costInput)
+		costInput = InputStyle.Width(18).Render(costInput)
 	}
 	b.WriteString(budgetInput + "  " + costInput)
 	b.WriteString("\n\n")

@@ -217,7 +217,7 @@ func (s SummaryView) renderCard(title string, current, budget float64, width int
 		lipgloss.JoinHorizontal(lipgloss.Left, statusStyled, "  ", percentageStyled),
 	)
 
-	return CardStyle.Copy().
+	return CardStyle.
 		Width(width).
 		Render(content)
 }
@@ -258,7 +258,7 @@ func (s SummaryView) renderBalanceCard(title string, current, budget float64, wi
 		statusStyled,
 	)
 
-	return CardStyle.Copy().
+	return CardStyle.
 		Width(width).
 		Render(content)
 }

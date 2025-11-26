@@ -338,7 +338,7 @@ func (m LoginModel) View() string {
 	logoStyled := LogoStyle.Render(logo)
 
 	// Title
-	title := TitleStyle.Copy().
+	title := TitleStyle.
 		Foreground(ColorText).
 		Bold(true).
 		Render("Welcome to Appz Budget")
@@ -411,7 +411,7 @@ func (m LoginModel) View() string {
 	)
 
 	// Card for the form
-	card := CardStyle.Copy().
+	card := CardStyle.
 		Width(50).
 		Align(lipgloss.Center).
 		Render(form)
@@ -446,7 +446,7 @@ func (m LoginModel) View() string {
 func (m LoginModel) renderAPIConfig() string {
 	var b strings.Builder
 
-	title := TitleStyle.Copy().
+	title := TitleStyle.
 		Foreground(ColorText).
 		Bold(true).
 		Render("⚙️  API Configuration")
@@ -508,7 +508,7 @@ func (m LoginModel) renderAPIConfig() string {
 	)
 
 	// Card for the form
-	card := CardStyle.Copy().
+	card := CardStyle.
 		Width(50).
 		Align(lipgloss.Center).
 		Render(form)
