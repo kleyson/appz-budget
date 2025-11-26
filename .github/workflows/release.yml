@@ -3,11 +3,6 @@ name: Create Release
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: "Release version (e.g., v1.0.0)"
-        required: true
-        type: string
-        default: "v1.0.0"
       release_notes:
         description: "Release notes (markdown supported)"
         required: false
@@ -44,14 +39,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Get version tag
+      - name: Get version from VERSION file
         id: version_tag
         run: |
-          VERSION="${{ inputs.version }}"
-          # Remove 'v' prefix if present for tag
-          TAG="${VERSION#v}"
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          # Read version from VERSION file
+          VERSION=$(cat VERSION | tr -d '[:space:]')
+          # Add 'v' prefix for the tag name
+          VERSION_TAG="v${VERSION}"
+          echo "tag=$VERSION" >> $GITHUB_OUTPUT
+          echo "version=$VERSION_TAG" >> $GITHUB_OUTPUT
+          echo "Using version: $VERSION_TAG"
 
       - name: Set VITE_API_KEY for build
         run: |

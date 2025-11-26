@@ -2,6 +2,7 @@ import { useCategorySummary, useCategories } from '../hooks/useCategories';
 import { useIncomeTypeSummary } from '../hooks/useSummary';
 import { useIncomeTypes } from '../hooks/useIncomeTypes';
 import { isDarkColor } from '../utils/colors';
+import { formatCurrency } from '../utils/format';
 
 interface SummaryProps {
   periodFilter?: string | null;
@@ -55,16 +56,16 @@ export const Summary = ({ periodFilter = null, monthId = null }: SummaryProps) =
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Category
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Budget
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Total
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Difference
                 </th>
               </tr>
@@ -92,22 +93,22 @@ export const Summary = ({ periodFilter = null, monthId = null }: SummaryProps) =
                       </span>
                     </td>
                     <td
-                      className={`px-6 py-4 whitespace-nowrap text-sm ${
+                      className={`px-6 py-4 whitespace-nowrap text-sm text-right ${
                         item.budget === 0
                           ? 'text-gray-400 dark:text-gray-500'
                           : 'text-gray-900 dark:text-white'
                       }`}
                     >
-                      ${item.budget.toFixed(2)}
+                      {formatCurrency(item.budget)}
                     </td>
                     <td
-                      className={`px-6 py-4 whitespace-nowrap text-sm ${
+                      className={`px-6 py-4 whitespace-nowrap text-sm text-right ${
                         item.total === 0
                           ? 'text-gray-400 dark:text-gray-500'
                           : 'text-gray-900 dark:text-white'
                       }`}
                     >
-                      ${item.total.toFixed(2)}
+                      {formatCurrency(item.total)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <span
@@ -121,7 +122,7 @@ export const Summary = ({ periodFilter = null, monthId = null }: SummaryProps) =
                       </span>
                     </td>
                     <td
-                      className={`px-6 py-4 whitespace-nowrap text-sm font-semibold ${
+                      className={`px-6 py-4 whitespace-nowrap text-sm text-right font-semibold ${
                         difference === 0
                           ? 'text-gray-400 dark:text-gray-500'
                           : difference >= 0
@@ -129,7 +130,7 @@ export const Summary = ({ periodFilter = null, monthId = null }: SummaryProps) =
                             : 'text-red-600 dark:text-red-400'
                       }`}
                     >
-                      ${difference.toFixed(2)}
+                      {formatCurrency(difference)}
                     </td>
                   </tr>
                 );
@@ -153,13 +154,13 @@ export const Summary = ({ periodFilter = null, monthId = null }: SummaryProps) =
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Income Type
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Budget
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Total
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Difference
                 </th>
               </tr>
@@ -186,25 +187,25 @@ export const Summary = ({ periodFilter = null, monthId = null }: SummaryProps) =
                       </span>
                     </td>
                     <td
-                      className={`px-6 py-4 whitespace-nowrap text-sm ${
+                      className={`px-6 py-4 whitespace-nowrap text-sm text-right ${
                         item.budget === 0
                           ? 'text-gray-400 dark:text-gray-500'
                           : 'text-gray-900 dark:text-white'
                       }`}
                     >
-                      ${item.budget.toFixed(2)}
+                      {formatCurrency(item.budget)}
                     </td>
                     <td
-                      className={`px-6 py-4 whitespace-nowrap text-sm ${
+                      className={`px-6 py-4 whitespace-nowrap text-sm text-right ${
                         item.total === 0
                           ? 'text-gray-400 dark:text-gray-500'
                           : 'text-gray-900 dark:text-white'
                       }`}
                     >
-                      ${item.total.toFixed(2)}
+                      {formatCurrency(item.total)}
                     </td>
                     <td
-                      className={`px-6 py-4 whitespace-nowrap text-sm font-semibold ${
+                      className={`px-6 py-4 whitespace-nowrap text-sm text-right font-semibold ${
                         difference === 0
                           ? 'text-gray-400 dark:text-gray-500'
                           : difference >= 0
@@ -212,7 +213,7 @@ export const Summary = ({ periodFilter = null, monthId = null }: SummaryProps) =
                             : 'text-red-600 dark:text-red-400'
                       }`}
                     >
-                      ${difference.toFixed(2)}
+                      {formatCurrency(difference)}
                     </td>
                   </tr>
                 );

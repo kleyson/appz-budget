@@ -6,6 +6,7 @@ import { useMonths, useCurrentMonth } from '../hooks/useMonths';
 import type { Expense, ExpenseCreate } from '../types';
 import { ColorSelect } from './ColorSelect';
 import { MonthSelect } from './MonthSelect';
+import { formatCurrency } from '../utils/format';
 
 interface ExpenseFormProps {
   expense?: Expense | null;
@@ -297,7 +298,7 @@ export const ExpenseForm = ({
                       : 'text-gray-500 dark:text-gray-400'
                   }`}
                 >
-                  Total: ${calculatedCost.toFixed(2)}
+                  Total: {formatCurrency(calculatedCost)}
                 </div>
               </div>
             ) : (
