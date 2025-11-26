@@ -1162,9 +1162,9 @@ func (s SettingsView) renderAPIConfigForm(width, height int) string {
 	b.WriteString(InputLabelStyle.Render("API URL"))
 	b.WriteString("\n")
 	if s.apiConfigFocus == 0 {
-		b.WriteString(InputFocusedStyle.Copy().Width(52).Render(s.apiConfigInputs[0].View()))
+		b.WriteString(InputFocusedStyle.Width(52).Render(s.apiConfigInputs[0].View()))
 	} else {
-		b.WriteString(InputStyle.Copy().Width(52).Render(s.apiConfigInputs[0].View()))
+		b.WriteString(InputStyle.Width(52).Render(s.apiConfigInputs[0].View()))
 	}
 	b.WriteString("\n\n")
 
@@ -1172,9 +1172,9 @@ func (s SettingsView) renderAPIConfigForm(width, height int) string {
 	b.WriteString(InputLabelStyle.Render("API Key"))
 	b.WriteString("\n")
 	if s.apiConfigFocus == 1 {
-		b.WriteString(InputFocusedStyle.Copy().Width(52).Render(s.apiConfigInputs[1].View()))
+		b.WriteString(InputFocusedStyle.Width(52).Render(s.apiConfigInputs[1].View()))
 	} else {
-		b.WriteString(InputStyle.Copy().Width(52).Render(s.apiConfigInputs[1].View()))
+		b.WriteString(InputStyle.Width(52).Render(s.apiConfigInputs[1].View()))
 	}
 	b.WriteString("\n\n")
 
@@ -1245,9 +1245,9 @@ func (s SettingsView) renderForm(width, height int) string {
 			Render("     ")
 	}
 	if s.formFocus == 1 {
-		b.WriteString(InputFocusedStyle.Copy().Width(12).Render(colorInput))
+		b.WriteString(InputFocusedStyle.Width(12).Render(colorInput))
 	} else {
-		b.WriteString(InputStyle.Copy().Width(12).Render(colorInput))
+		b.WriteString(InputStyle.Width(12).Render(colorInput))
 	}
 	b.WriteString("  " + colorPreview)
 	b.WriteString("\n\n")

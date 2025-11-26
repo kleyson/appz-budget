@@ -457,18 +457,18 @@ func (m LoginModel) renderAPIConfig() string {
 	urlLabel := InputLabelStyle.Render("API URL")
 	urlField := m.apiURLInput.View()
 	if m.apiConfigFocus == 0 {
-		urlField = InputFocusedStyle.Copy().Width(42).Render(urlField)
+		urlField = InputFocusedStyle.Width(42).Render(urlField)
 	} else {
-		urlField = InputStyle.Copy().Width(42).Render(urlField)
+		urlField = InputStyle.Width(42).Render(urlField)
 	}
 
 	// API Key
 	keyLabel := InputLabelStyle.Render("API Key")
 	keyField := m.apiKeyInput.View()
 	if m.apiConfigFocus == 1 {
-		keyField = InputFocusedStyle.Copy().Width(42).Render(keyField)
+		keyField = InputFocusedStyle.Width(42).Render(keyField)
 	} else {
-		keyField = InputStyle.Copy().Width(42).Render(keyField)
+		keyField = InputStyle.Width(42).Render(keyField)
 	}
 
 	// Save button

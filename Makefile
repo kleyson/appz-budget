@@ -231,11 +231,23 @@ verify: ## Run all linting, type checking, formatting checks, and tests
 	@echo "✅ TUI formatting OK"
 	@echo ""
 	@echo "9. TUI: Linting..."
-	@if ! command -v golangci-lint >/dev/null 2>&1; then \
-		echo "❌ golangci-lint is not installed. Please run: cd tui && make tools"; \
+	@cd tui && GOLANGCI_LINT=$$(command -v golangci-lint 2>/dev/null || \
+		([ -f "$$HOME/go/bin/golangci-lint" ] && echo "$$HOME/go/bin/golangci-lint") || \
+		([ -n "$$GOPATH" ] && [ -f "$$GOPATH/bin/golangci-lint" ] && echo "$$GOPATH/bin/golangci-lint") || \
+		""); \
+	if [ -z "$$GOLANGCI_LINT" ]; then \
+		echo "⚠️  golangci-lint not found. Installing..."; \
+		go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest; \
+		GOLANGCI_LINT=$$(command -v golangci-lint 2>/dev/null || \
+			([ -f "$$HOME/go/bin/golangci-lint" ] && echo "$$HOME/go/bin/golangci-lint") || \
+			([ -n "$$GOPATH" ] && [ -f "$$GOPATH/bin/golangci-lint" ] && echo "$$GOPATH/bin/golangci-lint") || \
+			""); \
+	fi; \
+	if [ -z "$$GOLANGCI_LINT" ]; then \
+		echo "❌ Failed to find or install golangci-lint"; \
 		exit 1; \
-	fi
-	@cd tui && golangci-lint run --out-format=colored-line-number ./... || (echo "❌ TUI linting failed" && exit 1)
+	fi; \
+	$$GOLANGCI_LINT run --out-format=colored-line-number ./... || (echo "❌ TUI linting failed" && exit 1)
 	@echo "✅ TUI linting OK"
 	@echo ""
 	@echo "10. TUI: Running tests..."
