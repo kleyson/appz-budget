@@ -187,7 +187,11 @@ version: ## Update version and create git tag (usage: make version VERSION="1.0.
 	@git commit -m "Bump version to $(VERSION)" || true
 	@git tag -a "v$(VERSION)" -m "Version $(VERSION)" || (echo "⚠️  Tag v$(VERSION) already exists. Skipping tag creation." && exit 0)
 	@echo "✅ Version updated to $(VERSION) and tag v$(VERSION) created"
-	@echo "Don't forget to push tags: git push --tags"
+	@echo "Pushing commit..."
+	@git push || (echo "⚠️  Failed to push commit. Make sure you have a remote configured." && exit 1)
+	@echo "Pushing tags..."
+	@git push --tags || (echo "⚠️  Failed to push tags. Make sure you have a remote configured." && exit 1)
+	@echo "✅ Version $(VERSION) pushed and tag v$(VERSION) pushed"
 
 verify: ## Run all linting, type checking, formatting checks, and tests
 	@echo "=========================================="
