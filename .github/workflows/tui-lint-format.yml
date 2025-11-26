@@ -1,0 +1,95 @@
+name: TUI Lint and Format
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "tui/**"
+      - ".github/workflows/tui-lint-format.yml"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "tui/**"
+      - ".github/workflows/tui-lint-format.yml"
+
+jobs:
+  lint:
+    name: Lint TUI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - name: Install dependencies
+        working-directory: ./tui
+        run: go mod download
+
+      - name: Install golangci-lint
+        uses: golangci/golangci-lint-action@v4
+        with:
+          version: latest
+
+      - name: Run golangci-lint
+        working-directory: ./tui
+        run: |
+          if command -v golangci-lint >/dev/null 2>&1; then
+            golangci-lint run ./...
+          else
+            echo "⚠️  golangci-lint not available. Falling back to go vet..."
+            go vet ./...
+          fi
+
+  format:
+    name: Check Formatting
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - name: Install dependencies
+        working-directory: ./tui
+        run: go mod download
+
+      - name: Check gofmt formatting
+        working-directory: ./tui
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "❌ The following files are not formatted:"
+            echo "$unformatted"
+            exit 1
+          fi
+          echo "✅ All files are properly formatted"
+
+  vet:
+    name: Run go vet
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - name: Install dependencies
+        working-directory: ./tui
+        run: go mod download
+
+      - name: Run go vet
+        working-directory: ./tui
+        run: go vet ./...

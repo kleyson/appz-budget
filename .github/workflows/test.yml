@@ -8,6 +8,7 @@ on:
       - "backend/**"
       - "frontend/**"
       - "mobile/**"
+      - "tui/**"
       - ".github/workflows/test.yml"
   push:
     branches:
@@ -16,6 +17,7 @@ on:
       - "backend/**"
       - "frontend/**"
       - "mobile/**"
+      - "tui/**"
       - ".github/workflows/test.yml"
 
 jobs:
@@ -74,3 +76,16 @@ jobs:
           VITE_API_KEY: test-api-key
         run: |
           npm run build || exit 1
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - name: Install TUI dependencies
+        working-directory: ./tui
+        run: go mod download
+
+      - name: Run TUI tests
+        working-directory: ./tui
+        run: go test -v ./...
