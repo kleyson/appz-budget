@@ -5,6 +5,7 @@ import { usePeriods } from '../hooks/usePeriods';
 import { ExpenseForm } from './ExpenseForm';
 import type { Expense } from '../types';
 import { isDarkColor } from '../utils/colors';
+import { formatCurrency } from '../utils/format';
 import { useDialog } from '../contexts/DialogContext';
 
 interface ExpenseListProps {
@@ -175,7 +176,7 @@ export const ExpenseList = ({
                           : 'text-gray-900 dark:text-white font-medium'
                       }
                     >
-                      ${expense.budget.toFixed(2)}
+                      {formatCurrency(expense.budget)}
                     </span>
                   </div>
                   <div className="flex justify-between text-xs">
@@ -187,7 +188,7 @@ export const ExpenseList = ({
                           : 'text-gray-900 dark:text-white font-medium'
                       }
                     >
-                      ${expense.cost.toFixed(2)}
+                      {formatCurrency(expense.cost)}
                     </span>
                   </div>
                   <div className="flex justify-center">
@@ -227,7 +228,7 @@ export const ExpenseList = ({
                                         : 'text-gray-900 dark:text-white'
                                     }`}
                                   >
-                                    ${purchase.amount.toFixed(2)}
+                                    {formatCurrency(purchase.amount)}
                                   </span>
                                 </div>
                               ))}
@@ -278,10 +279,10 @@ export const ExpenseList = ({
                     <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/8">
                       Category
                     </th>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/12">
+                    <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/12">
                       Budget
                     </th>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/12">
+                    <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/12">
                       Cost
                     </th>
                     <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/8">
@@ -329,22 +330,22 @@ export const ExpenseList = ({
                           </span>
                         </td>
                         <td
-                          className={`px-3 py-4 text-sm ${
+                          className={`px-3 py-4 text-sm text-right ${
                             expense.budget === 0
                               ? 'text-gray-400 dark:text-gray-500'
                               : 'text-gray-900 dark:text-white'
                           }`}
                         >
-                          ${expense.budget.toFixed(2)}
+                          {formatCurrency(expense.budget)}
                         </td>
                         <td
-                          className={`px-3 py-4 text-sm ${
+                          className={`px-3 py-4 text-sm text-right ${
                             expense.cost === 0
                               ? 'text-gray-400 dark:text-gray-500'
                               : 'text-gray-900 dark:text-white'
                           }`}
                         >
-                          ${expense.cost.toFixed(2)}
+                          {formatCurrency(expense.cost)}
                         </td>
                         <td className="px-3 py-4 text-sm">
                           {getStatusBadge(expense.budget, expense.cost)}
@@ -406,7 +407,7 @@ export const ExpenseList = ({
                                                 : 'text-gray-900 dark:text-white'
                                             }`}
                                           >
-                                            ${purchase.amount.toFixed(2)}
+                                            {formatCurrency(purchase.amount)}
                                           </span>
                                         </div>
                                       ))}

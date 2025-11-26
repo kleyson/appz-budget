@@ -13,6 +13,7 @@ import {
   Cell,
 } from 'recharts';
 import { useTheme } from '../contexts/ThemeContext';
+import { formatCurrency } from '../utils/format';
 import type { TooltipProps } from 'recharts';
 import type { NameType, Payload } from 'recharts/types/component/DefaultTooltipContent';
 
@@ -48,7 +49,7 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
                 color: entry.value === 0 ? '#9ca3af' : entry.color,
               }}
             >
-              ${entry.value?.toFixed(2)}
+              {formatCurrency(entry.value ?? 0)}
             </span>
           </p>
         ))}

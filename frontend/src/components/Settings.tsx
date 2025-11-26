@@ -17,7 +17,7 @@ export const Settings = () => {
     { id: 'categories', label: 'Categories', icon: '🏷️' },
     { id: 'periods', label: 'Periods', icon: '📅' },
     { id: 'income-types', label: 'Income Types', icon: '💵' },
-    { id: 'password', label: 'Change Password', icon: '🔒' },
+    { id: 'password', label: 'Password', icon: '🔒' },
     { id: 'users', label: 'Users', icon: '👥' },
   ];
 

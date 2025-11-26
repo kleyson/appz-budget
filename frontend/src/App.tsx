@@ -78,12 +78,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <DialogProvider>
-          <AuthProvider>
-            <AppContent />
-            <ReactQueryDevtools initialIsOpen={false} />
-          </AuthProvider>
-        </DialogProvider>
+          <DialogProvider>
+            <AuthProvider>
+              <AppContent />
+              <ReactQueryDevtools initialIsOpen={false} />
+            </AuthProvider>
+          </DialogProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

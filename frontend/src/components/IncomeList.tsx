@@ -4,6 +4,7 @@ import { usePeriods } from '../hooks/usePeriods';
 import { useIncomeTypes } from '../hooks/useIncomeTypes';
 import { IncomeForm } from './IncomeForm';
 import type { Income } from '../types';
+import { formatCurrency } from '../utils/format';
 import { useDialog } from '../contexts/DialogContext';
 
 interface IncomeListProps {
@@ -128,14 +129,26 @@ export const IncomeList = ({ periodFilter = null, monthId = null }: IncomeListPr
                     </div>
                     <div className="flex justify-between text-xs">
                       <span className="text-gray-500 dark:text-gray-400">Budget:</span>
-                      <span className="text-gray-900 dark:text-white font-medium">
-                        ${income.budget.toFixed(2)}
+                      <span
+                        className={
+                          income.budget === 0
+                            ? 'text-gray-400 dark:text-gray-500'
+                            : 'text-gray-900 dark:text-white font-medium'
+                        }
+                      >
+                        {formatCurrency(income.budget)}
                       </span>
                     </div>
                     <div className="flex justify-between text-xs">
                       <span className="text-gray-500 dark:text-gray-400">Amount:</span>
-                      <span className="text-sm font-semibold text-green-600 dark:text-green-400">
-                        ${income.amount.toFixed(2)}
+                      <span
+                        className={
+                          income.amount === 0
+                            ? 'text-gray-400 dark:text-gray-500'
+                            : 'text-sm font-semibold text-green-600 dark:text-green-400'
+                        }
+                      >
+                        {formatCurrency(income.amount)}
                       </span>
                     </div>
                     <div className="flex gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
@@ -168,10 +181,10 @@ export const IncomeList = ({ periodFilter = null, monthId = null }: IncomeListPr
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Period
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Budget
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Amount
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -208,14 +221,26 @@ export const IncomeList = ({ periodFilter = null, monthId = null }: IncomeListPr
                             </span>
                           </div>
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900 dark:text-gray-100">
-                            ${income.budget.toFixed(2)}
+                        <td className="px-4 py-4 whitespace-nowrap text-right">
+                          <div
+                            className={`text-sm ${
+                              income.budget === 0
+                                ? 'text-gray-400 dark:text-gray-500'
+                                : 'text-gray-900 dark:text-gray-100'
+                            }`}
+                          >
+                            {formatCurrency(income.budget)}
                           </div>
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap">
-                          <div className="text-sm font-semibold text-green-600 dark:text-green-400">
-                            ${income.amount.toFixed(2)}
+                        <td className="px-4 py-4 whitespace-nowrap text-right">
+                          <div
+                            className={`text-sm font-semibold ${
+                              income.amount === 0
+                                ? 'text-gray-400 dark:text-gray-500'
+                                : 'text-green-600 dark:text-green-400'
+                            }`}
+                          >
+                            {formatCurrency(income.amount)}
                           </div>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
