@@ -319,21 +319,23 @@ func (m MainModel) View() string {
 
 	var b strings.Builder
 
-	// Header
+	// Header with gradient accent
 	header := m.renderHeader()
 	b.WriteString(header)
 	b.WriteString("\n")
 
-	// Tabs
+	// Navigation tabs
 	tabs := m.renderTabs()
 	b.WriteString(tabs)
 	b.WriteString("\n")
 
-	// Month selector
+	// Month selector with enhanced styling
 	monthSelector := m.renderMonthSelector()
 	b.WriteString(monthSelector)
 	b.WriteString("\n")
-	b.WriteString(RenderDivider(m.width - 4))
+
+	// Divider with subtle styling
+	b.WriteString(lipgloss.NewStyle().Padding(0, 2).Render(RenderDivider(m.width - 4)))
 	b.WriteString("\n")
 
 	// Content area
@@ -349,52 +351,91 @@ func (m MainModel) View() string {
 }
 
 func (m MainModel) renderLoading() string {
-	loading := lipgloss.NewStyle().
+	// Spinner animation frames
+	spinnerFrames := []string{"◐", "◓", "◑", "◒"}
+	spinner := lipgloss.NewStyle().
+		Foreground(ColorSecondary).
+		Bold(true).
+		Render(spinnerFrames[0])
+
+	loadingText := lipgloss.NewStyle().
 		Foreground(ColorPrimary).
 		Bold(true).
-		Render("Loading...")
+		Render("  Loading...")
+
+	loadingContent := spinner + loadingText
+
+	// Add a subtle box around the loading indicator
+	loadingBox := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(ColorOverlayDim).
+		Padding(1, 4).
+		Render(loadingContent)
 
 	return lipgloss.Place(
 		m.width,
 		m.height,
 		lipgloss.Center,
 		lipgloss.Center,
-		loading,
+		loadingBox,
 	)
 }
 
 func (m MainModel) renderHeader() string {
-	logo := LogoStyle.Render("💰 Appz Budget")
+	// Logo with icon
+	logoIcon := lipgloss.NewStyle().Foreground(ColorSecondary).Render("💰")
+	logoText := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(ColorPrimary).
+		Render(" Appz Budget")
+	logo := logoIcon + logoText
 
-	// Version badge
+	// Version badge with subtle styling
 	versionBadge := lipgloss.NewStyle().
 		Foreground(ColorMuted).
+		Italic(true).
 		Render("v" + m.version)
 
+	// User info with icon
 	var userInfo string
 	if m.user != nil {
 		name := m.user.Email
 		if m.user.FullName != nil && *m.user.FullName != "" {
 			name = *m.user.FullName
 		}
+
+		userIcon := lipgloss.NewStyle().Foreground(ColorPrimary).Render("👤")
+		userName := lipgloss.NewStyle().Foreground(ColorSubtext).Render(" " + name)
+
 		if m.user.IsAdmin {
-			userInfo = SubtitleStyle.Render(fmt.Sprintf("👤 %s (admin)", name))
+			adminBadge := BadgeStyle.Render("admin")
+			userInfo = userIcon + userName + " " + adminBadge
 		} else {
-			userInfo = SubtitleStyle.Render(fmt.Sprintf("👤 %s", name))
+			userInfo = userIcon + userName
 		}
 	}
 
-	left := logo + " " + versionBadge
+	// Build header layout
+	left := logo + "  " + versionBadge
 	right := userInfo
 
-	spaces := m.width - lipgloss.Width(left) - lipgloss.Width(right) - 4
+	// Calculate spacing
+	leftWidth := lipgloss.Width(left)
+	rightWidth := lipgloss.Width(right)
+	spaces := m.width - leftWidth - rightWidth - 4
 	if spaces < 0 {
 		spaces = 0
 	}
 
-	return lipgloss.NewStyle().
-		Padding(0, 2).
-		Render(left + strings.Repeat(" ", spaces) + right)
+	headerContent := left + strings.Repeat(" ", spaces) + right
+
+	// Add accent line at top
+	accentLine := lipgloss.NewStyle().Padding(0, 2).Render(RenderAccentLine(m.width-4, ColorPrimary))
+
+	return lipgloss.JoinVertical(lipgloss.Left,
+		accentLine,
+		lipgloss.NewStyle().Padding(0, 2).Render(headerContent),
+	)
 }
 
 func (m MainModel) renderTabs() string {
@@ -411,16 +452,29 @@ func (m MainModel) renderTabs() string {
 
 	var tabViews []string
 	for i, tab := range tabs {
-		style := TabStyle
+		// Tab number indicator
+		numStyle := lipgloss.NewStyle().Foreground(ColorMuted)
 		if m.activeTab == tab.tab {
-			style = ActiveTabStyle
+			numStyle = lipgloss.NewStyle().Foreground(ColorBase).Bold(true)
 		}
-		tabViews = append(tabViews, style.Render(fmt.Sprintf("%d %s %s", i+1, tab.icon, tab.name)))
+		num := numStyle.Render(fmt.Sprintf("%d", i+1))
+
+		// Tab content
+		content := fmt.Sprintf(" %s %s %s ", num, tab.icon, tab.name)
+
+		if m.activeTab == tab.tab {
+			tabViews = append(tabViews, ActiveTabStyle.Render(content))
+		} else {
+			tabViews = append(tabViews, TabStyle.Render(content))
+		}
 	}
+
+	// Join tabs with small gap
+	tabsRow := strings.Join(tabViews, " ")
 
 	return lipgloss.NewStyle().
 		Padding(0, 2).
-		Render(lipgloss.JoinHorizontal(lipgloss.Top, tabViews...))
+		Render(tabsRow)
 }
 
 func (m MainModel) renderMonthSelector() string {
@@ -431,18 +485,31 @@ func (m MainModel) renderMonthSelector() string {
 		monthName = "No month selected"
 	}
 
-	selector := lipgloss.NewStyle().
-		Foreground(ColorPrimary).
-		Bold(true).
-		Render(fmt.Sprintf("📅  %s", monthName))
+	// Calendar icon
+	calIcon := lipgloss.NewStyle().Foreground(ColorSecondary).Render("📅")
 
-	hint := lipgloss.NewStyle().
-		Foreground(ColorMuted).
-		Render("  [ ← previous | next → ]")
+	// Month name with highlight
+	monthText := lipgloss.NewStyle().
+		Foreground(ColorTextBright).
+		Bold(true).
+		Render("  " + monthName)
+
+	// Navigation hints
+	leftArrow := lipgloss.NewStyle().Foreground(ColorPrimary).Bold(true).Render("◀")
+	rightArrow := lipgloss.NewStyle().Foreground(ColorPrimary).Bold(true).Render("▶")
+	navText := lipgloss.NewStyle().Foreground(ColorMuted).Render(" previous ")
+	navText2 := lipgloss.NewStyle().Foreground(ColorMuted).Render(" next ")
+	hint := lipgloss.NewStyle().Foreground(ColorMuted).Render("   [ ") +
+		leftArrow + navText +
+		lipgloss.NewStyle().Foreground(ColorMuted).Render("│") +
+		navText2 + rightArrow +
+		lipgloss.NewStyle().Foreground(ColorMuted).Render(" ]")
+
+	selector := calIcon + monthText + hint
 
 	return lipgloss.NewStyle().
 		Padding(0, 2).
-		Render(selector + hint)
+		Render(selector)
 }
 
 func (m MainModel) renderContent(height int) string {
@@ -466,74 +533,100 @@ func (m MainModel) renderContent(height int) string {
 }
 
 func (m MainModel) renderFooter() string {
-	help := "1-4: tabs | [/]: months | r: refresh | ?: help | L: logout | q: quit"
+	// Build help hints with refined styling
+	helpItems := []string{
+		RenderKeyHint("1-4", "tabs"),
+		RenderKeyHint("[/]", "months"),
+		RenderKeyHint("r", "refresh"),
+		RenderKeyHint("?", "help"),
+		RenderKeyHint("L", "logout"),
+		RenderKeyHint("q", "quit"),
+	}
+	help := strings.Join(helpItems, "  │  ")
 
+	// Error message
 	if m.err != nil {
-		errMsg := ErrorStyle.Render("Error: " + m.err.Error())
+		errIcon := lipgloss.NewStyle().Foreground(ColorDanger).Render("✗")
+		errText := lipgloss.NewStyle().Foreground(ColorDanger).Bold(true).Render(" " + m.err.Error())
+		errMsg := errIcon + errText
 		return lipgloss.NewStyle().
 			Padding(0, 2).
-			Render(errMsg + "  " + HelpStyle.Render(help))
+			Render(errMsg + "    " + lipgloss.NewStyle().Foreground(ColorMuted).Render(help))
 	}
 
+	// Success message
 	if m.message != "" {
-		msg := MessageStyle.Render(m.message)
+		msgIcon := lipgloss.NewStyle().Foreground(ColorSuccess).Render("✓")
+		msgText := lipgloss.NewStyle().Foreground(ColorSuccess).Render(" " + m.message)
+		msg := msgIcon + msgText
 		return lipgloss.NewStyle().
 			Padding(0, 2).
-			Render(msg + "  " + HelpStyle.Render(help))
+			Render(msg + "    " + lipgloss.NewStyle().Foreground(ColorMuted).Render(help))
 	}
 
 	return lipgloss.NewStyle().
 		Padding(0, 2).
-		Render(HelpStyle.Render(help))
+		Render(lipgloss.NewStyle().Foreground(ColorMuted).Render(help))
 }
 
 func (m MainModel) renderHelp() string {
-	help := `
-╭─────────────────────────────────────────────────────────────╮
-│                    📖 Keyboard Shortcuts                     │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  NAVIGATION                                                  │
-│  ──────────                                                  │
-│  1-4          Switch between tabs (Summary/Expenses/etc)     │
-│  [ / ]        Previous / Next month                          │
-│  Tab          Navigate between fields                        │
-│  ↑/↓          Navigate lists                                 │
-│  Enter        Select / Confirm                               │
-│  Esc          Cancel / Back                                  │
-│                                                              │
-│  ACTIONS                                                     │
-│  ──────────                                                  │
-│  n            New item (expense/income/category/etc)         │
-│  e            Edit selected item                             │
-│  d            Delete selected item                           │
-│  c            Clone expenses to next month                   │
-│  r            Refresh data                                   │
-│                                                              │
-│  FILTERS                                                     │
-│  ──────────                                                  │
-│  p            Filter by period                               │
-│  g            Filter by category (expenses only)             │
-│                                                              │
-│  OTHER                                                       │
-│  ──────────                                                  │
-│  L            Logout                                         │
-│  ?            Toggle this help                               │
-│  q / Ctrl+C   Quit                                          │
-│                                                              │
-╰─────────────────────────────────────────────────────────────╯
-
-                  Press any key to close
+	// Help modal with premium styling
+	helpContent := `
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃                    📖  Keyboard Shortcuts                     ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃                                                               ┃
+┃  ` + lipgloss.NewStyle().Foreground(ColorPrimary).Bold(true).Render("NAVIGATION") + `                                               ┃
+┃  ──────────                                                   ┃
+┃  ` + HelpKeyStyle.Render("1-4") + `          Switch between tabs (Summary/Expenses/etc)  ┃
+┃  ` + HelpKeyStyle.Render("[ / ]") + `        Previous / Next month                       ┃
+┃  ` + HelpKeyStyle.Render("Tab") + `          Navigate between fields                     ┃
+┃  ` + HelpKeyStyle.Render("↑/↓") + `          Navigate lists                              ┃
+┃  ` + HelpKeyStyle.Render("Enter") + `        Select / Confirm                            ┃
+┃  ` + HelpKeyStyle.Render("Esc") + `          Cancel / Back                               ┃
+┃                                                               ┃
+┃  ` + lipgloss.NewStyle().Foreground(ColorSecondary).Bold(true).Render("ACTIONS") + `                                                  ┃
+┃  ──────────                                                   ┃
+┃  ` + HelpKeyStyle.Render("n") + `            New item (expense/income/category/etc)      ┃
+┃  ` + HelpKeyStyle.Render("e") + `            Edit selected item                          ┃
+┃  ` + HelpKeyStyle.Render("d") + `            Delete selected item                        ┃
+┃  ` + HelpKeyStyle.Render("c") + `            Clone expenses to next month                ┃
+┃  ` + HelpKeyStyle.Render("r") + `            Refresh data                                ┃
+┃                                                               ┃
+┃  ` + lipgloss.NewStyle().Foreground(ColorInfo).Bold(true).Render("FILTERS") + `                                                  ┃
+┃  ──────────                                                   ┃
+┃  ` + HelpKeyStyle.Render("p") + `            Filter by period                            ┃
+┃  ` + HelpKeyStyle.Render("g") + `            Filter by category (expenses only)          ┃
+┃                                                               ┃
+┃  ` + lipgloss.NewStyle().Foreground(ColorDanger).Bold(true).Render("OTHER") + `                                                    ┃
+┃  ──────────                                                   ┃
+┃  ` + HelpKeyStyle.Render("L") + `            Logout                                      ┃
+┃  ` + HelpKeyStyle.Render("?") + `            Toggle this help                            ┃
+┃  ` + HelpKeyStyle.Render("q / Ctrl+C") + `   Quit                                         ┃
+┃                                                               ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 `
+
 	helpStyled := lipgloss.NewStyle().
 		Foreground(ColorText).
-		Render(help)
+		Render(helpContent)
+
+	dismissHint := lipgloss.NewStyle().
+		Foreground(ColorMuted).
+		Italic(true).
+		Render("Press any key to close")
+
+	content := lipgloss.JoinVertical(lipgloss.Center,
+		helpStyled,
+		"",
+		dismissHint,
+	)
 
 	return lipgloss.Place(
 		m.width,
 		m.height,
 		lipgloss.Center,
 		lipgloss.Center,
-		helpStyled,
+		content,
 	)
 }

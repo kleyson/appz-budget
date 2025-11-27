@@ -326,32 +326,64 @@ func (m LoginModel) View() string {
 
 	var b strings.Builder
 
-	// Logo/Title
-	logo := `
-    ____            __           __
-   / __ )__  ______/ /___ ____  / /_
-  / __  / / / / __  / __ '/ _ \/ __/
- / /_/ / /_/ / /_/ / /_/ /  __/ /_
-/_____/\__,_/\__,_/\__, /\___/\__/
-                  /____/
-`
-	logoStyled := LogoStyle.Render(logo)
+	// Premium ASCII Logo with gradient-like effect
+	logoLine1 := lipgloss.NewStyle().Foreground(ColorSecondary).Bold(true).Render("    ╔══════════════════════════════════════╗")
+	logoLine2 := lipgloss.NewStyle().Foreground(ColorSecondary).Bold(true).Render("    ║") +
+		lipgloss.NewStyle().Foreground(ColorPrimaryBright).Bold(true).Render("  ████╗ ██████╗ ██████╗ ███████╗  ") +
+		lipgloss.NewStyle().Foreground(ColorSecondary).Bold(true).Render("║")
+	logoLine3 := lipgloss.NewStyle().Foreground(ColorSecondary).Bold(true).Render("    ║") +
+		lipgloss.NewStyle().Foreground(ColorPrimary).Bold(true).Render("  ██╔═██╗██╔══██╗██╔══██╗╚══███╔╝  ") +
+		lipgloss.NewStyle().Foreground(ColorSecondary).Bold(true).Render("║")
+	logoLine4 := lipgloss.NewStyle().Foreground(ColorSecondary).Bold(true).Render("    ║") +
+		lipgloss.NewStyle().Foreground(ColorPrimary).Bold(true).Render("  ███████║██████╔╝██████╔╝  ███╔╝   ") +
+		lipgloss.NewStyle().Foreground(ColorSecondary).Bold(true).Render("║")
+	logoLine5 := lipgloss.NewStyle().Foreground(ColorSecondary).Bold(true).Render("    ║") +
+		lipgloss.NewStyle().Foreground(ColorPrimaryDim).Bold(true).Render("  ██╔══██║██╔═══╝ ██╔═══╝  ███╔╝    ") +
+		lipgloss.NewStyle().Foreground(ColorSecondary).Bold(true).Render("║")
+	logoLine6 := lipgloss.NewStyle().Foreground(ColorSecondary).Bold(true).Render("    ║") +
+		lipgloss.NewStyle().Foreground(ColorPrimaryDim).Bold(true).Render("  ██║  ██║██║     ██║     ███████╗ ") +
+		lipgloss.NewStyle().Foreground(ColorSecondary).Bold(true).Render("║")
+	logoLine7 := lipgloss.NewStyle().Foreground(ColorSecondary).Bold(true).Render("    ║") +
+		lipgloss.NewStyle().Foreground(ColorMuted).Render("  ╚═╝  ╚═╝╚═╝     ╚═╝     ╚══════╝ ") +
+		lipgloss.NewStyle().Foreground(ColorSecondary).Bold(true).Render("║")
+	logoLine8 := lipgloss.NewStyle().Foreground(ColorSecondary).Bold(true).Render("    ╚══════════════════════════════════════╝")
 
-	// Title
-	title := TitleStyle.
-		Foreground(ColorText).
+	logoStyled := lipgloss.JoinVertical(lipgloss.Center,
+		logoLine1, logoLine2, logoLine3, logoLine4, logoLine5, logoLine6, logoLine7, logoLine8,
+	)
+
+	// Brand tagline with icon
+	brandIcon := lipgloss.NewStyle().Foreground(ColorSecondary).Render("💰")
+	brandText := lipgloss.NewStyle().Foreground(ColorPrimary).Bold(true).Render(" Budget")
+	brand := brandIcon + brandText
+
+	// Title & Subtitle
+	title := lipgloss.NewStyle().
+		Foreground(ColorTextBright).
 		Bold(true).
-		Render("Welcome to Appz Budget")
+		Render("Welcome Back")
 
-	subtitle := SubtitleStyle.Render("Manage your budget from the terminal")
+	subtitle := lipgloss.NewStyle().
+		Foreground(ColorSubtext).
+		Render("Sign in to manage your finances")
 
-	// Version
-	versionText := lipgloss.NewStyle().
+	// Version badge with styling
+	versionBadge := lipgloss.NewStyle().
 		Foreground(ColorMuted).
+		Italic(true).
 		Render("v" + m.version)
 
-	// Form
-	emailLabel := InputLabelStyle.Render("Email")
+	// Form fields with improved styling
+	emailLabelStyle := InputLabelStyle
+	passLabelStyle := InputLabelStyle
+	if m.focusIndex == 0 {
+		emailLabelStyle = InputLabelFocusedStyle
+	}
+	if m.focusIndex == 1 {
+		passLabelStyle = InputLabelFocusedStyle
+	}
+
+	emailLabel := emailLabelStyle.Render("📧  Email Address")
 	emailField := m.emailInput.View()
 	if m.focusIndex == 0 {
 		emailField = InputFocusedStyle.Render(emailField)
@@ -359,7 +391,7 @@ func (m LoginModel) View() string {
 		emailField = InputStyle.Render(emailField)
 	}
 
-	passLabel := InputLabelStyle.Render("Password")
+	passLabel := passLabelStyle.Render("🔒  Password")
 	passField := m.passInput.View()
 	if m.focusIndex == 1 {
 		passField = InputFocusedStyle.Render(passField)
@@ -367,41 +399,55 @@ func (m LoginModel) View() string {
 		passField = InputStyle.Render(passField)
 	}
 
-	// Login button
+	// Login button with loading state
 	var loginBtn string
 	if m.loading {
-		loginBtn = ButtonStyle.Render("  Logging in...  ")
+		spinner := lipgloss.NewStyle().Foreground(ColorSecondary).Render("◐")
+		loginBtn = ButtonStyle.Render(spinner + "  Signing in...  ")
 	} else if m.focusIndex == 2 {
-		loginBtn = ButtonFocusedStyle.Render("  Login  ")
+		loginBtn = ButtonFocusedStyle.Render("  ➜  Sign In  ")
 	} else {
-		loginBtn = ButtonStyle.Render("  Login  ")
+		loginBtn = ButtonStyle.Render("  ➜  Sign In  ")
 	}
 
-	// API Config button
+	// API Config button with subtle styling
 	var apiConfigBtn string
 	if m.focusIndex == 3 {
-		apiConfigBtn = ButtonFocusedStyle.Render("  ⚙️ API Settings  ")
+		apiConfigBtn = ButtonFocusedStyle.Render("  ⚙  API Settings  ")
 	} else {
-		apiConfigBtn = ButtonStyle.Render("  ⚙️ API Settings  ")
+		apiConfigBtn = ButtonSecondaryStyle.Render("  ⚙  API Settings  ")
 	}
 
-	// Error message
+	// Error message with icon
 	var errMsg string
 	if m.err != nil {
-		errMsg = ErrorStyle.Render("✗ " + m.err.Error())
+		errIcon := lipgloss.NewStyle().Foreground(ColorDanger).Render("✗")
+		errText := lipgloss.NewStyle().Foreground(ColorDanger).Bold(true).Render(" " + m.err.Error())
+		errMsg = errIcon + errText
 	}
 
-	// Help text
-	help := HelpStyle.Render("Tab: navigate • Enter: submit • s: API settings • Esc: quit")
+	// Help text with refined styling
+	helpKeys := []string{
+		RenderKeyHint("Tab", "navigate"),
+		RenderKeyHint("Enter", "submit"),
+		RenderKeyHint("s", "API settings"),
+		RenderKeyHint("Esc", "quit"),
+	}
+	help := lipgloss.NewStyle().Foreground(ColorMuted).Render(strings.Join(helpKeys, "  │  "))
 
-	// Build the form
+	// Decorative accent line
+	accentLine := RenderAccentLine(44, ColorPrimary)
+
+	// Build the form content
 	form := lipgloss.JoinVertical(lipgloss.Left,
+		accentLine,
 		"",
 		emailLabel,
 		emailField,
 		"",
 		passLabel,
 		passField,
+		"",
 		"",
 		loginBtn,
 		"",
@@ -410,23 +456,30 @@ func (m LoginModel) View() string {
 		errMsg,
 	)
 
-	// Card for the form
-	card := CardStyle.
-		Width(50).
+	// Card wrapper with refined border
+	card := CardHighlightStyle.
+		Width(48).
 		Align(lipgloss.Center).
 		Render(form)
 
-	// Center everything
+	// Footer decoration
+	footerLine := lipgloss.NewStyle().Foreground(ColorOverlayDim).Render(strings.Repeat("─", 48))
+	footerText := lipgloss.NewStyle().Foreground(ColorMuted).Italic(true).Render("Secure • Simple • Smart")
+
+	// Center everything vertically
 	content := lipgloss.JoinVertical(lipgloss.Center,
 		logoStyled,
 		"",
+		brand,
 		"",
 		title,
 		subtitle,
-		versionText,
-		"",
+		versionBadge,
 		"",
 		card,
+		"",
+		footerLine,
+		footerText,
 		"",
 		help,
 	)
@@ -446,15 +499,24 @@ func (m LoginModel) View() string {
 func (m LoginModel) renderAPIConfig() string {
 	var b strings.Builder
 
-	title := TitleStyle.
-		Foreground(ColorText).
-		Bold(true).
-		Render("⚙️  API Configuration")
+	// Header icon and title
+	titleIcon := lipgloss.NewStyle().Foreground(ColorPrimary).Render("⚙")
+	titleText := lipgloss.NewStyle().Foreground(ColorTextBright).Bold(true).Render("  API Configuration")
+	title := titleIcon + titleText
 
-	subtitle := SubtitleStyle.Render("Configure your API server URL and key")
+	subtitle := lipgloss.NewStyle().
+		Foreground(ColorSubtext).
+		Render("Configure your API server connection")
 
-	// API URL
-	urlLabel := InputLabelStyle.Render("API URL")
+	// Accent line
+	accentLine := RenderAccentLine(46, ColorPrimary)
+
+	// API URL field
+	urlLabelStyle := InputLabelStyle
+	if m.apiConfigFocus == 0 {
+		urlLabelStyle = InputLabelFocusedStyle
+	}
+	urlLabel := urlLabelStyle.Render("🌐  API URL")
 	urlField := m.apiURLInput.View()
 	if m.apiConfigFocus == 0 {
 		urlField = InputFocusedStyle.Width(42).Render(urlField)
@@ -462,8 +524,12 @@ func (m LoginModel) renderAPIConfig() string {
 		urlField = InputStyle.Width(42).Render(urlField)
 	}
 
-	// API Key
-	keyLabel := InputLabelStyle.Render("API Key")
+	// API Key field
+	keyLabelStyle := InputLabelStyle
+	if m.apiConfigFocus == 1 {
+		keyLabelStyle = InputLabelFocusedStyle
+	}
+	keyLabel := keyLabelStyle.Render("🔑  API Key")
 	keyField := m.apiKeyInput.View()
 	if m.apiConfigFocus == 1 {
 		keyField = InputFocusedStyle.Width(42).Render(keyField)
@@ -471,28 +537,35 @@ func (m LoginModel) renderAPIConfig() string {
 		keyField = InputStyle.Width(42).Render(keyField)
 	}
 
-	// Save button
-	saveBtn := ButtonStyle.Render("  Save (Ctrl+S)  ")
+	// Buttons
+	saveBtn := ButtonStyle.Render("  ✓  Save  ")
+	cancelBtn := ButtonSecondaryStyle.Render("  ✗  Cancel  ")
+	buttons := saveBtn + "  " + cancelBtn
 
-	// Cancel button
-	cancelBtn := ButtonStyle.Render("  Cancel (Esc)  ")
-
-	// Info
-	info := lipgloss.NewStyle().
-		Foreground(ColorMuted).
-		Render("Settings saved to ~/.config/appz-budget-tui/config (obfuscated)")
+	// Info text
+	infoIcon := lipgloss.NewStyle().Foreground(ColorInfo).Render("ℹ")
+	infoText := lipgloss.NewStyle().Foreground(ColorMuted).Render(" Settings stored in ~/.config/appz-budget-tui/")
+	info := infoIcon + infoText
 
 	// Error message
 	var errMsg string
 	if m.err != nil {
-		errMsg = ErrorStyle.Render("✗ " + m.err.Error())
+		errIcon := lipgloss.NewStyle().Foreground(ColorDanger).Render("✗")
+		errText := lipgloss.NewStyle().Foreground(ColorDanger).Bold(true).Render(" " + m.err.Error())
+		errMsg = errIcon + errText
 	}
 
 	// Help text
-	help := HelpStyle.Render("Tab: navigate • Enter/Ctrl+S: save • Esc: cancel")
+	helpKeys := []string{
+		RenderKeyHint("Tab", "navigate"),
+		RenderKeyHint("Enter/Ctrl+S", "save"),
+		RenderKeyHint("Esc", "cancel"),
+	}
+	help := lipgloss.NewStyle().Foreground(ColorMuted).Render(strings.Join(helpKeys, "  │  "))
 
 	// Build the form
 	form := lipgloss.JoinVertical(lipgloss.Left,
+		accentLine,
 		"",
 		urlLabel,
 		urlField,
@@ -500,17 +573,17 @@ func (m LoginModel) renderAPIConfig() string {
 		keyLabel,
 		keyField,
 		"",
-		saveBtn+"  "+cancelBtn,
+		"",
+		buttons,
 		"",
 		info,
 		"",
 		errMsg,
 	)
 
-	// Card for the form
-	card := CardStyle.
+	// Card wrapper
+	card := ModalStyle.
 		Width(50).
-		Align(lipgloss.Center).
 		Render(form)
 
 	// Center everything

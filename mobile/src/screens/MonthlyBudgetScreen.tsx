@@ -8,7 +8,9 @@ import {
   Alert,
   ScrollView,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../contexts/ThemeContext";
+import { getThemeColors, colors, getShadow, isDarkColor } from "../utils/colors";
 import {
   useExpenses,
   useDeleteExpense,
@@ -40,6 +42,7 @@ type TabId = "expenses" | "income" | "summary";
 
 export const MonthlyBudgetScreen = () => {
   const { isDark } = useTheme();
+  const theme = getThemeColors(isDark);
   const [activeTab, setActiveTab] = useState<TabId>("summary");
   const [selectedPeriod, setSelectedPeriod] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
@@ -131,7 +134,6 @@ export const MonthlyBudgetScreen = () => {
           onPress: async () => {
             try {
               await deleteMonthMutation.mutateAsync(selectedMonthId);
-              // Switch to another month if available
               const remainingMonths =
                 months?.filter((m: Month) => m.id !== selectedMonthId) || [];
               if (remainingMonths.length > 0) {
@@ -197,51 +199,84 @@ export const MonthlyBudgetScreen = () => {
     );
   };
 
-  const styles = getStyles(isDark);
+  const tabs: { id: TabId; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+    { id: "summary", label: "Summary", icon: "stats-chart-outline" },
+    { id: "expenses", label: "Expenses", icon: "wallet-outline" },
+    { id: "income", label: "Income", icon: "cash-outline" },
+  ];
+
+  const styles = getStyles(isDark, theme);
 
   return (
     <View style={styles.container}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
       >
+        {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Monthly Budget</Text>
+          <View style={styles.headerTop}>
+            <View>
+              <Text style={styles.title}>Monthly Budget</Text>
+              <Text style={styles.subtitle}>Track your expenses and income</Text>
+            </View>
+          </View>
           <View style={styles.headerButtons}>
             <TouchableOpacity
-              style={styles.createButton}
+              style={styles.actionButton}
               onPress={() => setShowExpenseForm(true)}
+              activeOpacity={0.8}
             >
-              <Ionicons name="add" size={18} color="#ffffff" />
-              <Text style={styles.createButtonText}>New</Text>
+              <LinearGradient
+                colors={[colors.success.light, "#059669"]}
+                style={styles.actionButtonGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Ionicons name="add" size={18} color="#ffffff" />
+                <Text style={styles.actionButtonText}>New</Text>
+              </LinearGradient>
             </TouchableOpacity>
             {selectedMonthId && (
               <>
                 <TouchableOpacity
-                  style={styles.deleteButton}
+                  style={styles.actionButton}
                   onPress={handleDeleteMonth}
                   disabled={deleteMonthMutation.isPending}
+                  activeOpacity={0.8}
                 >
-                  <Ionicons name="trash" size={18} color="#ffffff" />
-                  <Text style={styles.deleteButtonText}>
-                    {deleteMonthMutation.isPending ? "Deleting..." : "Delete"}
-                  </Text>
+                  <LinearGradient
+                    colors={[colors.danger.light, "#dc2626"]}
+                    style={styles.actionButtonGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  >
+                    <Ionicons name="trash-outline" size={18} color="#ffffff" />
+                  </LinearGradient>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={styles.cloneButton}
+                  style={styles.actionButton}
                   onPress={handleCloneToNextMonth}
                   disabled={cloneMutation.isPending}
+                  activeOpacity={0.8}
                 >
-                  <Ionicons name="copy" size={18} color="#ffffff" />
-                  <Text style={styles.cloneButtonText}>
-                    {cloneMutation.isPending ? "Cloning..." : "Clone"}
-                  </Text>
+                  <LinearGradient
+                    colors={[colors.primary[500], colors.primary[600]]}
+                    style={styles.actionButtonGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  >
+                    <Ionicons name="copy-outline" size={18} color="#ffffff" />
+                    <Text style={styles.actionButtonText}>Clone</Text>
+                  </LinearGradient>
                 </TouchableOpacity>
               </>
             )}
           </View>
         </View>
 
+        {/* Filters */}
         <View style={styles.filters}>
           <View style={styles.filterRow}>
             <View style={styles.monthSelectorContainer}>
@@ -273,81 +308,35 @@ export const MonthlyBudgetScreen = () => {
             )}
         </View>
 
-        <View style={styles.tabs}>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === "summary" && styles.activeTab]}
-            onPress={() => setActiveTab("summary")}
-          >
-            <Ionicons
-              name="stats-chart"
-              size={20}
-              color={
-                activeTab === "summary"
-                  ? "#3b82f6"
-                  : isDark
-                  ? "#9ca3af"
-                  : "#6b7280"
-              }
-            />
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === "summary" && styles.activeTabText,
-              ]}
-            >
-              Summary
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === "expenses" && styles.activeTab]}
-            onPress={() => setActiveTab("expenses")}
-          >
-            <Ionicons
-              name="wallet"
-              size={20}
-              color={
-                activeTab === "expenses"
-                  ? "#3b82f6"
-                  : isDark
-                  ? "#9ca3af"
-                  : "#6b7280"
-              }
-            />
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === "expenses" && styles.activeTabText,
-              ]}
-            >
-              Expenses
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === "income" && styles.activeTab]}
-            onPress={() => setActiveTab("income")}
-          >
-            <Ionicons
-              name="cash"
-              size={20}
-              color={
-                activeTab === "income"
-                  ? "#3b82f6"
-                  : isDark
-                  ? "#9ca3af"
-                  : "#6b7280"
-              }
-            />
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === "income" && styles.activeTabText,
-              ]}
-            >
-              Income
-            </Text>
-          </TouchableOpacity>
+        {/* Tabs */}
+        <View style={styles.tabsContainer}>
+          <View style={styles.tabs}>
+            {tabs.map((tab) => (
+              <TouchableOpacity
+                key={tab.id}
+                style={[styles.tab, activeTab === tab.id && styles.activeTab]}
+                onPress={() => setActiveTab(tab.id)}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={tab.icon}
+                  size={18}
+                  color={activeTab === tab.id ? theme.primary : theme.textSecondary}
+                />
+                <Text
+                  style={[
+                    styles.tabText,
+                    activeTab === tab.id && styles.activeTabText,
+                  ]}
+                >
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
+        {/* Content */}
         <View style={styles.content}>
           {activeTab === "expenses" && (
             <ExpenseList
@@ -361,6 +350,8 @@ export const MonthlyBudgetScreen = () => {
               }}
               onDelete={handleDeleteExpense}
               onAdd={() => setShowExpenseForm(true)}
+              theme={theme}
+              isDark={isDark}
             />
           )}
           {activeTab === "income" && (
@@ -375,6 +366,8 @@ export const MonthlyBudgetScreen = () => {
               }}
               onDelete={handleDeleteIncome}
               onAdd={() => setShowIncomeForm(true)}
+              theme={theme}
+              isDark={isDark}
             />
           )}
           {activeTab === "summary" && (
@@ -416,7 +409,7 @@ export const MonthlyBudgetScreen = () => {
   );
 };
 
-// Simplified list components
+// Expense List Component
 interface ExpenseListProps {
   expenses: Expense[];
   isLoading: boolean;
@@ -425,6 +418,8 @@ interface ExpenseListProps {
   onEdit: (expense: Expense) => void;
   onDelete: (id: number) => void;
   onAdd: () => void;
+  theme: ReturnType<typeof getThemeColors>;
+  isDark: boolean;
 }
 
 const ExpenseList = ({
@@ -435,26 +430,27 @@ const ExpenseList = ({
   onEdit,
   onDelete,
   onAdd,
+  theme,
+  isDark,
 }: ExpenseListProps) => {
-  const { isDark } = useTheme();
-  const styles = getStyles(isDark);
+  const styles = getListStyles(isDark, theme);
 
   const getCategoryColor = (categoryName: string) => {
     const category = categories?.find(
       (cat: Category) => cat.name === categoryName
     );
-    return category?.color || "#6b7280";
+    return category?.color || colors.primary[500];
   };
 
   const getPeriodColor = (periodName: string) => {
     const period = periods?.find((p: Period) => p.name === periodName);
-    return period?.color || "#6b7280";
+    return period?.color || colors.primary[500];
   };
 
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#3b82f6" />
+        <ActivityIndicator size="large" color={theme.primary} />
         <Text style={styles.loadingText}>Loading expenses...</Text>
       </View>
     );
@@ -462,15 +458,31 @@ const ExpenseList = ({
 
   return (
     <View style={styles.listContainer}>
-      <TouchableOpacity style={styles.addButton} onPress={onAdd}>
-        <Ionicons name="add-circle" size={24} color="#3b82f6" />
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={onAdd}
+        activeOpacity={0.7}
+      >
+        <View style={styles.addButtonIcon}>
+          <Ionicons name="add" size={24} color={theme.primary} />
+        </View>
         <Text style={styles.addButtonText}>Add Expense</Text>
       </TouchableOpacity>
+
       {expenses.length === 0 ? (
-        <Text style={styles.emptyText}>No expenses found</Text>
+        <View style={styles.emptyContainer}>
+          <View style={styles.emptyIcon}>
+            <Ionicons name="wallet-outline" size={48} color={theme.textMuted} />
+          </View>
+          <Text style={styles.emptyTitle}>No expenses yet</Text>
+          <Text style={styles.emptyText}>
+            Add your first expense to start tracking your budget
+          </Text>
+        </View>
       ) : (
         expenses.map((expense: Expense) => (
           <View key={expense.id} style={styles.listItem}>
+            <View style={styles.listItemAccent} />
             <View style={styles.listItemContent}>
               <Text style={styles.listItemTitle}>{expense.expense_name}</Text>
               <View style={styles.chipsContainer}>
@@ -480,7 +492,14 @@ const ExpenseList = ({
                     { backgroundColor: getCategoryColor(expense.category) },
                   ]}
                 >
-                  <Text style={styles.chipText}>{expense.category}</Text>
+                  <Text
+                    style={[
+                      styles.chipText,
+                      { color: isDarkColor(getCategoryColor(expense.category)) ? "#fff" : "#000" },
+                    ]}
+                  >
+                    {expense.category}
+                  </Text>
                 </View>
                 <View
                   style={[
@@ -488,19 +507,53 @@ const ExpenseList = ({
                     { backgroundColor: getPeriodColor(expense.period) },
                   ]}
                 >
-                  <Text style={styles.chipText}>{expense.period}</Text>
+                  <Text
+                    style={[
+                      styles.chipText,
+                      { color: isDarkColor(getPeriodColor(expense.period)) ? "#fff" : "#000" },
+                    ]}
+                  >
+                    {expense.period}
+                  </Text>
                 </View>
               </View>
-              <Text style={styles.listItemAmount}>
-                ${expense.cost.toFixed(2)} / ${expense.budget.toFixed(2)}
-              </Text>
+              <View style={styles.amountRow}>
+                <Text style={styles.listItemAmount}>
+                  ${expense.cost.toFixed(2)}
+                </Text>
+                <Text style={styles.listItemBudget}>
+                  / ${expense.budget.toFixed(2)}
+                </Text>
+                <View
+                  style={[
+                    styles.statusBadge,
+                    expense.cost <= expense.budget
+                      ? styles.statusSuccess
+                      : styles.statusDanger,
+                  ]}
+                >
+                  <Ionicons
+                    name={expense.cost <= expense.budget ? "checkmark" : "alert"}
+                    size={12}
+                    color={expense.cost <= expense.budget ? theme.success : theme.danger}
+                  />
+                </View>
+              </View>
             </View>
             <View style={styles.listItemActions}>
-              <TouchableOpacity onPress={() => onEdit(expense)}>
-                <Ionicons name="pencil" size={20} color="#3b82f6" />
+              <TouchableOpacity
+                style={styles.actionIcon}
+                onPress={() => onEdit(expense)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="pencil-outline" size={20} color={theme.primary} />
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => onDelete(expense.id)}>
-                <Ionicons name="trash" size={20} color="#ef4444" />
+              <TouchableOpacity
+                style={styles.actionIcon}
+                onPress={() => onDelete(expense.id)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="trash-outline" size={20} color={theme.danger} />
               </TouchableOpacity>
             </View>
           </View>
@@ -510,6 +563,7 @@ const ExpenseList = ({
   );
 };
 
+// Income List Component
 interface IncomeListProps {
   incomes: Income[];
   isLoading: boolean;
@@ -518,6 +572,8 @@ interface IncomeListProps {
   onEdit: (income: Income) => void;
   onDelete: (id: number) => void;
   onAdd: () => void;
+  theme: ReturnType<typeof getThemeColors>;
+  isDark: boolean;
 }
 
 const IncomeList = ({
@@ -528,9 +584,10 @@ const IncomeList = ({
   onEdit,
   onDelete,
   onAdd,
+  theme,
+  isDark,
 }: IncomeListProps) => {
-  const { isDark } = useTheme();
-  const styles = getStyles(isDark);
+  const styles = getListStyles(isDark, theme);
 
   const getIncomeTypeName = (incomeTypeId: number) => {
     const incomeType = incomeTypes?.find(
@@ -539,31 +596,56 @@ const IncomeList = ({
     return incomeType?.name || `Type #${incomeTypeId}`;
   };
 
+  const getIncomeTypeColor = (incomeTypeId: number) => {
+    const incomeType = incomeTypes?.find(
+      (it: IncomeType) => it.id === incomeTypeId
+    );
+    return incomeType?.color || colors.success.light;
+  };
+
   const getPeriodColor = (periodName: string) => {
     const period = periods?.find((p: Period) => p.name === periodName);
-    return period?.color || "#6b7280";
+    return period?.color || colors.primary[500];
   };
 
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#3b82f6" />
-        <Text style={styles.loadingText}>Loading incomes...</Text>
+        <ActivityIndicator size="large" color={theme.primary} />
+        <Text style={styles.loadingText}>Loading income...</Text>
       </View>
     );
   }
 
   return (
     <View style={styles.listContainer}>
-      <TouchableOpacity style={styles.addButton} onPress={onAdd}>
-        <Ionicons name="add-circle" size={24} color="#3b82f6" />
-        <Text style={styles.addButtonText}>Add Income</Text>
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={onAdd}
+        activeOpacity={0.7}
+      >
+        <View style={styles.addButtonIcon}>
+          <Ionicons name="add" size={24} color={theme.success} />
+        </View>
+        <Text style={[styles.addButtonText, { color: theme.success }]}>
+          Add Income
+        </Text>
       </TouchableOpacity>
+
       {incomes.length === 0 ? (
-        <Text style={styles.emptyText}>No incomes found</Text>
+        <View style={styles.emptyContainer}>
+          <View style={styles.emptyIcon}>
+            <Ionicons name="cash-outline" size={48} color={theme.textMuted} />
+          </View>
+          <Text style={styles.emptyTitle}>No income yet</Text>
+          <Text style={styles.emptyText}>
+            Add your income sources to track your earnings
+          </Text>
+        </View>
       ) : (
         incomes.map((income: Income) => (
           <View key={income.id} style={styles.listItem}>
+            <View style={[styles.listItemAccent, { backgroundColor: theme.success }]} />
             <View style={styles.listItemContent}>
               <Text style={styles.listItemTitle}>
                 {getIncomeTypeName(income.income_type_id)}
@@ -572,22 +654,57 @@ const IncomeList = ({
                 <View
                   style={[
                     styles.chip,
+                    { backgroundColor: getIncomeTypeColor(income.income_type_id) },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.chipText,
+                      { color: isDarkColor(getIncomeTypeColor(income.income_type_id)) ? "#fff" : "#000" },
+                    ]}
+                  >
+                    {getIncomeTypeName(income.income_type_id)}
+                  </Text>
+                </View>
+                <View
+                  style={[
+                    styles.chip,
                     { backgroundColor: getPeriodColor(income.period) },
                   ]}
                 >
-                  <Text style={styles.chipText}>{income.period}</Text>
+                  <Text
+                    style={[
+                      styles.chipText,
+                      { color: isDarkColor(getPeriodColor(income.period)) ? "#fff" : "#000" },
+                    ]}
+                  >
+                    {income.period}
+                  </Text>
                 </View>
               </View>
-              <Text style={styles.listItemAmount}>
-                ${income.amount.toFixed(2)} / ${income.budget.toFixed(2)}
-              </Text>
+              <View style={styles.amountRow}>
+                <Text style={[styles.listItemAmount, { color: theme.success }]}>
+                  ${income.amount.toFixed(2)}
+                </Text>
+                <Text style={styles.listItemBudget}>
+                  / ${income.budget.toFixed(2)}
+                </Text>
+              </View>
             </View>
             <View style={styles.listItemActions}>
-              <TouchableOpacity onPress={() => onEdit(income)}>
-                <Ionicons name="pencil" size={20} color="#3b82f6" />
+              <TouchableOpacity
+                style={styles.actionIcon}
+                onPress={() => onEdit(income)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="pencil-outline" size={20} color={theme.primary} />
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => onDelete(income.id)}>
-                <Ionicons name="trash" size={20} color="#ef4444" />
+              <TouchableOpacity
+                style={styles.actionIcon}
+                onPress={() => onDelete(income.id)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="trash-outline" size={20} color={theme.danger} />
               </TouchableOpacity>
             </View>
           </View>
@@ -597,11 +714,11 @@ const IncomeList = ({
   );
 };
 
-const getStyles = (isDark: boolean) =>
+const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: isDark ? "#111827" : "#f9fafb",
+      backgroundColor: theme.background,
     },
     scrollView: {
       flex: 1,
@@ -610,72 +727,53 @@ const getStyles = (isDark: boolean) =>
       flexGrow: 1,
     },
     header: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
       padding: 16,
-      backgroundColor: isDark ? "#1f2937" : "#ffffff",
+      paddingTop: 8,
+      backgroundColor: theme.card,
       borderBottomWidth: 1,
-      borderBottomColor: isDark ? "#374151" : "#e5e7eb",
+      borderBottomColor: theme.border,
+    },
+    headerTop: {
+      marginBottom: 16,
     },
     title: {
       fontSize: 24,
-      fontWeight: "bold",
-      color: isDark ? "#ffffff" : "#111827",
-      flex: 1,
+      fontWeight: "700",
+      color: theme.text,
+      letterSpacing: -0.3,
+    },
+    subtitle: {
+      fontSize: 14,
+      color: theme.textSecondary,
+      marginTop: 4,
     },
     headerButtons: {
       flexDirection: "row",
       gap: 8,
       alignItems: "center",
     },
-    createButton: {
+    actionButton: {
+      borderRadius: 12,
+      overflow: "hidden",
+      ...getShadow(isDark, "sm"),
+    },
+    actionButtonGradient: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: "#10b981",
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderRadius: 8,
-      gap: 4,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      gap: 6,
     },
-    createButtonText: {
-      color: "#ffffff",
-      fontWeight: "600",
-      fontSize: 14,
-    },
-    deleteButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: "#ef4444",
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderRadius: 8,
-      gap: 4,
-    },
-    deleteButtonText: {
-      color: "#ffffff",
-      fontWeight: "600",
-      fontSize: 14,
-    },
-    cloneButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: "#3b82f6",
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderRadius: 8,
-      gap: 4,
-    },
-    cloneButtonText: {
+    actionButtonText: {
       color: "#ffffff",
       fontWeight: "600",
       fontSize: 14,
     },
     filters: {
       padding: 16,
-      backgroundColor: isDark ? "#1f2937" : "#ffffff",
+      backgroundColor: theme.card,
       borderBottomWidth: 1,
-      borderBottomColor: isDark ? "#374151" : "#e5e7eb",
+      borderBottomColor: theme.border,
       gap: 12,
     },
     filterRow: {
@@ -686,30 +784,40 @@ const getStyles = (isDark: boolean) =>
     monthSelectorContainer: {
       flex: 1,
     },
+    tabsContainer: {
+      backgroundColor: theme.card,
+      paddingHorizontal: 16,
+      paddingBottom: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.border,
+    },
     tabs: {
       flexDirection: "row",
-      backgroundColor: isDark ? "#1f2937" : "#ffffff",
-      borderBottomWidth: 1,
-      borderBottomColor: isDark ? "#374151" : "#e5e7eb",
+      backgroundColor: theme.tabBg,
+      borderRadius: 12,
+      padding: 4,
     },
     tab: {
       flex: 1,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
-      paddingVertical: 12,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      borderRadius: 10,
       gap: 6,
     },
     activeTab: {
-      borderBottomWidth: 2,
-      borderBottomColor: "#3b82f6",
+      backgroundColor: theme.tabActiveBg,
+      ...getShadow(isDark, "sm"),
     },
     tabText: {
       fontSize: 14,
-      color: isDark ? "#9ca3af" : "#6b7280",
+      fontWeight: "500",
+      color: theme.tabInactive,
     },
     activeTabText: {
-      color: "#3b82f6",
+      color: theme.text,
       fontWeight: "600",
     },
     content: {
@@ -718,83 +826,148 @@ const getStyles = (isDark: boolean) =>
     summaryContainer: {
       gap: 16,
     },
+  });
+
+const getListStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
+  StyleSheet.create({
+    listContainer: {
+      gap: 12,
+    },
     loadingContainer: {
-      padding: 32,
+      padding: 48,
       alignItems: "center",
     },
     loadingText: {
       marginTop: 12,
-      color: isDark ? "#9ca3af" : "#6b7280",
-    },
-    listContainer: {
-      gap: 12,
+      color: theme.textSecondary,
     },
     addButton: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
-      padding: 12,
-      backgroundColor: isDark ? "#1f2937" : "#ffffff",
-      borderRadius: 8,
+      gap: 12,
+      padding: 14,
+      backgroundColor: theme.card,
+      borderRadius: 14,
       borderWidth: 1,
-      borderColor: isDark ? "#374151" : "#e5e7eb",
+      borderColor: theme.border,
+      borderStyle: "dashed",
+    },
+    addButtonIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      backgroundColor: theme.primaryBg,
+      alignItems: "center",
+      justifyContent: "center",
     },
     addButtonText: {
-      color: "#3b82f6",
+      color: theme.primary,
       fontWeight: "600",
+      fontSize: 16,
+    },
+    emptyContainer: {
+      padding: 48,
+      alignItems: "center",
+    },
+    emptyIcon: {
+      width: 80,
+      height: 80,
+      borderRadius: 20,
+      backgroundColor: theme.backgroundTertiary,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 16,
+    },
+    emptyTitle: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: theme.text,
+      marginBottom: 8,
+    },
+    emptyText: {
+      textAlign: "center",
+      color: theme.textSecondary,
+      lineHeight: 20,
     },
     listItem: {
       flexDirection: "row",
-      justifyContent: "space-between",
       alignItems: "center",
-      padding: 16,
-      backgroundColor: isDark ? "#1f2937" : "#ffffff",
-      borderRadius: 8,
+      backgroundColor: theme.card,
+      borderRadius: 14,
       borderWidth: 1,
-      borderColor: isDark ? "#374151" : "#e5e7eb",
+      borderColor: theme.border,
+      overflow: "hidden",
+      ...getShadow(isDark, "sm"),
+    },
+    listItemAccent: {
+      width: 4,
+      alignSelf: "stretch",
+      backgroundColor: theme.primary,
     },
     listItemContent: {
       flex: 1,
+      padding: 14,
     },
     listItemTitle: {
       fontSize: 16,
       fontWeight: "600",
-      color: isDark ? "#ffffff" : "#111827",
-      marginBottom: 4,
+      color: theme.text,
+      marginBottom: 8,
     },
     chipsContainer: {
       flexDirection: "row",
       flexWrap: "wrap",
       gap: 6,
-      marginBottom: 8,
+      marginBottom: 10,
     },
     chip: {
       paddingHorizontal: 10,
       paddingVertical: 4,
-      borderRadius: 12,
+      borderRadius: 8,
     },
     chipText: {
       fontSize: 12,
       fontWeight: "600",
-      color: "#ffffff",
+    },
+    amountRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
     },
     listItemAmount: {
-      fontSize: 16,
-      fontWeight: "600",
-      color: "#3b82f6",
+      fontSize: 18,
+      fontWeight: "700",
+      color: theme.primary,
+    },
+    listItemBudget: {
+      fontSize: 14,
+      color: theme.textSecondary,
+    },
+    statusBadge: {
+      marginLeft: 8,
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    statusSuccess: {
+      backgroundColor: theme.successBg,
+    },
+    statusDanger: {
+      backgroundColor: theme.dangerBg,
     },
     listItemActions: {
       flexDirection: "row",
-      gap: 16,
+      gap: 8,
+      paddingRight: 14,
     },
-    emptyText: {
-      textAlign: "center",
-      padding: 32,
-      color: isDark ? "#9ca3af" : "#6b7280",
-    },
-    summaryText: {
-      marginTop: 16,
-      color: isDark ? "#9ca3af" : "#6b7280",
-      textAlign: "center",
+    actionIcon: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      backgroundColor: theme.backgroundTertiary,
+      alignItems: "center",
+      justifyContent: "center",
     },
   });

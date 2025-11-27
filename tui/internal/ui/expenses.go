@@ -507,9 +507,9 @@ func (e ExpensesView) View(width, height int) string {
 	}
 
 	if e.loading {
-		return lipgloss.NewStyle().
-			Foreground(ColorMuted).
-			Render("Loading expenses...")
+		spinner := lipgloss.NewStyle().Foreground(ColorSecondary).Render("◐")
+		loadingText := lipgloss.NewStyle().Foreground(ColorMuted).Render("  Loading expenses...")
+		return spinner + loadingText
 	}
 
 	var b strings.Builder
@@ -526,51 +526,73 @@ func (e ExpensesView) View(width, height int) string {
 	// Message or error
 	if e.message != "" {
 		b.WriteString("\n")
-		b.WriteString(MessageStyle.Render("✓ " + e.message))
+		msgIcon := lipgloss.NewStyle().Foreground(ColorSuccess).Render("✓")
+		msgText := lipgloss.NewStyle().Foreground(ColorSuccess).Render(" " + e.message)
+		b.WriteString(msgIcon + msgText)
 	}
 	if e.err != nil {
 		b.WriteString("\n")
-		b.WriteString(ErrorStyle.Render("✗ " + e.err.Error()))
+		errIcon := lipgloss.NewStyle().Foreground(ColorDanger).Render("✗")
+		errText := lipgloss.NewStyle().Foreground(ColorDanger).Bold(true).Render(" " + e.err.Error())
+		b.WriteString(errIcon + errText)
 	}
 
-	// Help
+	// Help with refined styling
 	b.WriteString("\n")
-	b.WriteString(HelpStyle.Render("n: new | e/Enter: edit | d: delete | p: filter period | g: filter category"))
+	helpItems := []string{
+		RenderKeyHint("n", "new"),
+		RenderKeyHint("e/Enter", "edit"),
+		RenderKeyHint("d", "delete"),
+		RenderKeyHint("p", "filter period"),
+		RenderKeyHint("g", "filter category"),
+	}
+	help := strings.Join(helpItems, "  │  ")
+	b.WriteString(lipgloss.NewStyle().Foreground(ColorMuted).Render(help))
 
 	return b.String()
 }
 
 func (e ExpensesView) renderHeader(width int) string {
-	title := TitleStyle.Render("💰 Expenses")
+	// Title with icon
+	titleIcon := lipgloss.NewStyle().Foreground(ColorSecondary).Render("💰")
+	titleText := lipgloss.NewStyle().
+		Foreground(ColorText).
+		Bold(true).
+		Render("  Expenses")
+	title := titleIcon + titleText
 
-	// Filters
+	// Count badge
+	count := lipgloss.NewStyle().
+		Foreground(ColorMuted).
+		Render(fmt.Sprintf("(%d items)", len(e.expenses)))
+
+	// Active filters with badges
 	var filters []string
 	if e.periodFilter != "" {
 		filters = append(filters, BadgeStyle.Render("Period: "+e.periodFilter))
 	}
 	if e.categoryFilter != "" {
-		filters = append(filters, BadgeStyle.Render("Category: "+e.categoryFilter))
+		filters = append(filters, BadgeInfoStyle.Render("Category: "+e.categoryFilter))
 	}
 
 	filterStr := ""
 	if len(filters) > 0 {
-		filterStr = strings.Join(filters, " ")
+		filterStr = "  " + strings.Join(filters, " ")
 	}
 
-	// Count
-	count := lipgloss.NewStyle().
-		Foreground(ColorMuted).
-		Render(fmt.Sprintf("(%d items)", len(e.expenses)))
-
-	return lipgloss.JoinHorizontal(lipgloss.Left, title, " ", count, "  ", filterStr)
+	return lipgloss.JoinHorizontal(lipgloss.Left, title, " ", count, filterStr)
 }
 
 func (e ExpensesView) renderTable(width, height int) string {
 	if len(e.expenses) == 0 {
-		return lipgloss.NewStyle().
+		emptyIcon := lipgloss.NewStyle().Foreground(ColorMuted).Render("📋")
+		emptyText := lipgloss.NewStyle().
 			Foreground(ColorMuted).
+			Italic(true).
+			Render("  No expenses found. Press 'n' to create one.")
+		return lipgloss.NewStyle().
 			Padding(2, 0).
-			Render("No expenses found. Press 'n' to create one.")
+			Render(emptyIcon + emptyText)
 	}
 
 	// Calculate column widths
@@ -581,8 +603,8 @@ func (e ExpensesView) renderTable(width, height int) string {
 	costWidth := 12
 	statusWidth := 8
 
-	// Header
-	header := fmt.Sprintf(
+	// Header row with refined styling
+	headerContent := fmt.Sprintf(
 		"%-*s %-*s %-*s %*s %*s %*s",
 		nameWidth, "Name",
 		periodWidth, "Period",
@@ -591,7 +613,7 @@ func (e ExpensesView) renderTable(width, height int) string {
 		costWidth, "Cost",
 		statusWidth, "Status",
 	)
-	headerStyled := TableHeaderStyle.Render(header)
+	headerStyled := TableHeaderStyle.Render(headerContent)
 
 	// Rows
 	visibleRows := height - 3
@@ -614,29 +636,30 @@ func (e ExpensesView) renderTable(width, height int) string {
 
 		name := exp.ExpenseName
 		if len(name) > nameWidth {
-			name = name[:nameWidth-3] + "..."
+			name = name[:nameWidth-2] + "…"
 		}
 
 		period := exp.Period
 		if len(period) > periodWidth {
-			period = period[:periodWidth-3] + "..."
+			period = period[:periodWidth-2] + "…"
 		}
 
 		category := exp.Category
 		if len(category) > categoryWidth {
-			category = category[:categoryWidth-3] + "..."
+			category = category[:categoryWidth-2] + "…"
 		}
 
 		budget := formatCurrency(exp.Budget)
 		cost := formatCurrency(exp.Cost)
 
+		// Status indicator with icon
 		var status string
 		if exp.Cost > exp.Budget {
-			status = DangerStyle.Render("OVER")
+			status = DangerBoldStyle.Render("▲OVER")
 		} else if exp.Cost >= exp.Budget*0.9 {
-			status = WarningStyle.Render("NEAR")
+			status = WarningBoldStyle.Render("●NEAR")
 		} else {
-			status = SuccessStyle.Render("OK")
+			status = SuccessBoldStyle.Render("✓OK")
 		}
 
 		row := fmt.Sprintf(
@@ -649,10 +672,14 @@ func (e ExpensesView) renderTable(width, height int) string {
 			statusWidth, status,
 		)
 
+		// Apply row styling based on selection
 		if i == e.cursor {
+			// Selected row with highlight
 			rows = append(rows, TableRowSelectedStyle.Render(row))
-		} else {
+		} else if i%2 == 0 {
 			rows = append(rows, TableRowStyle.Render(row))
+		} else {
+			rows = append(rows, TableRowAltStyle.Render(row))
 		}
 	}
 
@@ -671,18 +698,34 @@ func (e ExpensesView) renderTable(width, height int) string {
 }
 
 func (e ExpensesView) renderForm(width, height int) string {
-	title := "Create Expense"
-	if e.formMode == "edit" {
-		title = "Edit Expense"
+	// Form title with icon
+	var titleIcon, titleText string
+	if e.formMode == "create" {
+		titleIcon = lipgloss.NewStyle().Foreground(ColorSuccess).Render("✚")
+		titleText = "  Create Expense"
+	} else {
+		titleIcon = lipgloss.NewStyle().Foreground(ColorPrimary).Render("✎")
+		titleText = "  Edit Expense"
 	}
+	title := lipgloss.NewStyle().
+		Foreground(ColorTextBright).
+		Bold(true).
+		Render(titleIcon + titleText)
+
+	// Accent line
+	accentLine := RenderAccentLine(48, ColorPrimary)
 
 	var b strings.Builder
 
-	b.WriteString(ModalTitleStyle.Render(title))
+	b.WriteString(accentLine)
 	b.WriteString("\n\n")
 
 	// Name field
-	b.WriteString(InputLabelStyle.Render("Name"))
+	nameLabelStyle := InputLabelStyle
+	if e.formFocus == 0 {
+		nameLabelStyle = InputLabelFocusedStyle
+	}
+	b.WriteString(nameLabelStyle.Render("📝  Name"))
 	b.WriteString("\n")
 	if e.formFocus == 0 {
 		b.WriteString(InputFocusedStyle.Render(e.formInputs[0].View()))
@@ -692,10 +735,20 @@ func (e ExpensesView) renderForm(width, height int) string {
 	b.WriteString("\n\n")
 
 	// Budget and Cost side by side
-	b.WriteString(InputLabelStyle.Render("Budget"))
-	b.WriteString("                    ")
-	b.WriteString(InputLabelStyle.Render("Cost"))
+	budgetLabelStyle := InputLabelStyle
+	costLabelStyle := InputLabelStyle
+	if e.formFocus == 1 {
+		budgetLabelStyle = InputLabelFocusedStyle
+	}
+	if e.formFocus == 2 {
+		costLabelStyle = InputLabelFocusedStyle
+	}
+
+	b.WriteString(budgetLabelStyle.Render("💵  Budget"))
+	b.WriteString("                ")
+	b.WriteString(costLabelStyle.Render("💸  Cost"))
 	b.WriteString("\n")
+
 	budgetInput := e.formInputs[1].View()
 	costInput := e.formInputs[2].View()
 	if e.formFocus == 1 {
@@ -712,7 +765,11 @@ func (e ExpensesView) renderForm(width, height int) string {
 	b.WriteString("\n\n")
 
 	// Notes
-	b.WriteString(InputLabelStyle.Render("Notes"))
+	notesLabelStyle := InputLabelStyle
+	if e.formFocus == 3 {
+		notesLabelStyle = InputLabelFocusedStyle
+	}
+	b.WriteString(notesLabelStyle.Render("📋  Notes"))
 	b.WriteString("\n")
 	if e.formFocus == 3 {
 		b.WriteString(InputFocusedStyle.Render(e.formInputs[3].View()))
@@ -722,44 +779,73 @@ func (e ExpensesView) renderForm(width, height int) string {
 	b.WriteString("\n\n")
 
 	// Period selector
-	b.WriteString(InputLabelStyle.Render("Period"))
+	periodLabelStyle := InputLabelStyle
+	if e.formFocus == 4 {
+		periodLabelStyle = InputLabelFocusedStyle
+	}
+	b.WriteString(periodLabelStyle.Render("📅  Period"))
 	b.WriteString("\n")
 	periodSelector := e.renderSelector(e.periods, e.formPeriod, e.formFocus == 4, func(p models.Period) string { return p.Name })
 	b.WriteString(periodSelector)
 	b.WriteString("\n\n")
 
 	// Category selector
-	b.WriteString(InputLabelStyle.Render("Category"))
+	categoryLabelStyle := InputLabelStyle
+	if e.formFocus == 5 {
+		categoryLabelStyle = InputLabelFocusedStyle
+	}
+	b.WriteString(categoryLabelStyle.Render("📁  Category"))
 	b.WriteString("\n")
 	categorySelector := e.renderCategorySelector(e.formFocus == 5)
 	b.WriteString(categorySelector)
 	b.WriteString("\n\n")
 
 	// Buttons
-	saveBtn := ButtonStyle.Render("  Save (Ctrl+S)  ")
-	cancelBtn := ButtonStyle.Render("  Cancel (Esc)  ")
+	saveBtn := ButtonStyle.Render("  ✓  Save  ")
+	cancelBtn := ButtonSecondaryStyle.Render("  ✗  Cancel  ")
 	b.WriteString(saveBtn + "  " + cancelBtn)
 
 	// Error
 	if e.err != nil {
 		b.WriteString("\n\n")
-		b.WriteString(ErrorStyle.Render("✗ " + e.err.Error()))
+		errIcon := lipgloss.NewStyle().Foreground(ColorDanger).Render("✗")
+		errText := lipgloss.NewStyle().Foreground(ColorDanger).Bold(true).Render(" " + e.err.Error())
+		b.WriteString(errIcon + errText)
 	}
 
+	// Help
+	b.WriteString("\n\n")
+	helpItems := []string{
+		RenderKeyHint("Tab", "navigate"),
+		RenderKeyHint("←/→", "select"),
+		RenderKeyHint("Ctrl+S", "save"),
+		RenderKeyHint("Esc", "cancel"),
+	}
+	help := strings.Join(helpItems, "  │  ")
+	b.WriteString(lipgloss.NewStyle().Foreground(ColorMuted).Render(help))
+
+	// Wrap in modal
 	form := ModalStyle.Render(b.String())
+
+	// Title above modal
+	content := lipgloss.JoinVertical(lipgloss.Center,
+		title,
+		"",
+		form,
+	)
 
 	return lipgloss.Place(
 		width,
 		height,
 		lipgloss.Center,
 		lipgloss.Center,
-		form,
+		content,
 	)
 }
 
 func (e ExpensesView) renderSelector(periods []models.Period, selected int, focused bool, getName func(models.Period) string) string {
 	if len(periods) == 0 {
-		return lipgloss.NewStyle().Foreground(ColorMuted).Render("No periods available")
+		return lipgloss.NewStyle().Foreground(ColorMuted).Italic(true).Render("No periods available")
 	}
 
 	var items []string
@@ -767,9 +853,11 @@ func (e ExpensesView) renderSelector(periods []models.Period, selected int, focu
 		name := getName(p)
 		if i == selected {
 			if focused {
+				// Active and focused - show arrows
 				items = append(items, BadgeStyle.Render("◀ "+name+" ▶"))
 			} else {
-				items = append(items, BadgeStyle.Render(name))
+				// Active but not focused
+				items = append(items, BadgeSecondaryStyle.Render(name))
 			}
 		} else {
 			items = append(items, lipgloss.NewStyle().Foreground(ColorMuted).Render(name))
@@ -781,7 +869,7 @@ func (e ExpensesView) renderSelector(periods []models.Period, selected int, focu
 
 func (e ExpensesView) renderCategorySelector(focused bool) string {
 	if len(e.categories) == 0 {
-		return lipgloss.NewStyle().Foreground(ColorMuted).Render("No categories available")
+		return lipgloss.NewStyle().Foreground(ColorMuted).Italic(true).Render("No categories available")
 	}
 
 	var items []string
@@ -790,7 +878,7 @@ func (e ExpensesView) renderCategorySelector(focused bool) string {
 			if focused {
 				items = append(items, BadgeStyle.Render("◀ "+c.Name+" ▶"))
 			} else {
-				items = append(items, BadgeStyle.Render(c.Name))
+				items = append(items, BadgeSecondaryStyle.Render(c.Name))
 			}
 		} else {
 			items = append(items, lipgloss.NewStyle().Foreground(ColorMuted).Render(c.Name))
@@ -807,33 +895,58 @@ func (e ExpensesView) renderConfirmDialog(width, height int) string {
 
 	exp := e.expenses[e.cursor]
 
-	title := ModalTitleStyle.Render("Delete Expense")
+	// Warning icon and title
+	titleIcon := lipgloss.NewStyle().Foreground(ColorDanger).Render("⚠")
+	titleText := lipgloss.NewStyle().
+		Foreground(ColorDanger).
+		Bold(true).
+		Render("  Delete Expense")
+	title := titleIcon + titleText
+
+	// Accent line in danger color
+	accentLine := RenderAccentLine(44, ColorDanger)
+
+	// Message
 	message := lipgloss.NewStyle().
 		Foreground(ColorText).
 		Render(fmt.Sprintf("Are you sure you want to delete '%s'?", exp.ExpenseName))
 
+	subMessage := lipgloss.NewStyle().
+		Foreground(ColorMuted).
+		Italic(true).
+		Render("This action cannot be undone.")
+
+	// Buttons
 	buttons := lipgloss.JoinHorizontal(lipgloss.Left,
 		ButtonDangerStyle.Render("  Yes (y)  "),
 		"  ",
-		ButtonStyle.Render("  No (n)  "),
+		ButtonSecondaryStyle.Render("  No (n)  "),
 	)
 
-	content := lipgloss.JoinVertical(lipgloss.Center,
-		title,
+	content := lipgloss.JoinVertical(lipgloss.Left,
+		accentLine,
 		"",
 		message,
+		subMessage,
 		"",
 		buttons,
 	)
 
-	dialog := ModalStyle.Render(content)
+	dialog := ModalDangerStyle.Render(content)
+
+	// Title above dialog
+	fullContent := lipgloss.JoinVertical(lipgloss.Center,
+		title,
+		"",
+		dialog,
+	)
 
 	return lipgloss.Place(
 		width,
 		height,
 		lipgloss.Center,
 		lipgloss.Center,
-		dialog,
+		fullContent,
 	)
 }
 

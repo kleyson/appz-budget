@@ -1,133 +1,227 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { useTheme } from '../contexts/ThemeContext';
-import type { SummaryTotals } from '../types';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "../contexts/ThemeContext";
+import { getThemeColors, colors, getShadow } from "../utils/colors";
+import type { SummaryTotals } from "../types";
 
 interface SummaryCardsProps {
   totals?: SummaryTotals;
 }
 
+interface CardConfig {
+  title: string;
+  value: number;
+  gradientColors: readonly [string, string];
+  iconName: keyof typeof Ionicons.glyphMap;
+  iconBg: string;
+  iconColor: string;
+}
+
 export const SummaryCards = ({ totals }: SummaryCardsProps) => {
   const { isDark } = useTheme();
-  const styles = getStyles(isDark);
+  const theme = getThemeColors(isDark);
+  const styles = getStyles(isDark, theme);
 
   if (!totals) {
     return (
-      <View style={styles.container}>
+      <View style={styles.loadingContainer}>
+        <View style={styles.loadingSpinner} />
         <Text style={styles.loadingText}>Loading summary...</Text>
       </View>
     );
   }
 
-  const cards = [
+  const cards: CardConfig[] = [
     {
-      title: 'Total Budgeted Expenses',
+      title: "Budgeted Expenses",
       value: totals.total_budgeted_expenses,
-      color: '#3b82f6',
+      gradientColors: [colors.info.light, "#2563eb"],
+      iconName: "clipboard-outline",
+      iconBg: theme.infoBg,
+      iconColor: theme.info,
     },
     {
-      title: 'Total Expenses',
+      title: "Actual Expenses",
       value: totals.total_current_expenses,
-      color: '#ef4444',
+      gradientColors: [colors.danger.light, "#dc2626"],
+      iconName: "wallet-outline",
+      iconBg: theme.dangerBg,
+      iconColor: theme.danger,
     },
     {
-      title: 'Total Budgeted Income',
+      title: "Budgeted Income",
       value: totals.total_budgeted_income,
-      color: '#3b82f6',
+      gradientColors: ["#06b6d4", "#0891b2"],
+      iconName: "document-text-outline",
+      iconBg: "rgba(6, 182, 212, 0.15)",
+      iconColor: "#06b6d4",
     },
     {
-      title: 'Total Current Income',
+      title: "Actual Income",
       value: totals.total_current_income,
-      color: '#10b981',
+      gradientColors: [colors.success.light, "#059669"],
+      iconName: "cash-outline",
+      iconBg: theme.successBg,
+      iconColor: theme.success,
     },
     {
-      title: 'Total Budgeted',
+      title: "Budgeted Balance",
       value: totals.total_budgeted,
-      color: totals.total_budgeted >= 0 ? '#10b981' : '#ef4444',
+      gradientColors:
+        totals.total_budgeted >= 0
+          ? [colors.success.light, "#059669"]
+          : [colors.danger.light, "#dc2626"],
+      iconName: "scale-outline",
+      iconBg: totals.total_budgeted >= 0 ? theme.successBg : theme.dangerBg,
+      iconColor: totals.total_budgeted >= 0 ? theme.success : theme.danger,
     },
     {
-      title: 'Total Current',
+      title: "Actual Balance",
       value: totals.total_current,
-      color: totals.total_current >= 0 ? '#10b981' : '#ef4444',
+      gradientColors:
+        totals.total_current >= 0
+          ? [colors.success.light, "#059669"]
+          : [colors.danger.light, "#dc2626"],
+      iconName: "calculator-outline",
+      iconBg: totals.total_current >= 0 ? theme.successBg : theme.dangerBg,
+      iconColor: totals.total_current >= 0 ? theme.success : theme.danger,
     },
   ];
 
   return (
     <View style={styles.container}>
-      {cards.map((card, index) => {
-        // Create rows of 2 cards
-        if (index % 2 === 0) {
-          return (
-            <View key={card.title} style={styles.row}>
-              <View
-                style={[
-                  styles.card,
-                  {
-                    backgroundColor: isDark ? '#1f2937' : '#ffffff',
-                    borderColor: isDark ? '#374151' : '#e5e7eb',
-                  },
-                ]}
-              >
+      <Text style={styles.sectionTitle}>Overview</Text>
+      <View style={styles.grid}>
+        {cards.map((card, index) => (
+          <View key={card.title} style={styles.cardWrapper}>
+            <View style={styles.card}>
+              {/* Gradient accent bar */}
+              <LinearGradient
+                colors={card.gradientColors}
+                style={styles.accentBar}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              />
+
+              <View style={styles.cardContent}>
+                <View style={styles.cardHeader}>
+                  <View style={[styles.iconContainer, { backgroundColor: card.iconBg }]}>
+                    <Ionicons name={card.iconName} size={18} color={card.iconColor} />
+                  </View>
+                  {totals.total_budgeted_income > 0 && (
+                    <View style={[styles.percentBadge, { backgroundColor: card.iconBg }]}>
+                      <Text style={[styles.percentText, { color: card.iconColor }]}>
+                        {card.value >= 0 ? "+" : ""}
+                        {((card.value / totals.total_budgeted_income) * 100).toFixed(0)}%
+                      </Text>
+                    </View>
+                  )}
+                </View>
+
                 <Text style={styles.cardLabel}>{card.title}</Text>
-                <Text style={[styles.cardValue, { color: card.color }]}>
-                  ${Math.abs(card.value).toFixed(2)}
-                </Text>
-              </View>
-              {cards[index + 1] && (
-                <View
+                <Text
                   style={[
-                    styles.card,
-                    {
-                      backgroundColor: isDark ? '#1f2937' : '#ffffff',
-                      borderColor: isDark ? '#374151' : '#e5e7eb',
-                    },
+                    styles.cardValue,
+                    { color: card.value === 0 ? theme.textMuted : card.iconColor },
                   ]}
                 >
-                  <Text style={styles.cardLabel}>{cards[index + 1].title}</Text>
-                  <Text style={[styles.cardValue, { color: cards[index + 1].color }]}>
-                    ${Math.abs(cards[index + 1].value).toFixed(2)}
-                  </Text>
-                </View>
-              )}
+                  ${Math.abs(card.value).toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </Text>
+              </View>
             </View>
-          );
-        }
-        return null;
-      })}
+          </View>
+        ))}
+      </View>
     </View>
   );
 };
 
-const getStyles = (isDark: boolean) =>
+const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
   StyleSheet.create({
     container: {
       gap: 12,
     },
-    row: {
-      flexDirection: 'row',
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: theme.text,
+      marginBottom: 4,
+    },
+    loadingContainer: {
+      padding: 48,
+      alignItems: "center",
+    },
+    loadingSpinner: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      borderWidth: 3,
+      borderColor: theme.border,
+      borderTopColor: theme.primary,
+    },
+    loadingText: {
+      marginTop: 12,
+      color: theme.textSecondary,
+    },
+    grid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
       gap: 12,
     },
+    cardWrapper: {
+      width: "48%",
+      flexGrow: 1,
+    },
     card: {
-      flex: 1,
-      padding: 16,
-      borderRadius: 12,
+      backgroundColor: theme.card,
+      borderRadius: 16,
       borderWidth: 1,
+      borderColor: theme.border,
+      overflow: "hidden",
+      ...getShadow(isDark, "sm"),
+    },
+    accentBar: {
+      height: 3,
+    },
+    cardContent: {
+      padding: 14,
+    },
+    cardHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      marginBottom: 12,
+    },
+    iconContainer: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    percentBadge: {
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 8,
+    },
+    percentText: {
+      fontSize: 11,
+      fontWeight: "600",
     },
     cardLabel: {
       fontSize: 12,
-      fontWeight: '600',
-      color: isDark ? '#9ca3af' : '#6b7280',
-      marginBottom: 8,
-      textTransform: 'uppercase',
+      fontWeight: "500",
+      color: theme.textSecondary,
+      marginBottom: 4,
     },
     cardValue: {
-      fontSize: 24,
-      fontWeight: 'bold',
-    },
-    loadingText: {
-      textAlign: 'center',
-      color: isDark ? '#9ca3af' : '#6b7280',
-      padding: 32,
+      fontSize: 22,
+      fontWeight: "700",
+      letterSpacing: -0.5,
     },
   });
-

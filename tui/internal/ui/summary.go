@@ -94,30 +94,32 @@ func (s SummaryView) Update(msg tea.Msg) (SummaryView, tea.Cmd) {
 
 func (s SummaryView) View(width, height int) string {
 	if s.loading {
-		return lipgloss.NewStyle().
-			Foreground(ColorMuted).
-			Render("Loading summary...")
+		spinner := lipgloss.NewStyle().Foreground(ColorSecondary).Render("◐")
+		loadingText := lipgloss.NewStyle().Foreground(ColorMuted).Render("  Loading summary...")
+		return spinner + loadingText
 	}
 
 	if s.err != nil {
-		return ErrorStyle.Render("Error: " + s.err.Error())
+		errIcon := lipgloss.NewStyle().Foreground(ColorDanger).Render("✗")
+		errText := lipgloss.NewStyle().Foreground(ColorDanger).Bold(true).Render(" " + s.err.Error())
+		return errIcon + errText
 	}
 
 	if s.totals == nil {
 		return lipgloss.NewStyle().
 			Foreground(ColorMuted).
-			Render("No data available")
+			Render("📊 No data available for this month")
 	}
 
 	var b strings.Builder
 
-	// Summary cards
+	// Summary cards with refined design
 	b.WriteString(s.renderSummaryCards(width))
 	b.WriteString("\n\n")
 
 	// Two-column layout for categories and income types
-	leftCol := s.renderCategorySummary((width-4)/2, height-10)
-	rightCol := s.renderIncomeTypeSummary((width-4)/2, height-10)
+	leftCol := s.renderCategorySummary((width-4)/2, height-12)
+	rightCol := s.renderIncomeTypeSummary((width-4)/2, height-12)
 
 	columns := lipgloss.JoinHorizontal(lipgloss.Top, leftCol, "  ", rightCol)
 	b.WriteString(columns)
@@ -127,31 +129,36 @@ func (s SummaryView) View(width, height int) string {
 
 func (s SummaryView) renderSummaryCards(width int) string {
 	cardWidth := (width - 12) / 3
-	if cardWidth < 25 {
-		cardWidth = 25
+	if cardWidth < 28 {
+		cardWidth = 28
 	}
 
-	// Income Card
+	// Income Card with gradient accent
 	incomeCard := s.renderCard(
-		"💵  Income",
+		"Income",
+		"💵",
 		s.totals.TotalCurrentIncome,
 		s.totals.TotalBudgetedIncome,
 		cardWidth,
 		false,
+		ColorSuccess,
 	)
 
 	// Expenses Card
 	expenseCard := s.renderCard(
-		"💰 Expenses",
+		"Expenses",
+		"💰",
 		s.totals.TotalCurrentExpenses,
 		s.totals.TotalBudgetedExpenses,
 		cardWidth,
 		true,
+		ColorDanger,
 	)
 
 	// Balance Card
 	balanceCard := s.renderBalanceCard(
-		"📊 Balance",
+		"Balance",
+		"📊",
 		s.totals.TotalCurrent,
 		s.totals.TotalBudgeted,
 		cardWidth,
@@ -160,9 +167,10 @@ func (s SummaryView) renderSummaryCards(width int) string {
 	return lipgloss.JoinHorizontal(lipgloss.Top, incomeCard, expenseCard, balanceCard)
 }
 
-func (s SummaryView) renderCard(title string, current, budget float64, width int, isExpense bool) string {
+func (s SummaryView) renderCard(title, icon string, current, budget float64, width int, isExpense bool, accentColor lipgloss.Color) string {
 	var status string
 	var statusStyle lipgloss.Style
+	var statusIcon string
 
 	percentage := 0.0
 	if budget > 0 {
@@ -171,106 +179,184 @@ func (s SummaryView) renderCard(title string, current, budget float64, width int
 
 	if isExpense {
 		if current > budget {
-			status = "Over Budget!"
-			statusStyle = DangerStyle
+			status = "Over Budget"
+			statusStyle = DangerBoldStyle
+			statusIcon = "▲"
 		} else if current >= budget*0.9 {
 			status = "Near Budget"
-			statusStyle = WarningStyle
+			statusStyle = WarningBoldStyle
+			statusIcon = "●"
 		} else {
 			status = "On Track"
-			statusStyle = SuccessStyle
+			statusStyle = SuccessBoldStyle
+			statusIcon = "✓"
 		}
 	} else {
 		if current >= budget {
-			status = "Goal Met!"
-			statusStyle = SuccessStyle
+			status = "Goal Met"
+			statusStyle = SuccessBoldStyle
+			statusIcon = "★"
 		} else if current >= budget*0.5 {
 			status = "Progressing"
-			statusStyle = InfoStyle
+			statusStyle = InfoBoldStyle
+			statusIcon = "↗"
 		} else {
 			status = "In Progress"
-			statusStyle = WarningStyle
+			statusStyle = WarningBoldStyle
+			statusIcon = "○"
 		}
 	}
 
-	titleStyled := CardTitleStyle.Render(title)
+	// Card header with icon
+	headerIcon := lipgloss.NewStyle().Foreground(accentColor).Render(icon)
+	headerTitle := lipgloss.NewStyle().
+		Foreground(ColorText).
+		Bold(true).
+		Render("  " + title)
+	header := headerIcon + headerTitle
+
+	// Current value - large and prominent
 	currentStyled := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(ColorText).
+		Foreground(ColorTextBright).
 		Render(formatCurrency(current))
+
+	// Budget comparison
 	budgetStyled := lipgloss.NewStyle().
 		Foreground(ColorMuted).
-		Render(fmt.Sprintf("/ %s budgeted", formatCurrency(budget)))
-	statusStyled := statusStyle.Render(status)
+		Render(fmt.Sprintf("of %s budgeted", formatCurrency(budget)))
+
+	// Progress bar
 	progressBar := RenderProgressBar(current, budget, width-6)
+
+	// Status and percentage row
+	statusStyled := statusStyle.Render(statusIcon + " " + status)
 	percentageStyled := lipgloss.NewStyle().
 		Foreground(ColorMuted).
 		Render(fmt.Sprintf("%.1f%%", percentage))
 
+	statusRow := statusStyled + "  " + percentageStyled
+
+	// Build card content
 	content := lipgloss.JoinVertical(lipgloss.Left,
-		titleStyled,
+		header,
 		"",
 		currentStyled,
 		budgetStyled,
 		"",
 		progressBar,
-		lipgloss.JoinHorizontal(lipgloss.Left, statusStyled, "  ", percentageStyled),
+		statusRow,
+	)
+
+	// Card with accent line at top
+	accentLine := RenderAccentLine(width-4, accentColor)
+
+	cardContent := lipgloss.JoinVertical(lipgloss.Left,
+		accentLine,
+		content,
 	)
 
 	return CardStyle.
 		Width(width).
-		Render(content)
+		Render(cardContent)
 }
 
-func (s SummaryView) renderBalanceCard(title string, current, budget float64, width int) string {
+func (s SummaryView) renderBalanceCard(title, icon string, current, budget float64, width int) string {
 	var statusStyle lipgloss.Style
+	var accentColor lipgloss.Color
+	var statusIcon string
+	var status string
+
 	if current >= 0 {
-		statusStyle = SuccessStyle
+		statusStyle = SuccessBoldStyle
+		accentColor = ColorSuccess
+		if current >= budget {
+			status = "Above target"
+			statusIcon = "★"
+		} else {
+			status = "Positive"
+			statusIcon = "✓"
+		}
 	} else {
-		statusStyle = DangerStyle
+		statusStyle = DangerBoldStyle
+		accentColor = ColorDanger
+		status = "In deficit"
+		statusIcon = "▼"
 	}
 
-	titleStyled := CardTitleStyle.Render(title)
-	currentStyled := lipgloss.NewStyle().
+	// Card header
+	headerIcon := lipgloss.NewStyle().Foreground(accentColor).Render(icon)
+	headerTitle := lipgloss.NewStyle().
+		Foreground(ColorText).
 		Bold(true).
-		Foreground(statusStyle.GetForeground()).
-		Render(formatCurrency(current))
+		Render("  " + title)
+	header := headerIcon + headerTitle
+
+	// Current value with color based on positive/negative
+	valueStyle := statusStyle
+	currentStyled := valueStyle.Render(formatCurrency(current))
+
+	// Budget comparison
 	budgetStyled := lipgloss.NewStyle().
 		Foreground(ColorMuted).
-		Render(fmt.Sprintf("/ %s budgeted", formatCurrency(budget)))
+		Render(fmt.Sprintf("Target: %s", formatCurrency(budget)))
 
-	var status string
-	if current >= budget {
-		status = "✓ Above target"
-	} else if current >= 0 {
-		status = "○ Below target"
-	} else {
-		status = "✗ In deficit"
+	// Difference calculation
+	diff := current - budget
+	diffPrefix := ""
+	if diff >= 0 {
+		diffPrefix = "+"
 	}
-	statusStyled := statusStyle.Render(status)
+	diffText := fmt.Sprintf("%s%s vs target", diffPrefix, formatCurrency(diff))
+	diffStyled := lipgloss.NewStyle().
+		Foreground(ColorSubtext).
+		Render(diffText)
 
+	// Status
+	statusStyled := statusStyle.Render(statusIcon + " " + status)
+
+	// Build content
 	content := lipgloss.JoinVertical(lipgloss.Left,
-		titleStyled,
+		header,
 		"",
 		currentStyled,
 		budgetStyled,
+		diffStyled,
 		"",
 		statusStyled,
 	)
 
+	// Card with accent
+	accentLine := RenderAccentLine(width-4, accentColor)
+
+	cardContent := lipgloss.JoinVertical(lipgloss.Left,
+		accentLine,
+		content,
+	)
+
 	return CardStyle.
 		Width(width).
-		Render(content)
+		Render(cardContent)
 }
 
 func (s SummaryView) renderCategorySummary(width, height int) string {
-	title := TitleStyle.Render("📁 Expenses by Category")
+	// Section header with icon
+	headerIcon := lipgloss.NewStyle().Foreground(ColorPrimary).Render("📁")
+	headerTitle := lipgloss.NewStyle().
+		Foreground(ColorText).
+		Bold(true).
+		Render("  Expenses by Category")
+	title := headerIcon + headerTitle
 
 	if len(s.categorySummary) == 0 {
+		emptyMsg := lipgloss.NewStyle().
+			Foreground(ColorMuted).
+			Italic(true).
+			Render("No categories found")
 		return lipgloss.JoinVertical(lipgloss.Left,
 			title,
 			"",
-			lipgloss.NewStyle().Foreground(ColorMuted).Render("No categories"),
+			emptyMsg,
 		)
 	}
 
@@ -290,50 +376,66 @@ func (s SummaryView) renderCategorySummary(width, height int) string {
 }
 
 func (s SummaryView) renderCategoryRow(cat models.CategorySummary, width int) string {
-	nameWidth := 20
+	nameWidth := 18
 	if width < 50 {
-		nameWidth = 15
+		nameWidth = 14
 	}
 
+	// Status dot
+	var statusDot string
+	if cat.OverBudget {
+		statusDot = DangerStyle.Render("●")
+	} else if cat.Total >= cat.Budget*0.9 {
+		statusDot = WarningStyle.Render("●")
+	} else {
+		statusDot = SuccessStyle.Render("●")
+	}
+
+	// Category name
 	name := cat.Category
 	if len(name) > nameWidth {
-		name = name[:nameWidth-3] + "..."
+		name = name[:nameWidth-2] + "…"
 	}
-	name = lipgloss.NewStyle().Width(nameWidth).Render(name)
+	nameStyled := lipgloss.NewStyle().
+		Width(nameWidth).
+		Foreground(ColorText).
+		Render(name)
 
+	// Progress bar
+	barWidth := width - nameWidth - 32
+	if barWidth < 8 {
+		barWidth = 8
+	}
+	bar := RenderSlimProgressBar(cat.Total, cat.Budget, barWidth)
+
+	// Values
 	current := formatCurrency(cat.Total)
 	budget := formatCurrency(cat.Budget)
-
-	var status string
-	if cat.OverBudget {
-		status = DangerStyle.Render("●")
-	} else if cat.Total >= cat.Budget*0.9 {
-		status = WarningStyle.Render("●")
-	} else {
-		status = SuccessStyle.Render("●")
-	}
-
-	barWidth := width - nameWidth - 30
-	if barWidth < 10 {
-		barWidth = 10
-	}
-	bar := RenderProgressBar(cat.Total, cat.Budget, barWidth)
-
 	values := lipgloss.NewStyle().
-		Foreground(ColorText).
-		Render(fmt.Sprintf("%s / %s", current, budget))
+		Foreground(ColorSubtext).
+		Render(fmt.Sprintf("%s/%s", current, budget))
 
-	return fmt.Sprintf("%s %s %s %s", status, name, bar, values)
+	return fmt.Sprintf("%s %s %s %s", statusDot, nameStyled, bar, values)
 }
 
 func (s SummaryView) renderIncomeTypeSummary(width, height int) string {
-	title := TitleStyle.Render("💵  Income by Type")
+	// Section header
+	headerIcon := lipgloss.NewStyle().Foreground(ColorSuccess).Render("💵")
+	headerTitle := lipgloss.NewStyle().
+		Foreground(ColorText).
+		Bold(true).
+		Render("  Income by Type")
+	title := headerIcon + headerTitle
 
 	if len(s.incomeTypeSummary) == 0 {
+		emptyMsg := lipgloss.NewStyle().
+			Foreground(ColorMuted).
+			Italic(true).
+			Render("No income types found")
 		return lipgloss.JoinVertical(lipgloss.Left,
 			title,
 			"",
-			lipgloss.NewStyle().Foreground(ColorMuted).Render("No income types"),
+			emptyMsg,
 		)
 	}
 
@@ -353,38 +455,44 @@ func (s SummaryView) renderIncomeTypeSummary(width, height int) string {
 }
 
 func (s SummaryView) renderIncomeTypeRow(inc models.IncomeTypeSummary, width int) string {
-	nameWidth := 20
+	nameWidth := 18
 	if width < 50 {
-		nameWidth = 15
+		nameWidth = 14
 	}
 
+	// Status dot
+	var statusDot string
+	if inc.Total >= inc.Budget {
+		statusDot = SuccessStyle.Render("●")
+	} else if inc.Total >= inc.Budget*0.5 {
+		statusDot = InfoStyle.Render("●")
+	} else {
+		statusDot = WarningStyle.Render("●")
+	}
+
+	// Income type name
 	name := inc.IncomeType
 	if len(name) > nameWidth {
-		name = name[:nameWidth-3] + "..."
+		name = name[:nameWidth-2] + "…"
 	}
-	name = lipgloss.NewStyle().Width(nameWidth).Render(name)
+	nameStyled := lipgloss.NewStyle().
+		Width(nameWidth).
+		Foreground(ColorText).
+		Render(name)
 
+	// Progress bar
+	barWidth := width - nameWidth - 32
+	if barWidth < 8 {
+		barWidth = 8
+	}
+	bar := RenderSlimProgressBar(inc.Total, inc.Budget, barWidth)
+
+	// Values
 	current := formatCurrency(inc.Total)
 	budget := formatCurrency(inc.Budget)
-
-	var status string
-	if inc.Total >= inc.Budget {
-		status = SuccessStyle.Render("●")
-	} else if inc.Total >= inc.Budget*0.5 {
-		status = InfoStyle.Render("●")
-	} else {
-		status = WarningStyle.Render("●")
-	}
-
-	barWidth := width - nameWidth - 30
-	if barWidth < 10 {
-		barWidth = 10
-	}
-	bar := RenderProgressBar(inc.Total, inc.Budget, barWidth)
-
 	values := lipgloss.NewStyle().
-		Foreground(ColorText).
-		Render(fmt.Sprintf("%s / %s", current, budget))
+		Foreground(ColorSubtext).
+		Render(fmt.Sprintf("%s/%s", current, budget))
 
-	return fmt.Sprintf("%s %s %s %s", status, name, bar, values)
+	return fmt.Sprintf("%s %s %s %s", statusDot, nameStyled, bar, values)
 }

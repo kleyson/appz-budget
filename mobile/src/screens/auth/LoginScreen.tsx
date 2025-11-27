@@ -11,10 +11,12 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import { getErrorMessage } from "../../utils/errorHandler";
+import { getThemeColors, colors, getShadow } from "../../utils/colors";
 import { Ionicons } from "@expo/vector-icons";
 import {
   isBiometricAvailable,
@@ -30,6 +32,7 @@ import {
 export const LoginScreen = () => {
   const { login } = useAuth();
   const { isDark } = useTheme();
+  const theme = getThemeColors(isDark);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -43,12 +46,10 @@ export const LoginScreen = () => {
       await checkBiometricAvailability();
       await checkBiometricEnabled();
 
-      // Try biometric login on mount if enabled
       const enabled = await isBiometricEnabled();
       if (enabled) {
         const credentials = await getBiometricCredentials();
         if (credentials) {
-          // Small delay to ensure UI is ready
           setTimeout(async () => {
             try {
               const authenticated = await authenticateWithBiometrics();
@@ -64,7 +65,6 @@ export const LoginScreen = () => {
                   );
                   router.replace("/");
                 } catch (err: unknown) {
-                  // Check if it's a 403 error (invalid API key)
                   const errorMessage = getErrorMessage(
                     err,
                     "Failed to login. Please check your credentials."
@@ -94,7 +94,6 @@ export const LoginScreen = () => {
                 }
               }
             } catch (error) {
-              // Biometric auth cancelled or failed, user will need to type password
               console.log("Biometric authentication cancelled or failed");
             }
           }, 300);
@@ -122,8 +121,6 @@ export const LoginScreen = () => {
   const handleBiometricToggle = async (enabled: boolean) => {
     setBiometricEnabledState(enabled);
     await setBiometricEnabled(enabled);
-
-    // If disabling biometrics, clear saved credentials
     if (!enabled) {
       await removeBiometricCredentials();
     }
@@ -139,7 +136,6 @@ export const LoginScreen = () => {
     try {
       await login({ email, password }, true);
 
-      // Save credentials if biometric is enabled
       if (biometricAvailable && biometricEnabled) {
         try {
           await saveBiometricCredentials({ email, password });
@@ -150,7 +146,6 @@ export const LoginScreen = () => {
 
       router.replace("/");
     } catch (err: unknown) {
-      // Check if it's a 403 error (invalid API key)
       const errorMessage = getErrorMessage(
         err,
         "Failed to login. Please check your credentials."
@@ -180,312 +175,360 @@ export const LoginScreen = () => {
     }
   };
 
-  const styles = getStyles(isDark);
+  const styles = getStyles(isDark, theme);
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Background gradient orbs */}
+        <View style={styles.backgroundOrbs}>
+          <View style={[styles.orb, styles.orb1]} />
+          <View style={[styles.orb, styles.orb2]} />
+        </View>
+
         <View style={styles.content}>
-          <Text style={styles.title}>💰 Appz Budget</Text>
-          <Text style={styles.subtitle}>Sign in to your account</Text>
-
-          <View style={styles.form}>
-            <TextInput
-              style={styles.input}
-              placeholder="Email address"
-              placeholderTextColor={isDark ? "#9ca3af" : "#6b7280"}
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              autoComplete="email"
-            />
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder="Password"
-                placeholderTextColor={isDark ? "#9ca3af" : "#6b7280"}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                autoComplete="password"
-              />
-              <View style={styles.eyeButtonContainer}>
-                <TouchableOpacity
-                  style={styles.eyeButton}
-                  onPress={() => setShowPassword(!showPassword)}
-                >
-                  <Ionicons
-                    name={showPassword ? "eye-off" : "eye"}
-                    size={20}
-                    color={isDark ? "#9ca3af" : "#6b7280"}
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <TouchableOpacity
-              style={styles.forgotButton}
-              onPress={() => router.push("/(auth)/forgot-password")}
+          {/* Logo */}
+          <View style={styles.logoContainer}>
+            <LinearGradient
+              colors={[colors.primary[500], colors.primary[600]]}
+              style={styles.logoGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
             >
-              <Text style={styles.forgotText}>Forgot your password?</Text>
-            </TouchableOpacity>
-
-            {biometricAvailable && (
-              <View style={styles.biometricToggleContainer}>
-                <View style={styles.biometricToggleRow}>
-                  <Ionicons
-                    name={
-                      biometricType === "Face ID" ? "person" : "lock-closed"
-                    }
-                    size={20}
-                    color={
-                      biometricEnabled
-                        ? "#3b82f6"
-                        : isDark
-                        ? "#9ca3af"
-                        : "#6b7280"
-                    }
-                  />
-                  <Text style={styles.biometricToggleLabel}>
-                    Use {biometricType} for quick login
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  style={[
-                    styles.toggle,
-                    biometricEnabled && styles.toggleActive,
-                  ]}
-                  onPress={() => handleBiometricToggle(!biometricEnabled)}
-                >
-                  <View
-                    style={[
-                      styles.toggleThumb,
-                      biometricEnabled && styles.toggleThumbActive,
-                    ]}
-                  />
-                </TouchableOpacity>
-              </View>
-            )}
-
-            <TouchableOpacity
-              style={[
-                styles.submitButton,
-                isLoading && styles.submitButtonDisabled,
-              ]}
-              onPress={handleSubmit}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator color="#ffffff" />
-              ) : (
-                <Text style={styles.submitButtonText}>Sign in</Text>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.apiConfigButton}
-              onPress={() => router.push("/api-config")}
-            >
-              <Ionicons
-                name="server"
-                size={16}
-                color={isDark ? "#9ca3af" : "#6b7280"}
-              />
-              <Text style={styles.apiConfigText}>Configure API Server</Text>
-            </TouchableOpacity>
+              <Text style={styles.logoEmoji}>💰</Text>
+            </LinearGradient>
+            <Text style={styles.title}>Appz Budget</Text>
+            <Text style={styles.subtitle}>Take control of your finances</Text>
           </View>
+
+          {/* Login Card */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Welcome back</Text>
+
+            <View style={styles.form}>
+              {/* Email Input */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Email address</Text>
+                <View style={styles.inputWrapper}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="you@example.com"
+                    placeholderTextColor={theme.placeholder}
+                    value={email}
+                    onChangeText={setEmail}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    autoComplete="email"
+                  />
+                </View>
+              </View>
+
+              {/* Password Input */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Password</Text>
+                <View style={styles.inputWrapper}>
+                  <TextInput
+                    style={[styles.input, styles.passwordInput]}
+                    placeholder="Enter your password"
+                    placeholderTextColor={theme.placeholder}
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPassword}
+                    autoComplete="password"
+                  />
+                  <TouchableOpacity
+                    style={styles.eyeButton}
+                    onPress={() => setShowPassword(!showPassword)}
+                  >
+                    <Ionicons
+                      name={showPassword ? "eye-off-outline" : "eye-outline"}
+                      size={20}
+                      color={theme.textSecondary}
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Forgot Password */}
+              <TouchableOpacity
+                style={styles.forgotButton}
+                onPress={() => router.push("/(auth)/forgot-password")}
+              >
+                <Text style={styles.forgotText}>Forgot your password?</Text>
+              </TouchableOpacity>
+
+              {/* Biometric Toggle */}
+              {biometricAvailable && (
+                <View style={styles.biometricContainer}>
+                  <View style={styles.biometricInfo}>
+                    <Ionicons
+                      name={biometricType === "Face ID" ? "scan-outline" : "finger-print-outline"}
+                      size={20}
+                      color={biometricEnabled ? theme.primary : theme.textSecondary}
+                    />
+                    <Text style={styles.biometricLabel}>
+                      Use {biometricType} for quick login
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={[styles.toggle, biometricEnabled && styles.toggleActive]}
+                    onPress={() => handleBiometricToggle(!biometricEnabled)}
+                  >
+                    <View style={[styles.toggleThumb, biometricEnabled && styles.toggleThumbActive]} />
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {/* Submit Button */}
+              <TouchableOpacity
+                style={[styles.submitButton, isLoading && styles.submitButtonDisabled]}
+                onPress={handleSubmit}
+                disabled={isLoading}
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={[colors.primary[500], colors.primary[600]]}
+                  style={styles.submitGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  {isLoading ? (
+                    <ActivityIndicator color="#ffffff" />
+                  ) : (
+                    <>
+                      <Text style={styles.submitButtonText}>Sign in</Text>
+                      <Ionicons name="arrow-forward" size={20} color="#ffffff" />
+                    </>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* API Config Link */}
+          <TouchableOpacity
+            style={styles.apiConfigButton}
+            onPress={() => router.push("/api-config")}
+          >
+            <Ionicons name="server-outline" size={16} color={theme.textSecondary} />
+            <Text style={styles.apiConfigText}>Configure API Server</Text>
+          </TouchableOpacity>
+
+          {/* Footer */}
+          <Text style={styles.footerText}>
+            Secure, simple, and smart budgeting
+          </Text>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 };
 
-const getStyles = (isDark: boolean) =>
+const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: isDark ? "#111827" : "#f9fafb",
+      backgroundColor: theme.background,
     },
     scrollContent: {
       flexGrow: 1,
       justifyContent: "center",
       padding: 20,
     },
+    backgroundOrbs: {
+      ...StyleSheet.absoluteFillObject,
+      overflow: "hidden",
+    },
+    orb: {
+      position: "absolute",
+      borderRadius: 999,
+    },
+    orb1: {
+      width: 300,
+      height: 300,
+      top: -100,
+      right: -100,
+      backgroundColor: isDark
+        ? "rgba(90, 111, 242, 0.15)"
+        : "rgba(90, 111, 242, 0.08)",
+    },
+    orb2: {
+      width: 350,
+      height: 350,
+      bottom: -150,
+      left: -150,
+      backgroundColor: isDark
+        ? "rgba(251, 191, 36, 0.1)"
+        : "rgba(251, 191, 36, 0.06)",
+    },
     content: {
       width: "100%",
       maxWidth: 400,
       alignSelf: "center",
     },
-    title: {
-      fontSize: 32,
-      fontWeight: "bold",
-      textAlign: "center",
-      color: isDark ? "#ffffff" : "#111827",
-      marginBottom: 8,
-    },
-    subtitle: {
-      fontSize: 24,
-      fontWeight: "bold",
-      textAlign: "center",
-      color: isDark ? "#ffffff" : "#111827",
+    logoContainer: {
+      alignItems: "center",
       marginBottom: 32,
     },
-    form: {
-      width: "100%",
-    },
-    inputContainer: {
-      position: "relative",
+    logoGradient: {
+      width: 80,
+      height: 80,
+      borderRadius: 20,
+      alignItems: "center",
+      justifyContent: "center",
       marginBottom: 16,
+      ...getShadow(isDark, "lg"),
+    },
+    logoEmoji: {
+      fontSize: 40,
+    },
+    title: {
+      fontSize: 32,
+      fontWeight: "700",
+      color: theme.text,
+      letterSpacing: -0.5,
+    },
+    subtitle: {
+      fontSize: 16,
+      color: theme.textSecondary,
+      marginTop: 8,
+    },
+    card: {
+      backgroundColor: isDark ? "rgba(15, 23, 42, 0.8)" : "rgba(255, 255, 255, 0.9)",
+      borderRadius: 24,
+      padding: 24,
+      borderWidth: 1,
+      borderColor: isDark ? colors.slate[800] : colors.slate[200],
+      ...getShadow(isDark, "lg"),
+    },
+    cardTitle: {
+      fontSize: 24,
+      fontWeight: "600",
+      color: theme.text,
+      marginBottom: 24,
+    },
+    form: {
+      gap: 16,
+    },
+    inputGroup: {
+      gap: 8,
+    },
+    inputLabel: {
+      fontSize: 14,
+      fontWeight: "500",
+      color: theme.textSecondary,
+    },
+    inputWrapper: {
+      position: "relative",
     },
     input: {
-      backgroundColor: isDark ? "#1f2937" : "#ffffff",
+      backgroundColor: theme.inputBg,
       borderWidth: 1,
-      borderColor: isDark ? "#374151" : "#d1d5db",
-      borderRadius: 8,
-      padding: 12,
-      paddingRight: 45,
+      borderColor: theme.inputBorder,
+      borderRadius: 12,
+      padding: 14,
       fontSize: 16,
-      lineHeight: 20,
-      color: isDark ? "#ffffff" : "#111827",
-      marginBottom: 16,
+      color: theme.text,
     },
-    eyeButtonContainer: {
-      position: "absolute",
-      right: 12,
-      top: 12,
-      height: 20,
-      justifyContent: "center",
-      alignItems: "center",
+    passwordInput: {
+      paddingRight: 48,
     },
     eyeButton: {
-      padding: 0,
+      position: "absolute",
+      right: 14,
+      top: 14,
     },
     forgotButton: {
       alignSelf: "flex-end",
-      marginBottom: 24,
     },
     forgotText: {
-      color: "#3b82f6",
+      color: theme.primary,
       fontSize: 14,
+      fontWeight: "500",
+    },
+    biometricContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      backgroundColor: theme.backgroundTertiary,
+      borderRadius: 12,
+      padding: 14,
+    },
+    biometricInfo: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      flex: 1,
+    },
+    biometricLabel: {
+      fontSize: 14,
+      color: theme.text,
+      flex: 1,
+    },
+    toggle: {
+      width: 48,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: theme.inputBorder,
+      justifyContent: "center",
+      padding: 2,
+    },
+    toggleActive: {
+      backgroundColor: theme.primary,
+    },
+    toggleThumb: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: "#ffffff",
+      ...getShadow(isDark, "sm"),
+    },
+    toggleThumbActive: {
+      alignSelf: "flex-end",
     },
     submitButton: {
-      backgroundColor: "#3b82f6",
-      padding: 14,
-      borderRadius: 8,
-      alignItems: "center",
-      marginBottom: 16,
+      marginTop: 8,
+      borderRadius: 14,
+      overflow: "hidden",
+      ...getShadow(isDark, "md"),
     },
     submitButtonDisabled: {
-      opacity: 0.5,
+      opacity: 0.6,
+    },
+    submitGradient: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 16,
+      gap: 8,
     },
     submitButtonText: {
       color: "#ffffff",
       fontSize: 16,
       fontWeight: "600",
     },
-    switchContainer: {
-      flexDirection: "row",
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    switchText: {
-      color: isDark ? "#9ca3af" : "#6b7280",
-      fontSize: 14,
-    },
-    switchLink: {
-      color: "#3b82f6",
-      fontSize: 14,
-      fontWeight: "600",
-    },
     apiConfigButton: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
-      gap: 6,
-      marginTop: 16,
-      padding: 8,
-    },
-    apiConfigText: {
-      color: isDark ? "#9ca3af" : "#6b7280",
-      fontSize: 14,
-    },
-    biometricButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
       gap: 8,
-      padding: 14,
-      borderRadius: 8,
-      borderWidth: 2,
-      borderColor: "#3b82f6",
-      backgroundColor: isDark ? "#1f2937" : "#ffffff",
-      marginBottom: 16,
-    },
-    biometricButtonText: {
-      color: "#3b82f6",
-      fontSize: 16,
-      fontWeight: "600",
-    },
-    divider: {
-      flexDirection: "row",
-      alignItems: "center",
-      marginVertical: 16,
-    },
-    dividerLine: {
-      flex: 1,
-      height: 1,
-      backgroundColor: isDark ? "#374151" : "#d1d5db",
-    },
-    dividerText: {
-      marginHorizontal: 12,
-      color: isDark ? "#9ca3af" : "#6b7280",
-      fontSize: 14,
-    },
-    biometricToggleContainer: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      paddingVertical: 12,
-      paddingHorizontal: 4,
-      marginBottom: 16,
-      backgroundColor: isDark ? "#1f2937" : "#f3f4f6",
-      borderRadius: 8,
+      marginTop: 24,
       padding: 12,
     },
-    biometricToggleRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 8,
-      flex: 1,
-    },
-    biometricToggleLabel: {
+    apiConfigText: {
+      color: theme.textSecondary,
       fontSize: 14,
-      color: isDark ? "#ffffff" : "#111827",
-      flex: 1,
     },
-    toggle: {
-      width: 50,
-      height: 30,
-      borderRadius: 15,
-      backgroundColor: isDark ? "#374151" : "#d1d5db",
-      justifyContent: "center",
-      paddingHorizontal: 2,
-    },
-    toggleActive: {
-      backgroundColor: "#3b82f6",
-    },
-    toggleThumb: {
-      width: 26,
-      height: 26,
-      borderRadius: 13,
-      backgroundColor: "#ffffff",
-      alignSelf: "flex-start",
-    },
-    toggleThumbActive: {
-      alignSelf: "flex-end",
+    footerText: {
+      textAlign: "center",
+      color: theme.textMuted,
+      fontSize: 14,
+      marginTop: 16,
     },
   });
