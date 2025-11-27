@@ -1,4 +1,4 @@
-import { useState, FormEvent, ChangeEvent, useEffect } from 'react';
+import { useState, FormEvent, useEffect } from 'react';
 import { useCreateIncome, useUpdateIncome } from '../hooks/useIncomes';
 import { usePeriods } from '../hooks/usePeriods';
 import { useIncomeTypes } from '../hooks/useIncomeTypes';
@@ -6,6 +6,7 @@ import { useMonths, useCurrentMonth } from '../hooks/useMonths';
 import type { Income, IncomeCreate } from '../types';
 import { ColorSelect } from './ColorSelect';
 import { MonthSelect } from './MonthSelect';
+import { CurrencyInput } from './CurrencyInput';
 
 interface IncomeFormProps {
   income?: Income | null;
@@ -59,14 +60,6 @@ export const IncomeForm = ({ income = null, onClose, defaultMonthId = null }: In
     } catch (error) {
       console.error('Error saving income:', error);
     }
-  };
-
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === 'amount' || name === 'budget' ? parseFloat(value) || 0 : value,
-    }));
   };
 
   return (
@@ -133,14 +126,10 @@ export const IncomeForm = ({ income = null, onClose, defaultMonthId = null }: In
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Budget
                 </label>
-                <input
-                  type="number"
-                  step="0.01"
+                <CurrencyInput
                   name="budget"
                   value={formData.budget}
-                  onChange={handleChange}
-                  required
-                  min="0"
+                  onChange={(value) => setFormData((prev) => ({ ...prev, budget: value }))}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
@@ -148,14 +137,10 @@ export const IncomeForm = ({ income = null, onClose, defaultMonthId = null }: In
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Amount
                 </label>
-                <input
-                  type="number"
-                  step="0.01"
+                <CurrencyInput
                   name="amount"
                   value={formData.amount}
-                  onChange={handleChange}
-                  required
-                  min="0"
+                  onChange={(value) => setFormData((prev) => ({ ...prev, amount: value }))}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>

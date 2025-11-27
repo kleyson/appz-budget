@@ -36,7 +36,7 @@ export const Settings = () => {
   }, [tabs, activeTab]);
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-x-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
       <div className="p-4 lg:p-6 border-b border-gray-200 dark:border-gray-700">
         <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Settings</h2>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
@@ -44,35 +44,34 @@ export const Settings = () => {
         </p>
       </div>
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
-        <nav
-          className="flex space-x-4 sm:space-x-8 min-w-max sm:min-w-0 px-4 sm:px-6"
-          aria-label="Tabs"
-        >
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`
-                flex items-center gap-1.5 sm:gap-2 py-3 sm:py-4 px-2 sm:px-1 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap
-                transition-colors
-                ${
-                  activeTab === tab.id
-                    ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                }
-              `}
-            >
-              <span className="text-base sm:text-lg">{tab.icon}</span>
-              <span>{tab.label}</span>
-            </button>
-          ))}
-        </nav>
+      {/* Tabs - scrollable on mobile */}
+      <div className="border-b border-gray-200 dark:border-gray-700">
+        <div className="overflow-x-auto scrollbar-hide">
+          <nav className="flex px-4 sm:px-6" aria-label="Tabs" style={{ minWidth: 'max-content' }}>
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`
+                  flex items-center gap-1.5 sm:gap-2 py-3 sm:py-4 px-3 sm:px-4 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap
+                  transition-colors flex-shrink-0
+                  ${
+                    activeTab === tab.id
+                      ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                  }
+                `}
+              >
+                <span className="text-base sm:text-lg">{tab.icon}</span>
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </nav>
+        </div>
       </div>
 
       {/* Tab Content */}
-      <div>
+      <div className="overflow-x-hidden">
         {activeTab === 'categories' && <CategoryManagement />}
         {activeTab === 'periods' && <PeriodManagement />}
         {activeTab === 'income-types' && <IncomeTypeManagement />}

@@ -6,6 +6,7 @@ import { useMonths, useCurrentMonth } from '../hooks/useMonths';
 import type { Expense, ExpenseCreate } from '../types';
 import { ColorSelect } from './ColorSelect';
 import { MonthSelect } from './MonthSelect';
+import { CurrencyInput } from './CurrencyInput';
 import { formatCurrency } from '../utils/format';
 
 interface ExpenseFormProps {
@@ -94,7 +95,7 @@ export const ExpenseForm = ({
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === 'budget' || name === 'cost' ? parseFloat(value) || 0 : value,
+      [name]: value,
     }));
   };
 
@@ -129,12 +130,7 @@ export const ExpenseForm = ({
           i === index
             ? {
                 ...item,
-                [field]:
-                  field === 'amount'
-                    ? typeof value === 'string'
-                      ? parseFloat(value) || 0
-                      : value
-                    : value,
+                [field]: value,
               }
             : item
         ) || [],
@@ -203,13 +199,10 @@ export const ExpenseForm = ({
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Budget
               </label>
-              <input
-                type="number"
-                step="0.01"
+              <CurrencyInput
                 name="budget"
                 value={formData.budget}
-                onChange={handleChange}
-                required
+                onChange={(value) => setFormData((prev) => ({ ...prev, budget: value }))}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
             </div>
@@ -221,13 +214,10 @@ export const ExpenseForm = ({
                   <span className="text-xs text-gray-500">(calculated from purchases)</span>
                 )}
               </label>
-              <input
-                type="number"
-                step="0.01"
+              <CurrencyInput
                 name="cost"
                 value={hasPurchases ? calculatedCost : formData.cost}
-                onChange={handleChange}
-                required
+                onChange={(value) => setFormData((prev) => ({ ...prev, cost: value }))}
                 disabled={hasPurchases}
                 readOnly={hasPurchases}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 dark:disabled:bg-gray-900 disabled:cursor-not-allowed"
@@ -261,12 +251,9 @@ export const ExpenseForm = ({
                       onChange={(e) => handlePurchaseChange(index, 'name', e.target.value)}
                       className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
                     />
-                    <input
-                      type="number"
-                      step="0.01"
-                      placeholder="Amount"
+                    <CurrencyInput
                       value={purchase.amount}
-                      onChange={(e) => handlePurchaseChange(index, 'amount', e.target.value)}
+                      onChange={(value) => handlePurchaseChange(index, 'amount', value)}
                       className="w-24 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
                     />
                     <button
