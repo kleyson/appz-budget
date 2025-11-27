@@ -81,11 +81,6 @@ htmlcov/
 backend/static/
 backend/htmlcov/
 
-# TUI binaries
-tui/budget-tui
-tui/budget-tui-*
-!tui/budget-tui.go
-
 # Sensitive files - DO NOT COMMIT
 # Service account keys and API keys
 google-play-service-account.json
