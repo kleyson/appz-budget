@@ -53,6 +53,54 @@ export const useDeleteExpense = () => {
   });
 };
 
+export const useReorderExpenses = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    Expense[],
+    Error,
+    { expenseIds: number[]; filters: ExpenseFilters },
+    { previousExpenses: Expense[] | undefined }
+  >({
+    mutationFn: ({ expenseIds }) => expensesApi.reorder(expenseIds).then((res) => res.data),
+    onMutate: async ({ expenseIds, filters }) => {
+      // Cancel any outgoing refetches to avoid overwriting optimistic update
+      await queryClient.cancelQueries({ queryKey: ['expenses', filters] });
+
+      // Snapshot the previous value
+      const previousExpenses = queryClient.getQueryData<Expense[]>(['expenses', filters]);
+
+      // Optimistically update to the new order
+      if (previousExpenses) {
+        // Create a map for quick lookup
+        const expenseMap = new Map(previousExpenses.map((exp) => [exp.id, exp]));
+
+        // Reorder expenses based on expenseIds
+        const reorderedExpenses = expenseIds
+          .map((id) => expenseMap.get(id))
+          .filter((exp): exp is Expense => exp !== undefined)
+          .map((exp, index) => ({ ...exp, order: index }));
+
+        // Update the cache
+        queryClient.setQueryData<Expense[]>(['expenses', filters], reorderedExpenses);
+      }
+
+      // Return context with the previous value
+      return { previousExpenses };
+    },
+    onSuccess: (data, variables) => {
+      // Update cache with the response data (which has the correct order from server)
+      queryClient.setQueryData<Expense[]>(['expenses', variables.filters], data);
+    },
+    onError: (_err, variables, context) => {
+      // Rollback to previous value on error
+      if (context?.previousExpenses) {
+        queryClient.setQueryData(['expenses', variables.filters], context.previousExpenses);
+      }
+    },
+  });
+};
+
 export const useCloneExpensesToNextMonth = () => {
   const queryClient = useQueryClient();
 

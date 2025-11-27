@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -9,12 +9,17 @@ import {
   FlatList,
   Alert,
   ActivityIndicator,
-} from 'react-native';
-import { useTheme } from '../../contexts/ThemeContext';
-import { useIncomeTypes, useCreateIncomeType, useUpdateIncomeType, useDeleteIncomeType } from '../../hooks/useIncomeTypes';
-import { Ionicons } from '@expo/vector-icons';
-import type { IncomeType } from '../../types';
-import { getErrorMessage } from '../../utils/errorHandler';
+} from "react-native";
+import { useTheme } from "../../contexts/ThemeContext";
+import {
+  useIncomeTypes,
+  useCreateIncomeType,
+  useUpdateIncomeType,
+  useDeleteIncomeType,
+} from "../../hooks/useIncomeTypes";
+import { Ionicons } from "@expo/vector-icons";
+import type { IncomeType } from "../../types";
+import { getErrorMessage } from "../../utils/errorHandler";
 
 export const IncomeTypeManagement = () => {
   const { isDark } = useTheme();
@@ -24,48 +29,68 @@ export const IncomeTypeManagement = () => {
   const deleteMutation = useDeleteIncomeType();
 
   const [showForm, setShowForm] = useState(false);
-  const [editingIncomeType, setEditingIncomeType] = useState<IncomeType | null>(null);
-  const [name, setName] = useState('');
-  const [color, setColor] = useState('#10b981');
+  const [editingIncomeType, setEditingIncomeType] = useState<IncomeType | null>(
+    null
+  );
+  const [name, setName] = useState("");
+  const [color, setColor] = useState("#10b981");
 
-  const colors = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#06b6d4'];
+  const colors = [
+    "#8b5cf6",
+    "#3b82f6",
+    "#10b981",
+    "#f59e0b",
+    "#ef4444",
+    "#ec4899",
+    "#06b6d4",
+  ];
 
   const handleSave = async () => {
     if (!name.trim()) {
-      Alert.alert('Error', 'Please enter an income type name');
+      Alert.alert("Error", "Please enter an income type name");
       return;
     }
 
     try {
       if (editingIncomeType) {
-        await updateMutation.mutateAsync({ id: editingIncomeType.id, data: { name, color } });
+        await updateMutation.mutateAsync({
+          id: editingIncomeType.id,
+          data: { name, color },
+        });
       } else {
         await createMutation.mutateAsync({ name, color });
       }
       setShowForm(false);
-      setName('');
-      setColor('#10b981');
+      setName("");
+      setColor("#10b981");
       setEditingIncomeType(null);
     } catch (error: unknown) {
-      Alert.alert('Error', getErrorMessage(error, 'Failed to save income type'));
+      Alert.alert(
+        "Error",
+        getErrorMessage(error, "Failed to save income type")
+      );
     }
   };
 
   const handleDelete = (incomeType: IncomeType) => {
-    Alert.alert('Delete Income Type', `Are you sure you want to delete "${incomeType.name}"?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await deleteMutation.mutateAsync(incomeType.id);
-          } catch (error) {
-            Alert.alert('Error', 'Failed to delete income type');
-          }
+    Alert.alert(
+      "Delete Income Type",
+      `Are you sure you want to delete "${incomeType.name}"?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteMutation.mutateAsync(incomeType.id);
+            } catch (error) {
+              Alert.alert("Error", "Failed to delete income type");
+            }
+          },
         },
-      },
-    ]);
+      ]
+    );
   };
 
   const openForm = (incomeType?: IncomeType) => {
@@ -75,8 +100,8 @@ export const IncomeTypeManagement = () => {
       setColor(incomeType.color);
     } else {
       setEditingIncomeType(null);
-      setName('');
-      setColor('#10b981');
+      setName("");
+      setColor("#10b981");
     }
     setShowForm(true);
   };
@@ -100,19 +125,36 @@ export const IncomeTypeManagement = () => {
 
       <FlatList
         data={incomeTypes || []}
+        numColumns={2}
         keyExtractor={(item) => item.id.toString()}
+        columnWrapperStyle={styles.row}
         renderItem={({ item }) => (
-          <View style={styles.item}>
-            <View style={[styles.colorIndicator, { backgroundColor: item.color }]} />
-            <View style={styles.itemContent}>
-              <Text style={styles.itemName}>{item.name}</Text>
+          <View style={styles.card}>
+            <View style={styles.cardContent}>
+              <View style={[styles.badge, { backgroundColor: item.color }]}>
+                <Text
+                  style={styles.badgeText}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  {item.name}
+                </Text>
+              </View>
+              <View style={styles.cardActions}>
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={() => openForm(item)}
+                >
+                  <Text style={styles.editButtonText}>Edit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() => handleDelete(item)}
+                >
+                  <Text style={styles.deleteButtonText}>Delete</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-            <TouchableOpacity onPress={() => openForm(item)}>
-              <Ionicons name="pencil" size={20} color="#3b82f6" />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => handleDelete(item)}>
-              <Ionicons name="trash" size={20} color="#ef4444" />
-            </TouchableOpacity>
           </View>
         )}
       />
@@ -122,17 +164,21 @@ export const IncomeTypeManagement = () => {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
-                {editingIncomeType ? 'Edit Income Type' : 'Add Income Type'}
+                {editingIncomeType ? "Edit Income Type" : "Add Income Type"}
               </Text>
               <TouchableOpacity onPress={() => setShowForm(false)}>
-                <Ionicons name="close" size={24} color={isDark ? '#ffffff' : '#111827'} />
+                <Ionicons
+                  name="close"
+                  size={24}
+                  color={isDark ? "#ffffff" : "#111827"}
+                />
               </TouchableOpacity>
             </View>
 
             <TextInput
               style={styles.input}
               placeholder="Income Type Name"
-              placeholderTextColor={isDark ? '#9ca3af' : '#6b7280'}
+              placeholderTextColor={isDark ? "#9ca3af" : "#6b7280"}
               value={name}
               onChangeText={setName}
             />
@@ -149,7 +195,9 @@ export const IncomeTypeManagement = () => {
                   ]}
                   onPress={() => setColor(c)}
                 >
-                  {color === c && <Ionicons name="checkmark" size={16} color="#ffffff" />}
+                  {color === c && (
+                    <Ionicons name="checkmark" size={16} color="#ffffff" />
+                  )}
                 </TouchableOpacity>
               ))}
             </View>
@@ -182,89 +230,126 @@ const getStyles = (isDark: boolean) =>
     },
     loadingContainer: {
       flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
     },
     addButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       gap: 8,
       padding: 12,
-      backgroundColor: isDark ? '#1f2937' : '#ffffff',
+      backgroundColor: isDark ? "#1f2937" : "#ffffff",
       borderRadius: 8,
       borderWidth: 1,
-      borderColor: isDark ? '#374151' : '#e5e7eb',
+      borderColor: isDark ? "#374151" : "#e5e7eb",
       marginBottom: 16,
     },
     addButtonText: {
-      color: '#3b82f6',
-      fontWeight: '600',
+      color: "#3b82f6",
+      fontWeight: "600",
     },
-    item: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      padding: 16,
-      backgroundColor: isDark ? '#1f2937' : '#ffffff',
+    row: {
+      justifyContent: "space-between",
+      gap: 12,
+    },
+    card: {
+      flex: 1,
+      minWidth: 0,
+      backgroundColor: isDark ? "#1f2937" : "#ffffff",
       borderRadius: 8,
       borderWidth: 1,
-      borderColor: isDark ? '#374151' : '#e5e7eb',
+      borderColor: isDark ? "#374151" : "#e5e7eb",
       marginBottom: 12,
+      padding: 12,
     },
-    colorIndicator: {
-      width: 24,
-      height: 24,
-      borderRadius: 12,
-      marginRight: 12,
+    cardContent: {
+      alignItems: "center",
     },
-    itemContent: {
+    badge: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 16,
+      marginBottom: 12,
+      width: "100%",
+    },
+    badgeText: {
+      color: "#ffffff",
+      fontSize: 14,
+      fontWeight: "600",
+      textAlign: "center",
+    },
+    cardActions: {
+      flexDirection: "row",
+      gap: 8,
+      width: "100%",
+    },
+    editButton: {
       flex: 1,
+      backgroundColor: "#3b82f6",
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      borderRadius: 6,
+      alignItems: "center",
     },
-    itemName: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: isDark ? '#ffffff' : '#111827',
+    editButtonText: {
+      color: "#ffffff",
+      fontSize: 12,
+      fontWeight: "600",
+    },
+    deleteButton: {
+      flex: 1,
+      backgroundColor: "#ef4444",
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      borderRadius: 6,
+      alignItems: "center",
+    },
+    deleteButtonText: {
+      color: "#ffffff",
+      fontSize: 12,
+      fontWeight: "600",
     },
     modalOverlay: {
       flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      justifyContent: 'flex-end',
+      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      justifyContent: "flex-end",
     },
     modalContent: {
-      backgroundColor: isDark ? '#1f2937' : '#ffffff',
+      backgroundColor: isDark ? "#1f2937" : "#ffffff",
       borderTopLeftRadius: 20,
       borderTopRightRadius: 20,
       padding: 16,
     },
     modalHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
       marginBottom: 16,
     },
     modalTitle: {
       fontSize: 18,
-      fontWeight: '600',
-      color: isDark ? '#ffffff' : '#111827',
+      fontWeight: "600",
+      color: isDark ? "#ffffff" : "#111827",
     },
     input: {
-      backgroundColor: isDark ? '#111827' : '#f3f4f6',
+      backgroundColor: isDark ? "#111827" : "#f3f4f6",
       borderWidth: 1,
-      borderColor: isDark ? '#374151' : '#d1d5db',
+      borderColor: isDark ? "#374151" : "#d1d5db",
       borderRadius: 8,
       padding: 12,
       fontSize: 16,
-      color: isDark ? '#ffffff' : '#111827',
+      color: isDark ? "#ffffff" : "#111827",
       marginBottom: 16,
     },
     label: {
       fontSize: 14,
-      fontWeight: '600',
-      color: isDark ? '#ffffff' : '#111827',
+      fontWeight: "600",
+      color: isDark ? "#ffffff" : "#111827",
       marginBottom: 8,
     },
     colorPicker: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
+      flexDirection: "row",
+      flexWrap: "wrap",
       gap: 12,
       marginBottom: 16,
     },
@@ -272,16 +357,16 @@ const getStyles = (isDark: boolean) =>
       width: 40,
       height: 40,
       borderRadius: 20,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
       borderWidth: 2,
-      borderColor: 'transparent',
+      borderColor: "transparent",
     },
     colorOptionSelected: {
-      borderColor: '#3b82f6',
+      borderColor: "#3b82f6",
     },
     modalFooter: {
-      flexDirection: 'row',
+      flexDirection: "row",
       gap: 12,
       marginTop: 16,
     },
@@ -289,21 +374,20 @@ const getStyles = (isDark: boolean) =>
       flex: 1,
       padding: 14,
       borderRadius: 8,
-      alignItems: 'center',
+      alignItems: "center",
     },
     cancelButton: {
-      backgroundColor: isDark ? '#374151' : '#e5e7eb',
+      backgroundColor: isDark ? "#374151" : "#e5e7eb",
     },
     cancelButtonText: {
-      color: isDark ? '#ffffff' : '#111827',
-      fontWeight: '600',
+      color: isDark ? "#ffffff" : "#111827",
+      fontWeight: "600",
     },
     saveButton: {
-      backgroundColor: '#3b82f6',
+      backgroundColor: "#3b82f6",
     },
     saveButtonText: {
-      color: '#ffffff',
-      fontWeight: '600',
+      color: "#ffffff",
+      fontWeight: "600",
     },
   });
-

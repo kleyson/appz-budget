@@ -6,7 +6,13 @@ from sqlalchemy.orm import Session
 from dependencies import get_api_key, get_client_info, get_db
 from exceptions import NotFoundError, ValidationError
 from repositories import ExpenseRepository, IncomeRepository, MonthRepository
-from schemas import CloneExpensesResponse, ExpenseCreate, ExpenseResponse, ExpenseUpdate
+from schemas import (
+    CloneExpensesResponse,
+    ExpenseCreate,
+    ExpenseReorderRequest,
+    ExpenseResponse,
+    ExpenseUpdate,
+)
 from services import ExpenseService
 
 router = APIRouter(prefix="/api/v1/expenses", tags=["expenses"])
@@ -94,6 +100,24 @@ def delete_expense(
         return service.delete_expense(expense_id)
     except NotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e)) from None
+
+
+@router.post("/reorder", response_model=list[ExpenseResponse])
+def reorder_expenses(
+    reorder_request: ExpenseReorderRequest,
+    db: Session = Depends(get_db),
+    api_key: str = Security(get_api_key),
+    client_info: str | None = Depends(get_client_info),
+):
+    """Reorder expenses by providing a list of expense IDs in the desired order"""
+    repository = ExpenseRepository(db)
+    service = ExpenseService(repository)
+    try:
+        return service.reorder_expenses(reorder_request.expense_ids)
+    except NotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from None
+    except ValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from None
 
 
 @router.post("/clone-to-next-month/{month_id}", response_model=CloneExpensesResponse)

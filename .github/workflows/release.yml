@@ -20,8 +20,26 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  prepare-release:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      version_tag: ${{ steps.version.outputs.version_tag }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Read version from file
+        id: version
+        run: |
+          VERSION=$(cat VERSION | tr -d '[:space:]')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "version_tag=v${VERSION}" >> "$GITHUB_OUTPUT"
+
   build-tui:
     name: Build TUI for ${{ matrix.goos }}/${{ matrix.goarch }}
+    needs: prepare-release
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     strategy:
@@ -50,12 +68,6 @@ jobs:
         with:
           go-version: "1.25.4"
 
-      - name: Get version from VERSION file
-        id: version_tag
-        run: |
-          VERSION=$(cat VERSION | tr -d '[:space:]')
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
       - name: Build TUI binary
         working-directory: ./tui
         env:
@@ -82,11 +94,16 @@ jobs:
 
   build-and-push:
     if: github.event_name == 'workflow_dispatch'
-    needs: build-tui
+    needs:
+      - prepare-release
+      - build-tui
     runs-on: ubuntu-latest
     permissions:
       contents: write
       packages: write
+    env:
+      VERSION: ${{ needs.prepare-release.outputs.version }}
+      VERSION_TAG: ${{ needs.prepare-release.outputs.version_tag }}
 
     steps:
       - name: Checkout repository
@@ -102,17 +119,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Get version from VERSION file
-        id: version_tag
-        run: |
-          # Read version from VERSION file
-          VERSION=$(cat VERSION | tr -d '[:space:]')
-          # Add 'v' prefix for the tag name
-          VERSION_TAG="v${VERSION}"
-          echo "tag=$VERSION" >> $GITHUB_OUTPUT
-          echo "version=$VERSION_TAG" >> $GITHUB_OUTPUT
-          echo "Using version: $VERSION_TAG"
-
       - name: Set VITE_API_KEY for build
         run: |
           echo "VITE_API_KEY_BUILD=${{ secrets.VITE_API_KEY || 'default-build-key' }}" >> $GITHUB_ENV
@@ -124,7 +130,7 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version_tag.outputs.tag }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           build-args: |
             VITE_API_KEY=${{ env.VITE_API_KEY_BUILD }}
@@ -132,14 +138,24 @@ jobs:
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
 
+      - name: Notify Watchtower of update
+        if: ${{ secrets.WATCHTOWER_TOKEN != '' }}
+        continue-on-error: true
+        run: |
+          echo "🔔 Notifying Watchtower of new release..."
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.WATCHTOWER_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            https://watchtower.appz.wtf/v1/update
+          echo "✅ Watchtower notified successfully"
+
       - name: Create Git Tag
         id: create_tag
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          TAG="${{ steps.version_tag.outputs.tag }}"
-          git tag -a "${{ steps.version_tag.outputs.version }}" -m "Release ${{ steps.version_tag.outputs.version }}"
-          git push origin "${{ steps.version_tag.outputs.version }}"
+          git tag -a "${{ env.VERSION_TAG }}" -m "Release ${{ env.VERSION_TAG }}"
+          git push origin "${{ env.VERSION_TAG }}"
         continue-on-error: true
 
       - name: Download TUI artifacts
@@ -160,11 +176,11 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ steps.version_tag.outputs.version }}
-          name: Release ${{ steps.version_tag.outputs.version }}
+          tag_name: ${{ env.VERSION_TAG }}
+          name: Release ${{ env.VERSION_TAG }}
           files: release-assets/*
           body: |
-            ## Release ${{ steps.version_tag.outputs.version }}
+            ## Release ${{ env.VERSION_TAG }}
 
             ${{ inputs.release_notes }}
 
@@ -172,14 +188,14 @@ jobs:
 
             The Docker image is available at:
             ```
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version_tag.outputs.tag }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
             ```
 
             ### Quick Start
 
             ```bash
-            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version_tag.outputs.tag }}
+            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
             ```
 
             Or use the provided `docker-compose.yml`:
@@ -224,20 +240,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Notify Watchtower of update
-        continue-on-error: true
-        run: |
-          echo "🔔 Notifying Watchtower of new release..."
-          curl -X POST \
-            -H "Authorization: Bearer ${{ secrets.WATCHTOWER_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            https://watchtower.appz.wtf/v1/update
-          echo "✅ Watchtower notified successfully"
-
       - name: Output release information
         run: |
           echo "✅ Release created successfully!"
-          echo "Version: ${{ steps.version_tag.outputs.version }}"
-          echo "Tag: ${{ steps.version_tag.outputs.tag }}"
-          echo "Docker Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version_tag.outputs.tag }}"
-          echo "GitHub Release: https://github.com/${{ github.repository }}/releases/tag/${{ steps.version_tag.outputs.version }}"
+          echo "Version: ${{ env.VERSION }}"
+          echo "Tag: ${{ env.VERSION_TAG }}"
+          echo "Docker Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}"
+          echo "GitHub Release: https://github.com/${{ github.repository }}/releases/tag/${{ env.VERSION_TAG }}"

@@ -40,6 +40,15 @@ class ExpenseService:
             # If cost is provided but no purchases, set purchases to None
             expense_dict["purchases"] = None
 
+        # Set order if not provided - use the next available order for this month
+        if "order" not in expense_dict or expense_dict["order"] is None:
+            existing_expenses = self.repository.get_all(month_id=expense_data.month_id)
+            if existing_expenses:
+                max_order = max(exp.order for exp in existing_expenses if exp.order is not None)
+                expense_dict["order"] = max_order + 1
+            else:
+                expense_dict["order"] = 0
+
         return self.repository.create(expense_dict, user_name)
 
     def get_expense(self, expense_id: int):
@@ -95,6 +104,19 @@ class ExpenseService:
 
         self.repository.delete(expense)
         return {"message": "Expense deleted successfully"}
+
+    def reorder_expenses(self, expense_ids: list[int], user_name: str | None = None) -> list:
+        """Reorder expenses by updating their order field"""
+        if not expense_ids:
+            raise ValidationError("expense_ids cannot be empty")
+
+        # Validate all expenses exist
+        for expense_id in expense_ids:
+            expense = self.repository.get_by_id(expense_id)
+            if not expense:
+                raise NotFoundError(f"Expense with ID {expense_id} not found")
+
+        return self.repository.reorder_expenses(expense_ids, user_name)
 
     def clone_to_next_month(self, month_id: int, user_name: str | None = None):
         """Clone all expenses from a month to the following month"""
@@ -172,6 +194,7 @@ class ExpenseService:
                 "notes": expense.notes,
                 "month_id": next_month.id,
                 "purchases": None,  # Reset purchases
+                "order": expense.order,  # Preserve order
             }
             self.repository.create(expense_dict, user_name)
             cloned_expense_count += 1

@@ -37,7 +37,7 @@ class ExpenseRepository:
             query = query.filter(Expense.category == category)
         if month_id:
             query = query.filter(Expense.month_id == month_id)
-        return query.order_by(Expense.expense_name).all()
+        return query.order_by(Expense.order, Expense.expense_name).all()
 
     def update(self, expense: Expense, expense_data: dict, user_name: str | None = None) -> Expense:
         """Update an expense"""
@@ -80,3 +80,21 @@ class ExpenseRepository:
     def count_by_period(self, period_name: str) -> int:
         """Count expenses by period"""
         return self.db.query(Expense).filter(Expense.period == period_name).count()
+
+    def reorder_expenses(
+        self, expense_ids: list[int], user_name: str | None = None
+    ) -> list[Expense]:
+        """Reorder expenses by updating their order field based on the provided list of IDs"""
+        # Update order for each expense based on its position in the list
+        for order, expense_id in enumerate(expense_ids):
+            expense = self.get_by_id(expense_id)
+            if expense:
+                if user_name:
+                    expense.updated_by = user_name
+                expense.order = order
+        self.db.commit()
+
+        # Return updated expenses in order
+        return [
+            self.get_by_id(exp_id) for exp_id in expense_ids if self.get_by_id(exp_id) is not None
+        ]

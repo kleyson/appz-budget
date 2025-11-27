@@ -19,6 +19,7 @@ class Expense(Base):
     cost = Column(Float, default=0.0)
     notes = Column(Text, nullable=True)
     month_id = Column(Integer, ForeignKey("months.id"), nullable=False, index=True)
+    order = Column(Integer, nullable=False, default=0, index=True)
     purchases = Column(
         JSON, nullable=True
     )  # JSON array of purchases: [{"name": "...", "amount": 0.0}, ...]

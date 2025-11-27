@@ -12,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { CategoryManagement } from "../components/settings/CategoryManagement";
 import { PeriodManagement } from "../components/settings/PeriodManagement";
 import { IncomeTypeManagement } from "../components/settings/IncomeTypeManagement";
+import { UserManagement } from "../components/settings/UserManagement";
 import { ChangePasswordScreen } from "./auth/ChangePasswordScreen";
 import { APP_VERSION, getVersionFromBackend } from "../utils/version";
 import { useApiConfig } from "../contexts/ApiConfigContext";
@@ -20,6 +21,7 @@ type SettingsTab =
   | "categories"
   | "periods"
   | "income-types"
+  | "users"
   | "change-password";
 
 export const SettingsScreen = () => {
@@ -50,6 +52,7 @@ export const SettingsScreen = () => {
     { id: "categories", label: "Categories", icon: "pricetag" },
     { id: "periods", label: "Periods", icon: "calendar" },
     { id: "income-types", label: "Income Types", icon: "cash" },
+    { id: "users", label: "Users", icon: "people" },
     { id: "change-password", label: "Change Password", icon: "lock-closed" },
   ];
 
@@ -79,8 +82,19 @@ export const SettingsScreen = () => {
     <View style={styles.container}>
       <View style={styles.tabsWrapper}>
         {showLeftIndicator && (
-          <View style={[styles.scrollIndicator, styles.leftIndicator, isDark && styles.leftIndicatorDark]}>
-            <Ionicons name="chevron-back" size={16} color={isDark ? "#9ca3af" : "#6b7280"} style={styles.indicatorIcon} />
+          <View
+            style={[
+              styles.scrollIndicator,
+              styles.leftIndicator,
+              isDark && styles.leftIndicatorDark,
+            ]}
+          >
+            <Ionicons
+              name="chevron-back"
+              size={16}
+              color={isDark ? "#9ca3af" : "#6b7280"}
+              style={styles.indicatorIcon}
+            />
           </View>
         )}
         <ScrollView
@@ -124,8 +138,19 @@ export const SettingsScreen = () => {
           ))}
         </ScrollView>
         {showRightIndicator && (
-          <View style={[styles.scrollIndicator, styles.rightIndicator, isDark && styles.rightIndicatorDark]}>
-            <Ionicons name="chevron-forward" size={16} color={isDark ? "#9ca3af" : "#6b7280"} style={styles.indicatorIcon} />
+          <View
+            style={[
+              styles.scrollIndicator,
+              styles.rightIndicator,
+              isDark && styles.rightIndicatorDark,
+            ]}
+          >
+            <Ionicons
+              name="chevron-forward"
+              size={16}
+              color={isDark ? "#9ca3af" : "#6b7280"}
+              style={styles.indicatorIcon}
+            />
           </View>
         )}
       </View>
@@ -134,6 +159,7 @@ export const SettingsScreen = () => {
         {activeTab === "categories" && <CategoryManagement />}
         {activeTab === "periods" && <PeriodManagement />}
         {activeTab === "income-types" && <IncomeTypeManagement />}
+        {activeTab === "users" && <UserManagement />}
         {activeTab === "change-password" && <ChangePasswordScreen />}
       </View>
 
@@ -141,7 +167,9 @@ export const SettingsScreen = () => {
       <View style={styles.versionContainer}>
         <Text style={styles.versionText}>App Version: {APP_VERSION}</Text>
         {backendVersion && (
-          <Text style={styles.versionText}>Backend Version: {backendVersion}</Text>
+          <Text style={styles.versionText}>
+            Backend Version: {backendVersion}
+          </Text>
         )}
         {!backendVersion && apiUrl && (
           <Text style={[styles.versionText, styles.versionTextMuted]}>

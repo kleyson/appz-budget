@@ -54,6 +54,7 @@ describe('useExpenses', () => {
         notes: 'Weekly shopping',
         month_id: 1,
         purchases: null,
+        order: 0,
       },
     ];
 
@@ -83,6 +84,7 @@ describe('useExpenses', () => {
         notes: null,
         month_id: 1,
         purchases: null,
+        order: 0,
       },
     ];
 
@@ -136,6 +138,7 @@ describe('useExpense', () => {
       notes: 'Weekly shopping',
       month_id: 1,
       purchases: null,
+      order: 0,
     };
 
     vi.mocked(expensesApi.getById).mockResolvedValue({
@@ -198,6 +201,7 @@ describe('useCreateExpense', () => {
     const createdExpense: Expense = {
       id: 2,
       ...newExpense,
+      order: 0,
     };
 
     vi.mocked(expensesApi.create).mockResolvedValue({
@@ -262,6 +266,7 @@ describe('useUpdateExpense', () => {
       notes: null,
       month_id: 1,
       purchases: null,
+      order: 0,
     };
 
     vi.mocked(expensesApi.update).mockResolvedValue({

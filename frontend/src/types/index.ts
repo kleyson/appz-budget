@@ -13,6 +13,7 @@ export interface Expense {
   notes?: string | null;
   month_id: number;
   purchases?: Purchase[] | null;
+  order: number;
 }
 
 export interface ExpenseCreate {

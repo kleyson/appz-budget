@@ -64,13 +64,29 @@ function getVersion(): string {
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), copyPublicToPublic()],
+  plugins: [
+    react({
+      fastRefresh: true,
+    }),
+    copyPublicToPublic(),
+  ],
   base: '/public/',
   publicDir: 'public', // Keep publicDir enabled so files are available during dev
   define: {
     __APP_VERSION__: JSON.stringify(getVersion()),
   },
   envPrefix: 'VITE_',
+  server: {
+    host: '0.0.0.0',
+    port: 5173,
+    strictPort: false,
+    hmr: {
+      clientPort: 5173,
+    },
+    watch: {
+      usePolling: false,
+    },
+  },
   build: {
     outDir: '../backend/public',
     emptyOutDir: true,

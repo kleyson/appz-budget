@@ -1,5 +1,22 @@
 import React, { useState } from 'react';
-import { useExpenses, useDeleteExpense } from '../hooks/useExpenses';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { useExpenses, useDeleteExpense, useReorderExpenses } from '../hooks/useExpenses';
 import { useCategories } from '../hooks/useCategories';
 import { usePeriods } from '../hooks/usePeriods';
 import { ExpenseForm } from './ExpenseForm';
@@ -12,6 +29,188 @@ interface ExpenseListProps {
   periodFilter?: string | null;
   categoryFilter?: string | null;
   monthId?: number | null;
+}
+
+interface SortableExpenseRowProps {
+  expense: Expense;
+  getCategoryColor: (categoryName: string) => string;
+  getPeriodColor: (periodName: string) => string;
+  getStatusBadge: (budget: number, cost: number) => React.ReactNode;
+  formatCurrency: (amount: number) => string;
+  isDarkColor: (color: string) => boolean;
+  expandedPurchases: Set<number>;
+  togglePurchases: (expenseId: number) => void;
+  setEditingExpense: (expense: Expense) => void;
+  handleDelete: (id: number) => void;
+}
+
+function SortableExpenseRow({
+  expense,
+  getCategoryColor,
+  getPeriodColor,
+  getStatusBadge,
+  formatCurrency,
+  isDarkColor,
+  expandedPurchases,
+  togglePurchases,
+  setEditingExpense,
+  handleDelete,
+}: SortableExpenseRowProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: expense.id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <React.Fragment>
+      <tr
+        ref={setNodeRef}
+        style={style}
+        className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${
+          isDragging ? 'cursor-grabbing' : 'cursor-grab'
+        }`}
+        {...attributes}
+        {...listeners}
+      >
+        <td className="px-3 py-4 text-sm font-medium text-gray-900 dark:text-white truncate">
+          <div className="flex items-center gap-2">
+            <span className="text-gray-400 dark:text-gray-500">⋮⋮</span>
+            {expense.expense_name}
+          </div>
+        </td>
+        <td className="px-3 py-4 text-sm whitespace-nowrap truncate">
+          <span
+            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+            style={{
+              backgroundColor: getPeriodColor(expense.period),
+              color: isDarkColor(getPeriodColor(expense.period)) ? '#ffffff' : '#111827',
+            }}
+          >
+            {expense.period}
+          </span>
+        </td>
+        <td className="px-3 py-4 text-sm">
+          <span
+            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+            style={{
+              backgroundColor: getCategoryColor(expense.category),
+              color: isDarkColor(getCategoryColor(expense.category)) ? '#ffffff' : '#111827',
+            }}
+          >
+            {expense.category}
+          </span>
+        </td>
+        <td
+          className={`px-3 py-4 text-sm text-right ${
+            expense.budget === 0
+              ? 'text-gray-400 dark:text-gray-500'
+              : 'text-gray-900 dark:text-white'
+          }`}
+        >
+          {formatCurrency(expense.budget)}
+        </td>
+        <td
+          className={`px-3 py-4 text-sm text-right ${
+            expense.cost === 0
+              ? 'text-gray-400 dark:text-gray-500'
+              : 'text-gray-900 dark:text-white'
+          }`}
+        >
+          {formatCurrency(expense.cost)}
+        </td>
+        <td className="px-3 py-4 text-sm">{getStatusBadge(expense.budget, expense.cost)}</td>
+        <td className="px-3 py-4 text-sm font-medium">
+          {(expense.purchases && expense.purchases.length > 0) || expense.notes ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                togglePurchases(expense.id);
+              }}
+              className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 underline cursor-pointer"
+            >
+              {expense.purchases && expense.purchases.length > 0
+                ? `${expense.purchases.length} ${
+                    expense.purchases.length === 1 ? 'purchase' : 'purchases'
+                  }`
+                : 'Details'}
+            </button>
+          ) : (
+            <span className="text-gray-400 dark:text-gray-500">-</span>
+          )}
+        </td>
+        <td className="px-3 py-4 text-sm font-medium text-right">
+          <div className="flex items-center justify-end gap-3">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditingExpense(expense);
+              }}
+              className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300"
+            >
+              Edit
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(expense.id);
+              }}
+              className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+            >
+              Delete
+            </button>
+          </div>
+        </td>
+      </tr>
+      {((expense.purchases && expense.purchases.length > 0) || expense.notes) &&
+        expandedPurchases.has(expense.id) && (
+          <tr className="bg-gray-50 dark:bg-gray-900/30">
+            <td colSpan={8} className="px-3 py-3">
+              <div className="text-xs text-gray-600 dark:text-gray-400 space-y-3">
+                {expense.purchases && expense.purchases.length > 0 && (
+                  <div>
+                    <div className="font-medium mb-1">Purchases:</div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                      {expense.purchases.map((purchase, idx) => (
+                        <div
+                          key={idx}
+                          className="flex justify-between items-center bg-white dark:bg-gray-800 px-2 py-1 rounded border border-gray-200 dark:border-gray-700"
+                        >
+                          <span className="text-gray-700 dark:text-gray-300">{purchase.name}</span>
+                          <span
+                            className={`font-medium ml-2 ${
+                              purchase.amount === 0
+                                ? 'text-gray-400 dark:text-gray-500'
+                                : 'text-gray-900 dark:text-white'
+                            }`}
+                          >
+                            {formatCurrency(purchase.amount)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {expense.notes && (
+                  <div>
+                    <div className="font-medium mb-1">Notes:</div>
+                    <div className="bg-white dark:bg-gray-800 px-3 py-2 rounded border border-gray-200 dark:border-gray-700">
+                      <span className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                        {expense.notes}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </td>
+          </tr>
+        )}
+    </React.Fragment>
+  );
 }
 
 export const ExpenseList = ({
@@ -31,7 +230,16 @@ export const ExpenseList = ({
   const { data: categories } = useCategories();
   const { data: periods } = usePeriods();
   const deleteMutation = useDeleteExpense();
+  const reorderMutation = useReorderExpenses();
   const { showConfirm, showAlert } = useDialog();
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // Helper functions to get colors
   const getCategoryColor = (categoryName: string): string => {
@@ -92,6 +300,42 @@ export const ExpenseList = ({
         {isWithinBudget ? '✅ On Budget' : '🔴 Over Budget'}
       </span>
     );
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id || !expenses) {
+      return;
+    }
+
+    const oldIndex = expenses.findIndex((exp) => exp.id === active.id);
+    const newIndex = expenses.findIndex((exp) => exp.id === over.id);
+
+    if (oldIndex === -1 || newIndex === -1) {
+      return;
+    }
+
+    const reorderedExpenses = arrayMove(expenses, oldIndex, newIndex);
+    const expenseIds = reorderedExpenses.map((exp) => exp.id);
+
+    try {
+      await reorderMutation.mutateAsync({
+        expenseIds,
+        filters: {
+          period: periodFilter,
+          category: categoryFilter,
+          month_id: monthId,
+        },
+      });
+    } catch (error) {
+      console.error('Error reordering expenses:', error);
+      await showAlert({
+        title: 'Error',
+        message: 'Failed to reorder expenses. Please try again.',
+        type: 'error',
+      });
+    }
   };
 
   if (isLoading) {
@@ -267,171 +511,64 @@ export const ExpenseList = ({
 
             {/* Desktop: Table */}
             <div className="hidden lg:block overflow-hidden">
-              <table className="w-full table-fixed">
-                <thead className="bg-gray-50 dark:bg-gray-900">
-                  <tr>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/5">
-                      Expense
-                    </th>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/12">
-                      Period
-                    </th>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/8">
-                      Category
-                    </th>
-                    <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/12">
-                      Budget
-                    </th>
-                    <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/12">
-                      Cost
-                    </th>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/8">
-                      Status
-                    </th>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/12">
-                      Details
-                    </th>
-                    <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/8">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {expenses?.map((expense) => (
-                    <React.Fragment key={expense.id}>
-                      <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                        <td className="px-3 py-4 text-sm font-medium text-gray-900 dark:text-white truncate">
-                          {expense.expense_name}
-                        </td>
-                        <td className="px-3 py-4 text-sm whitespace-nowrap truncate">
-                          <span
-                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                            style={{
-                              backgroundColor: getPeriodColor(expense.period),
-                              color: isDarkColor(getPeriodColor(expense.period))
-                                ? '#ffffff'
-                                : '#111827',
-                            }}
-                          >
-                            {expense.period}
-                          </span>
-                        </td>
-                        <td className="px-3 py-4 text-sm">
-                          <span
-                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                            style={{
-                              backgroundColor: getCategoryColor(expense.category),
-                              color: isDarkColor(getCategoryColor(expense.category))
-                                ? '#ffffff'
-                                : '#111827',
-                            }}
-                          >
-                            {expense.category}
-                          </span>
-                        </td>
-                        <td
-                          className={`px-3 py-4 text-sm text-right ${
-                            expense.budget === 0
-                              ? 'text-gray-400 dark:text-gray-500'
-                              : 'text-gray-900 dark:text-white'
-                          }`}
-                        >
-                          {formatCurrency(expense.budget)}
-                        </td>
-                        <td
-                          className={`px-3 py-4 text-sm text-right ${
-                            expense.cost === 0
-                              ? 'text-gray-400 dark:text-gray-500'
-                              : 'text-gray-900 dark:text-white'
-                          }`}
-                        >
-                          {formatCurrency(expense.cost)}
-                        </td>
-                        <td className="px-3 py-4 text-sm">
-                          {getStatusBadge(expense.budget, expense.cost)}
-                        </td>
-                        <td className="px-3 py-4 text-sm font-medium">
-                          {(expense.purchases && expense.purchases.length > 0) || expense.notes ? (
-                            <button
-                              onClick={() => togglePurchases(expense.id)}
-                              className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 underline cursor-pointer"
-                            >
-                              {expense.purchases && expense.purchases.length > 0
-                                ? `${expense.purchases.length} ${
-                                    expense.purchases.length === 1 ? 'purchase' : 'purchases'
-                                  }`
-                                : 'Details'}
-                            </button>
-                          ) : (
-                            <span className="text-gray-400 dark:text-gray-500">-</span>
-                          )}
-                        </td>
-                        <td className="px-3 py-4 text-sm font-medium text-right">
-                          <div className="flex items-center justify-end gap-3">
-                            <button
-                              onClick={() => setEditingExpense(expense)}
-                              className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDelete(expense.id)}
-                              className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                      {((expense.purchases && expense.purchases.length > 0) || expense.notes) &&
-                        expandedPurchases.has(expense.id) && (
-                          <tr className="bg-gray-50 dark:bg-gray-900/30">
-                            <td colSpan={8} className="px-3 py-3">
-                              <div className="text-xs text-gray-600 dark:text-gray-400 space-y-3">
-                                {expense.purchases && expense.purchases.length > 0 && (
-                                  <div>
-                                    <div className="font-medium mb-1">Purchases:</div>
-                                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                                      {expense.purchases.map((purchase, idx) => (
-                                        <div
-                                          key={idx}
-                                          className="flex justify-between items-center bg-white dark:bg-gray-800 px-2 py-1 rounded border border-gray-200 dark:border-gray-700"
-                                        >
-                                          <span className="text-gray-700 dark:text-gray-300">
-                                            {purchase.name}
-                                          </span>
-                                          <span
-                                            className={`font-medium ml-2 ${
-                                              purchase.amount === 0
-                                                ? 'text-gray-400 dark:text-gray-500'
-                                                : 'text-gray-900 dark:text-white'
-                                            }`}
-                                          >
-                                            {formatCurrency(purchase.amount)}
-                                          </span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-                                {expense.notes && (
-                                  <div>
-                                    <div className="font-medium mb-1">Notes:</div>
-                                    <div className="bg-white dark:bg-gray-800 px-3 py-2 rounded border border-gray-200 dark:border-gray-700">
-                                      <span className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                                        {expense.notes}
-                                      </span>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        )}
-                    </React.Fragment>
-                  ))}
-                </tbody>
-              </table>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <table className="w-full table-fixed">
+                  <thead className="bg-gray-50 dark:bg-gray-900">
+                    <tr>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/5">
+                        Expense
+                      </th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/12">
+                        Period
+                      </th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/8">
+                        Category
+                      </th>
+                      <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/12">
+                        Budget
+                      </th>
+                      <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/12">
+                        Cost
+                      </th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/8">
+                        Status
+                      </th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/12">
+                        Details
+                      </th>
+                      <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/8">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <SortableContext
+                    items={expenses?.map((exp) => exp.id) || []}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                      {expenses?.map((expense) => (
+                        <SortableExpenseRow
+                          key={expense.id}
+                          expense={expense}
+                          getCategoryColor={getCategoryColor}
+                          getPeriodColor={getPeriodColor}
+                          getStatusBadge={getStatusBadge}
+                          formatCurrency={formatCurrency}
+                          isDarkColor={isDarkColor}
+                          expandedPurchases={expandedPurchases}
+                          togglePurchases={togglePurchases}
+                          setEditingExpense={setEditingExpense}
+                          handleDelete={handleDelete}
+                        />
+                      ))}
+                    </tbody>
+                  </SortableContext>
+                </table>
+              </DndContext>
             </div>
           </>
         )}

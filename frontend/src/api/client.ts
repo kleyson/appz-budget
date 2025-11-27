@@ -141,6 +141,8 @@ export const expensesApi = {
   update: (id: number, data: ExpenseUpdate): Promise<AxiosResponse<Expense>> =>
     apiClient.put<Expense>(`/api/v1/expenses/${id}`, data),
   delete: (id: number): Promise<AxiosResponse<void>> => apiClient.delete(`/api/v1/expenses/${id}`),
+  reorder: (expenseIds: number[]): Promise<AxiosResponse<Expense[]>> =>
+    apiClient.post<Expense[]>('/api/v1/expenses/reorder', { expense_ids: expenseIds }),
   cloneToNextMonth: (
     monthId: number
   ): Promise<

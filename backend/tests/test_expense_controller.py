@@ -356,3 +356,97 @@ class TestExpenseController:
         """Test cloning without API key"""
         response = client.post(f"/api/v1/expenses/clone-to-next-month/{sample_month.id}")
         assert response.status_code == 403
+
+    def test_reorder_expenses(self, client, test_db, api_headers, sample_month):
+        """Test reordering expenses"""
+        # Create expenses
+        expense1 = Expense(
+            expense_name="Expense 1",
+            period="Period 1",
+            category="Category 1",
+            budget=100.0,
+            cost=90.0,
+            month_id=sample_month.id,
+            order=0,
+        )
+        expense2 = Expense(
+            expense_name="Expense 2",
+            period="Period 1",
+            category="Category 1",
+            budget=200.0,
+            cost=180.0,
+            month_id=sample_month.id,
+            order=1,
+        )
+        expense3 = Expense(
+            expense_name="Expense 3",
+            period="Period 1",
+            category="Category 1",
+            budget=300.0,
+            cost=270.0,
+            month_id=sample_month.id,
+            order=2,
+        )
+        test_db.add_all([expense1, expense2, expense3])
+        test_db.commit()
+        test_db.refresh(expense1)
+        test_db.refresh(expense2)
+        test_db.refresh(expense3)
+
+        # Reorder: move expense3 to first position
+        response = client.post(
+            "/api/v1/expenses/reorder",
+            json={"expense_ids": [expense3.id, expense1.id, expense2.id]},
+            headers=api_headers,
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 3
+        assert data[0]["id"] == expense3.id
+        assert data[0]["order"] == 0
+        assert data[1]["id"] == expense1.id
+        assert data[1]["order"] == 1
+        assert data[2]["id"] == expense2.id
+        assert data[2]["order"] == 2
+
+        # Verify order persisted
+        expenses_response = client.get(
+            f"/api/v1/expenses?month_id={sample_month.id}", headers=api_headers
+        )
+        assert expenses_response.status_code == 200
+        expenses = expenses_response.json()
+        assert expenses[0]["id"] == expense3.id
+        assert expenses[1]["id"] == expense1.id
+        assert expenses[2]["id"] == expense2.id
+
+    def test_reorder_expenses_empty_list(self, client, api_headers):
+        """Test reordering with empty list"""
+        response = client.post(
+            "/api/v1/expenses/reorder", json={"expense_ids": []}, headers=api_headers
+        )
+        assert response.status_code == 400
+
+    def test_reorder_expenses_invalid_id(self, client, api_headers):
+        """Test reordering with invalid expense ID"""
+        response = client.post(
+            "/api/v1/expenses/reorder", json={"expense_ids": [999]}, headers=api_headers
+        )
+        assert response.status_code == 404
+
+    def test_reorder_expenses_no_api_key(self, client, test_db, sample_month):
+        """Test reordering without API key"""
+        expense = Expense(
+            expense_name="Test Expense",
+            period="Period 1",
+            category="Category 1",
+            budget=100.0,
+            cost=90.0,
+            month_id=sample_month.id,
+            order=0,
+        )
+        test_db.add(expense)
+        test_db.commit()
+        test_db.refresh(expense)
+
+        response = client.post("/api/v1/expenses/reorder", json={"expense_ids": [expense.id]})
+        assert response.status_code == 403

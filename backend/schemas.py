@@ -19,6 +19,7 @@ class ExpenseBase(BaseModel):
     notes: str | None = None
     month_id: int
     purchases: list[Purchase] | None = None
+    order: int = 0
 
 
 class ExpenseCreate(ExpenseBase):
@@ -34,6 +35,7 @@ class ExpenseUpdate(BaseModel):
     notes: str | None = None
     month_id: int | None = None
     purchases: list[Purchase] | None = None
+    order: int | None = None
 
 
 class ExpenseResponse(ExpenseBase):
@@ -44,6 +46,10 @@ class ExpenseResponse(ExpenseBase):
     updated_by: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ExpenseReorderRequest(BaseModel):
+    expense_ids: list[int]  # List of expense IDs in the desired order
 
 
 class CategoryResponse(BaseModel):
