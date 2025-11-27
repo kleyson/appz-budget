@@ -366,12 +366,6 @@ func (s SettingsView) handleFormKeys(msg tea.KeyMsg) (SettingsView, tea.Cmd) {
 			return s.randomizeColor()
 		}
 		return s.submitForm()
-
-	case "r":
-		// Quick shortcut to randomize color
-		if s.formFocus == 1 {
-			return s.randomizeColor()
-		}
 	}
 
 	return s, nil
@@ -859,6 +853,12 @@ func (s SettingsView) View(width, height int) string {
 		return s.renderForm(width, height)
 	}
 
+	if s.loading {
+		spinner := lipgloss.NewStyle().Foreground(ColorSecondary).Render("◐")
+		loadingText := lipgloss.NewStyle().Foreground(ColorMuted).Render("  Loading settings...")
+		return spinner + loadingText
+	}
+
 	var b strings.Builder
 
 	// Sub-tabs
@@ -886,20 +886,35 @@ func (s SettingsView) View(width, height int) string {
 	// Message or error
 	if s.message != "" {
 		b.WriteString("\n")
-		b.WriteString(MessageStyle.Render("✓ " + s.message))
+		msgIcon := lipgloss.NewStyle().Foreground(ColorSuccess).Render("✓")
+		msgText := lipgloss.NewStyle().Foreground(ColorSuccess).Render(" " + s.message)
+		b.WriteString(msgIcon + msgText)
 	}
 	if s.err != nil {
 		b.WriteString("\n")
-		b.WriteString(ErrorStyle.Render("✗ " + s.err.Error()))
+		errIcon := lipgloss.NewStyle().Foreground(ColorDanger).Render("✗")
+		errText := lipgloss.NewStyle().Foreground(ColorDanger).Bold(true).Render(" " + s.err.Error())
+		b.WriteString(errIcon + errText)
 	}
 
-	// Help
+	// Help with refined styling
 	b.WriteString("\n")
+	var helpItems []string
 	if s.activeTab == SettingsPassword || s.activeTab == SettingsAPI {
-		b.WriteString(HelpStyle.Render("Tab/Shift+Tab: switch sections | Enter/Ctrl+S: save"))
+		helpItems = []string{
+			RenderKeyHint("Tab/Shift+Tab", "sections"),
+			RenderKeyHint("Enter/Ctrl+S", "save"),
+		}
 	} else {
-		b.WriteString(HelpStyle.Render("Tab/Shift+Tab: switch sections | n: new | e: edit | d: delete"))
+		helpItems = []string{
+			RenderKeyHint("Tab/Shift+Tab", "sections"),
+			RenderKeyHint("n", "new"),
+			RenderKeyHint("e", "edit"),
+			RenderKeyHint("d", "delete"),
+		}
 	}
+	help := strings.Join(helpItems, "  │  ")
+	b.WriteString(lipgloss.NewStyle().Foreground(ColorMuted).Render(help))
 
 	return b.String()
 }
@@ -939,18 +954,35 @@ func (s SettingsView) renderTabs() string {
 }
 
 func (s SettingsView) renderCategoriesList(width, height int) string {
-	title := TitleStyle.Render("🏷️  Categories")
+	// Title with icon
+	titleIcon := lipgloss.NewStyle().Foreground(ColorPrimary).Render("🏷️")
+	titleText := lipgloss.NewStyle().
+		Foreground(ColorText).
+		Bold(true).
+		Render("  Categories")
+	title := titleIcon + titleText
+
+	// Count badge
 	count := lipgloss.NewStyle().
 		Foreground(ColorMuted).
 		Render(fmt.Sprintf("(%d items)", len(s.categories)))
 
 	if len(s.categories) == 0 {
+		emptyIcon := lipgloss.NewStyle().Foreground(ColorMuted).Render("📋")
+		emptyText := lipgloss.NewStyle().
+			Foreground(ColorMuted).
+			Italic(true).
+			Render("  No categories. Press 'n' to create one.")
 		return lipgloss.JoinVertical(lipgloss.Left,
 			title+" "+count,
 			"",
-			lipgloss.NewStyle().Foreground(ColorMuted).Render("No categories. Press 'n' to create one."),
+			emptyIcon+emptyText,
 		)
 	}
+
+	// Header row
+	headerContent := fmt.Sprintf("%-5s %-30s  %s", "Color", "Name", "Hex Code")
+	headerStyled := TableHeaderStyle.Render(headerContent)
 
 	var rows []string
 	for i, cat := range s.categories {
@@ -960,33 +992,54 @@ func (s SettingsView) renderCategoriesList(width, height int) string {
 
 		row := fmt.Sprintf("%s   %-30s  %s", colorBox, cat.Name, cat.Color)
 
+		// Apply row styling based on selection
 		if i == s.cursor {
 			rows = append(rows, TableRowSelectedStyle.Render(row))
-		} else {
+		} else if i%2 == 0 {
 			rows = append(rows, TableRowStyle.Render(row))
+		} else {
+			rows = append(rows, TableRowAltStyle.Render(row))
 		}
 	}
 
 	return lipgloss.JoinVertical(lipgloss.Left,
 		title+" "+count,
 		"",
+		headerStyled,
 		strings.Join(rows, "\n"),
 	)
 }
 
 func (s SettingsView) renderPeriodsList(width, height int) string {
-	title := TitleStyle.Render("📅  Periods")
+	// Title with icon
+	titleIcon := lipgloss.NewStyle().Foreground(ColorSecondary).Render("📅")
+	titleText := lipgloss.NewStyle().
+		Foreground(ColorText).
+		Bold(true).
+		Render("  Periods")
+	title := titleIcon + titleText
+
+	// Count badge
 	count := lipgloss.NewStyle().
 		Foreground(ColorMuted).
 		Render(fmt.Sprintf("(%d items)", len(s.periods)))
 
 	if len(s.periods) == 0 {
+		emptyIcon := lipgloss.NewStyle().Foreground(ColorMuted).Render("📋")
+		emptyText := lipgloss.NewStyle().
+			Foreground(ColorMuted).
+			Italic(true).
+			Render("  No periods. Press 'n' to create one.")
 		return lipgloss.JoinVertical(lipgloss.Left,
 			title+" "+count,
 			"",
-			lipgloss.NewStyle().Foreground(ColorMuted).Render("No periods. Press 'n' to create one."),
+			emptyIcon+emptyText,
 		)
 	}
+
+	// Header row
+	headerContent := fmt.Sprintf("%-5s %-30s  %s", "Color", "Name", "Hex Code")
+	headerStyled := TableHeaderStyle.Render(headerContent)
 
 	var rows []string
 	for i, period := range s.periods {
@@ -996,33 +1049,54 @@ func (s SettingsView) renderPeriodsList(width, height int) string {
 
 		row := fmt.Sprintf("%s   %-30s  %s", colorBox, period.Name, period.Color)
 
+		// Apply row styling based on selection
 		if i == s.cursor {
 			rows = append(rows, TableRowSelectedStyle.Render(row))
-		} else {
+		} else if i%2 == 0 {
 			rows = append(rows, TableRowStyle.Render(row))
+		} else {
+			rows = append(rows, TableRowAltStyle.Render(row))
 		}
 	}
 
 	return lipgloss.JoinVertical(lipgloss.Left,
 		title+" "+count,
 		"",
+		headerStyled,
 		strings.Join(rows, "\n"),
 	)
 }
 
 func (s SettingsView) renderIncomeTypesList(width, height int) string {
-	title := TitleStyle.Render("💵  Income Types")
+	// Title with icon
+	titleIcon := lipgloss.NewStyle().Foreground(ColorSuccess).Render("💵")
+	titleText := lipgloss.NewStyle().
+		Foreground(ColorText).
+		Bold(true).
+		Render("  Income Types")
+	title := titleIcon + titleText
+
+	// Count badge
 	count := lipgloss.NewStyle().
 		Foreground(ColorMuted).
 		Render(fmt.Sprintf("(%d items)", len(s.incomeTypes)))
 
 	if len(s.incomeTypes) == 0 {
+		emptyIcon := lipgloss.NewStyle().Foreground(ColorMuted).Render("📋")
+		emptyText := lipgloss.NewStyle().
+			Foreground(ColorMuted).
+			Italic(true).
+			Render("  No income types. Press 'n' to create one.")
 		return lipgloss.JoinVertical(lipgloss.Left,
 			title+" "+count,
 			"",
-			lipgloss.NewStyle().Foreground(ColorMuted).Render("No income types. Press 'n' to create one."),
+			emptyIcon+emptyText,
 		)
 	}
+
+	// Header row
+	headerContent := fmt.Sprintf("%-5s %-30s  %s", "Color", "Name", "Hex Code")
+	headerStyled := TableHeaderStyle.Render(headerContent)
 
 	var rows []string
 	for i, incType := range s.incomeTypes {
@@ -1032,37 +1106,54 @@ func (s SettingsView) renderIncomeTypesList(width, height int) string {
 
 		row := fmt.Sprintf("%s   %-30s  %s", colorBox, incType.Name, incType.Color)
 
+		// Apply row styling based on selection
 		if i == s.cursor {
 			rows = append(rows, TableRowSelectedStyle.Render(row))
-		} else {
+		} else if i%2 == 0 {
 			rows = append(rows, TableRowStyle.Render(row))
+		} else {
+			rows = append(rows, TableRowAltStyle.Render(row))
 		}
 	}
 
 	return lipgloss.JoinVertical(lipgloss.Left,
 		title+" "+count,
 		"",
+		headerStyled,
 		strings.Join(rows, "\n"),
 	)
 }
 
 func (s SettingsView) renderUsersList(width, height int) string {
-	title := TitleStyle.Render("👥  Users")
+	// Title with icon
+	titleIcon := lipgloss.NewStyle().Foreground(ColorInfo).Render("👥")
+	titleText := lipgloss.NewStyle().
+		Foreground(ColorText).
+		Bold(true).
+		Render("  Users")
+	title := titleIcon + titleText
+
+	// Count badge
 	count := lipgloss.NewStyle().
 		Foreground(ColorMuted).
 		Render(fmt.Sprintf("(%d items)", len(s.users)))
 
 	if len(s.users) == 0 {
+		emptyIcon := lipgloss.NewStyle().Foreground(ColorMuted).Render("📋")
+		emptyText := lipgloss.NewStyle().
+			Foreground(ColorMuted).
+			Italic(true).
+			Render("  No users found.")
 		return lipgloss.JoinVertical(lipgloss.Left,
 			title+" "+count,
 			"",
-			lipgloss.NewStyle().Foreground(ColorMuted).Render("No users found."),
+			emptyIcon+emptyText,
 		)
 	}
 
 	// Header
-	header := fmt.Sprintf("%-30s %-20s %-10s %-10s", "Email", "Name", "Active", "Admin")
-	headerStyled := TableHeaderStyle.Render(header)
+	headerContent := fmt.Sprintf("%-30s %-20s %-10s %-10s", "Email", "Name", "Active", "Admin")
+	headerStyled := TableHeaderStyle.Render(headerContent)
 
 	var rows []string
 	for i, user := range s.users {
@@ -1071,24 +1162,30 @@ func (s SettingsView) renderUsersList(width, height int) string {
 			name = *user.FullName
 		}
 
+		// Status indicator with icon
 		var active string
 		if user.IsActive {
-			active = SuccessStyle.Render("Yes")
+			active = SuccessBoldStyle.Render("✓ Yes")
 		} else {
-			active = DangerStyle.Render("No")
+			active = DangerBoldStyle.Render("✗ No")
 		}
 
-		admin := "No"
+		var admin string
 		if user.IsAdmin {
-			admin = BadgeStyle.Render("Yes")
+			admin = BadgeStyle.Render("★ Yes")
+		} else {
+			admin = lipgloss.NewStyle().Foreground(ColorMuted).Render("No")
 		}
 
 		row := fmt.Sprintf("%-30s %-20s %-10s %-10s", user.Email, name, active, admin)
 
+		// Apply row styling based on selection
 		if i == s.cursor {
 			rows = append(rows, TableRowSelectedStyle.Render(row))
-		} else {
+		} else if i%2 == 0 {
 			rows = append(rows, TableRowStyle.Render(row))
+		} else {
+			rows = append(rows, TableRowAltStyle.Render(row))
 		}
 	}
 
@@ -1101,7 +1198,13 @@ func (s SettingsView) renderUsersList(width, height int) string {
 }
 
 func (s SettingsView) renderPasswordForm(width, height int) string {
-	title := TitleStyle.Render("🔒  Change Password")
+	// Title with icon
+	titleIcon := lipgloss.NewStyle().Foreground(ColorSecondary).Render("🔒")
+	titleText := lipgloss.NewStyle().
+		Foreground(ColorText).
+		Bold(true).
+		Render("  Change Password")
+	title := titleIcon + titleText
 
 	if len(s.passwordInputs) == 0 {
 		return title
@@ -1112,7 +1215,11 @@ func (s SettingsView) renderPasswordForm(width, height int) string {
 	b.WriteString("\n\n")
 
 	// Current password
-	b.WriteString(InputLabelStyle.Render("Current Password"))
+	currentLabelStyle := InputLabelStyle
+	if s.passwordFocus == 0 {
+		currentLabelStyle = InputLabelFocusedStyle
+	}
+	b.WriteString(currentLabelStyle.Render("🔑  Current Password"))
 	b.WriteString("\n")
 	if s.passwordFocus == 0 {
 		b.WriteString(InputFocusedStyle.Render(s.passwordInputs[0].View()))
@@ -1122,7 +1229,11 @@ func (s SettingsView) renderPasswordForm(width, height int) string {
 	b.WriteString("\n\n")
 
 	// New password
-	b.WriteString(InputLabelStyle.Render("New Password"))
+	newLabelStyle := InputLabelStyle
+	if s.passwordFocus == 1 {
+		newLabelStyle = InputLabelFocusedStyle
+	}
+	b.WriteString(newLabelStyle.Render("🔐  New Password"))
 	b.WriteString("\n")
 	if s.passwordFocus == 1 {
 		b.WriteString(InputFocusedStyle.Render(s.passwordInputs[1].View()))
@@ -1132,7 +1243,11 @@ func (s SettingsView) renderPasswordForm(width, height int) string {
 	b.WriteString("\n\n")
 
 	// Confirm password
-	b.WriteString(InputLabelStyle.Render("Confirm New Password"))
+	confirmLabelStyle := InputLabelStyle
+	if s.passwordFocus == 2 {
+		confirmLabelStyle = InputLabelFocusedStyle
+	}
+	b.WriteString(confirmLabelStyle.Render("🔐  Confirm New Password"))
 	b.WriteString("\n")
 	if s.passwordFocus == 2 {
 		b.WriteString(InputFocusedStyle.Render(s.passwordInputs[2].View()))
@@ -1142,13 +1257,19 @@ func (s SettingsView) renderPasswordForm(width, height int) string {
 	b.WriteString("\n\n")
 
 	// Button
-	b.WriteString(ButtonStyle.Render("  Change Password (Ctrl+S)  "))
+	b.WriteString(ButtonStyle.Render("  ✓  Change Password  "))
 
 	return b.String()
 }
 
 func (s SettingsView) renderAPIConfigForm(width, height int) string {
-	title := TitleStyle.Render("⚙️  API Configuration")
+	// Title with icon
+	titleIcon := lipgloss.NewStyle().Foreground(ColorPrimary).Render("⚙️")
+	titleText := lipgloss.NewStyle().
+		Foreground(ColorText).
+		Bold(true).
+		Render("  API Configuration")
+	title := titleIcon + titleText
 
 	if len(s.apiConfigInputs) == 0 {
 		s.initAPIConfigForm()
@@ -1159,7 +1280,11 @@ func (s SettingsView) renderAPIConfigForm(width, height int) string {
 	b.WriteString("\n\n")
 
 	// API URL
-	b.WriteString(InputLabelStyle.Render("API URL"))
+	urlLabelStyle := InputLabelStyle
+	if s.apiConfigFocus == 0 {
+		urlLabelStyle = InputLabelFocusedStyle
+	}
+	b.WriteString(urlLabelStyle.Render("🌐  API URL"))
 	b.WriteString("\n")
 	if s.apiConfigFocus == 0 {
 		b.WriteString(InputFocusedStyle.Width(52).Render(s.apiConfigInputs[0].View()))
@@ -1169,7 +1294,11 @@ func (s SettingsView) renderAPIConfigForm(width, height int) string {
 	b.WriteString("\n\n")
 
 	// API Key
-	b.WriteString(InputLabelStyle.Render("API Key"))
+	keyLabelStyle := InputLabelStyle
+	if s.apiConfigFocus == 1 {
+		keyLabelStyle = InputLabelFocusedStyle
+	}
+	b.WriteString(keyLabelStyle.Render("🔑  API Key"))
 	b.WriteString("\n")
 	if s.apiConfigFocus == 1 {
 		b.WriteString(InputFocusedStyle.Width(52).Render(s.apiConfigInputs[1].View()))
@@ -1179,53 +1308,73 @@ func (s SettingsView) renderAPIConfigForm(width, height int) string {
 	b.WriteString("\n\n")
 
 	// Info
-	info := lipgloss.NewStyle().
+	infoIcon := lipgloss.NewStyle().Foreground(ColorInfo).Render("ℹ")
+	infoText := lipgloss.NewStyle().
 		Foreground(ColorMuted).
-		Render("Settings are saved to ~/.config/appz-budget-tui/config (obfuscated)")
-	b.WriteString(info)
+		Italic(true).
+		Render("  Settings are saved to ~/.config/appz-budget-tui/config")
+	b.WriteString(infoIcon + infoText)
 	b.WriteString("\n\n")
 
 	// Button
-	b.WriteString(ButtonStyle.Render("  Save (Ctrl+S)  "))
-
-	// Error
-	if s.err != nil {
-		b.WriteString("\n\n")
-		b.WriteString(ErrorStyle.Render("✗ " + s.err.Error()))
-	}
+	b.WriteString(ButtonStyle.Render("  ✓  Save  "))
 
 	return b.String()
 }
 
 func (s SettingsView) renderForm(width, height int) string {
-	var title string
+	var titleIcon, titleText string
+	var accentColor lipgloss.Color
+
 	switch s.activeTab {
 	case SettingsCategories:
+		accentColor = ColorPrimary
 		if s.formMode == "create" {
-			title = "Create Category"
+			titleIcon = lipgloss.NewStyle().Foreground(ColorSuccess).Render("✚")
+			titleText = "  Create Category"
 		} else {
-			title = "Edit Category"
+			titleIcon = lipgloss.NewStyle().Foreground(ColorPrimary).Render("✎")
+			titleText = "  Edit Category"
 		}
 	case SettingsPeriods:
+		accentColor = ColorSecondary
 		if s.formMode == "create" {
-			title = "Create Period"
+			titleIcon = lipgloss.NewStyle().Foreground(ColorSuccess).Render("✚")
+			titleText = "  Create Period"
 		} else {
-			title = "Edit Period"
+			titleIcon = lipgloss.NewStyle().Foreground(ColorPrimary).Render("✎")
+			titleText = "  Edit Period"
 		}
 	case SettingsIncomeTypes:
+		accentColor = ColorSuccess
 		if s.formMode == "create" {
-			title = "Create Income Type"
+			titleIcon = lipgloss.NewStyle().Foreground(ColorSuccess).Render("✚")
+			titleText = "  Create Income Type"
 		} else {
-			title = "Edit Income Type"
+			titleIcon = lipgloss.NewStyle().Foreground(ColorPrimary).Render("✎")
+			titleText = "  Edit Income Type"
 		}
 	}
 
+	title := lipgloss.NewStyle().
+		Foreground(ColorTextBright).
+		Bold(true).
+		Render(titleIcon + titleText)
+
+	// Accent line
+	accentLine := RenderAccentLine(44, accentColor)
+
 	var b strings.Builder
-	b.WriteString(ModalTitleStyle.Render(title))
+
+	b.WriteString(accentLine)
 	b.WriteString("\n\n")
 
 	// Name field
-	b.WriteString(InputLabelStyle.Render("Name"))
+	nameLabelStyle := InputLabelStyle
+	if s.formFocus == 0 {
+		nameLabelStyle = InputLabelFocusedStyle
+	}
+	b.WriteString(nameLabelStyle.Render("📝  Name"))
 	b.WriteString("\n")
 	if s.formFocus == 0 {
 		b.WriteString(InputFocusedStyle.Render(s.formInputs[0].View()))
@@ -1235,7 +1384,11 @@ func (s SettingsView) renderForm(width, height int) string {
 	b.WriteString("\n\n")
 
 	// Color field
-	b.WriteString(InputLabelStyle.Render("Color (hex)"))
+	colorLabelStyle := InputLabelStyle
+	if s.formFocus == 1 {
+		colorLabelStyle = InputLabelFocusedStyle
+	}
+	b.WriteString(colorLabelStyle.Render("🎨  Color (hex)"))
 	b.WriteString("\n")
 	colorInput := s.formInputs[1].View()
 	colorPreview := ""
@@ -1255,26 +1408,44 @@ func (s SettingsView) renderForm(width, height int) string {
 	// Randomize color button
 	var randomBtn string
 	if s.formFocus == 2 {
-		randomBtn = ButtonFocusedStyle.Render("  🎲 Randomize Color (r)  ")
+		randomBtn = ButtonFocusedStyle.Render("  🎲 Randomize Color  ")
 	} else {
-		randomBtn = ButtonStyle.Render("  🎲 Randomize Color (r)  ")
+		randomBtn = ButtonSecondaryStyle.Render("  🎲 Randomize Color  ")
 	}
 	b.WriteString(randomBtn)
 	b.WriteString("\n\n")
 
 	// Buttons
-	saveBtn := ButtonStyle.Render("  Save (Ctrl+S)  ")
-	cancelBtn := ButtonStyle.Render("  Cancel (Esc)  ")
+	saveBtn := ButtonStyle.Render("  ✓  Save  ")
+	cancelBtn := ButtonSecondaryStyle.Render("  ✗  Cancel  ")
 	b.WriteString(saveBtn + "  " + cancelBtn)
 
+	// Help
+	b.WriteString("\n\n")
+	helpItems := []string{
+		RenderKeyHint("Tab", "navigate"),
+		RenderKeyHint("Ctrl+S", "save"),
+		RenderKeyHint("Esc", "cancel"),
+	}
+	help := strings.Join(helpItems, "  │  ")
+	b.WriteString(lipgloss.NewStyle().Foreground(ColorMuted).Render(help))
+
+	// Wrap in modal
 	form := ModalStyle.Render(b.String())
+
+	// Title above modal
+	content := lipgloss.JoinVertical(lipgloss.Center,
+		title,
+		"",
+		form,
+	)
 
 	return lipgloss.Place(
 		width,
 		height,
 		lipgloss.Center,
 		lipgloss.Center,
-		form,
+		content,
 	)
 }
 
@@ -1305,32 +1476,57 @@ func (s SettingsView) renderConfirmDialog(width, height int) string {
 		}
 	}
 
-	title := ModalTitleStyle.Render(fmt.Sprintf("Delete %s", itemType))
+	// Warning icon and title
+	titleIcon := lipgloss.NewStyle().Foreground(ColorDanger).Render("⚠")
+	titleText := lipgloss.NewStyle().
+		Foreground(ColorDanger).
+		Bold(true).
+		Render(fmt.Sprintf("  Delete %s", itemType))
+	title := titleIcon + titleText
+
+	// Accent line in danger color
+	accentLine := RenderAccentLine(44, ColorDanger)
+
+	// Message
 	message := lipgloss.NewStyle().
 		Foreground(ColorText).
 		Render(fmt.Sprintf("Are you sure you want to delete '%s'?", itemName))
 
+	subMessage := lipgloss.NewStyle().
+		Foreground(ColorMuted).
+		Italic(true).
+		Render("This action cannot be undone.")
+
+	// Buttons
 	buttons := lipgloss.JoinHorizontal(lipgloss.Left,
 		ButtonDangerStyle.Render("  Yes (y)  "),
 		"  ",
-		ButtonStyle.Render("  No (n)  "),
+		ButtonSecondaryStyle.Render("  No (n)  "),
 	)
 
-	content := lipgloss.JoinVertical(lipgloss.Center,
-		title,
+	content := lipgloss.JoinVertical(lipgloss.Left,
+		accentLine,
 		"",
 		message,
+		subMessage,
 		"",
 		buttons,
 	)
 
-	dialog := ModalStyle.Render(content)
+	dialog := ModalDangerStyle.Render(content)
+
+	// Title above dialog
+	fullContent := lipgloss.JoinVertical(lipgloss.Center,
+		title,
+		"",
+		dialog,
+	)
 
 	return lipgloss.Place(
 		width,
 		height,
 		lipgloss.Center,
 		lipgloss.Center,
-		dialog,
+		fullContent,
 	)
 }

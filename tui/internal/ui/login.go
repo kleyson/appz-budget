@@ -118,13 +118,6 @@ func (m LoginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c", "esc":
 			return m, tea.Quit
 
-		case "s":
-			// Show API config
-			m.showAPIConfig = true
-			m.apiConfigFocus = 0
-			m.updateAPIConfigFocus()
-			return m, nil
-
 		case "tab", "shift+tab", "up", "down":
 			if msg.String() == "up" || msg.String() == "shift+tab" {
 				m.focusIndex--
@@ -430,7 +423,6 @@ func (m LoginModel) View() string {
 	helpKeys := []string{
 		RenderKeyHint("Tab", "navigate"),
 		RenderKeyHint("Enter", "submit"),
-		RenderKeyHint("s", "API settings"),
 		RenderKeyHint("Esc", "quit"),
 	}
 	help := lipgloss.NewStyle().Foreground(ColorMuted).Render(strings.Join(helpKeys, "  │  "))

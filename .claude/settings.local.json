@@ -3,7 +3,9 @@
     "allow": [
       "Bash(npm install:*)",
       "Skill(example-skills:frontend-design)",
-      "Bash(go build:*)"
+      "Bash(go build:*)",
+      "Bash(find:*)",
+      "Bash(tree:*)"
     ],
     "deny": [],
     "ask": []

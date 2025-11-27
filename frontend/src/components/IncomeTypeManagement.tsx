@@ -90,36 +90,61 @@ export const IncomeTypeManagement = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-gray-500 dark:text-gray-400">Loading income types...</div>
+      <div className="flex items-center justify-center py-16">
+        <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
+          <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            />
+          </svg>
+          <span>Loading income types...</span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-2 sm:mx-4 my-4 overflow-x-hidden">
-      <div className="mb-6 flex items-center justify-between">
-        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
-          Income Types
-        </h3>
+    <div className="p-5 lg:p-6">
+      <div className="flex items-center justify-between mb-5">
+        <div>
+          <h3 className="font-display text-lg font-semibold text-slate-900 dark:text-white">
+            Income Types
+          </h3>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            {incomeTypes?.length || 0} {incomeTypes?.length === 1 ? 'type' : 'types'}
+          </p>
+        </div>
         <button
           onClick={() => {
             setShowForm(true);
             setEditingIncomeType(null);
             setFormData({ name: '', color: generateRandomColor() });
           }}
-          className="px-3 py-1.5 sm:px-4 sm:py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm sm:text-base rounded-lg font-medium transition-colors shadow-sm"
+          className="btn-primary text-sm"
         >
-          <span className="hidden sm:inline">+ Add Income Type</span>
-          <span className="sm:hidden">+ Add</span>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          <span className="hidden sm:inline">Add Income Type</span>
+          <span className="sm:hidden">Add</span>
         </button>
       </div>
 
       {showForm && (
-        <div className="mb-6 p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900/50">
+        <div className="mb-6 p-5 border border-slate-200/80 dark:border-slate-700/50 rounded-xl bg-slate-50 dark:bg-slate-800/30">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                 Income Type Name
               </label>
               <input
@@ -131,11 +156,11 @@ export const IncomeTypeManagement = () => {
                 placeholder="e.g., Salary, Freelance"
                 required
                 autoFocus
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                 Color
               </label>
               <div className="flex items-center gap-3">
@@ -145,16 +170,16 @@ export const IncomeTypeManagement = () => {
                   onChange={(e: ChangeEvent<HTMLInputElement>) =>
                     setFormData({ ...formData, color: e.target.value })
                   }
-                  className="h-10 w-20 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer"
+                  className="h-10 w-20 border border-slate-200 dark:border-slate-600 rounded-lg cursor-pointer"
                 />
                 <button
                   type="button"
                   onClick={() => setFormData({ ...formData, color: generateRandomColor() })}
-                  className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                  className="px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                 >
                   Random
                 </button>
-                <span className="text-sm text-gray-500 dark:text-gray-400">
+                <span className="text-sm text-slate-500 dark:text-slate-400 font-mono">
                   {formData.color || '#10b981'}
                 </span>
               </div>
@@ -164,18 +189,18 @@ export const IncomeTypeManagement = () => {
                 {error}
               </div>
             )}
-            <div className="flex gap-3">
+            <div className="flex gap-3 pt-2">
               <button
                 type="button"
                 onClick={handleCancel}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors font-medium"
+                className="px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-medium"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={createMutation.isPending || updateMutation.isPending}
-                className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-primary"
               >
                 {createMutation.isPending || updateMutation.isPending
                   ? 'Saving...'
@@ -188,24 +213,44 @@ export const IncomeTypeManagement = () => {
         </div>
       )}
 
-      <div>
+      <div className="mt-4">
         {!incomeTypes || incomeTypes.length === 0 ? (
-          <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-            <p className="text-lg">No income types found.</p>
-            <p className="text-sm mt-2">Add your first income type to get started!</p>
+          <div className="text-center py-16">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+              <svg
+                className="w-8 h-8 text-slate-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+            <h4 className="text-lg font-medium text-slate-900 dark:text-white mb-1">
+              No income types yet
+            </h4>
+            <p className="text-slate-500 dark:text-slate-400">
+              Add your first income type to categorize your earnings.
+            </p>
           </div>
         ) : (
           <>
-            {/* Mobile/Tablet: 2-column grid */}
-            <div className="lg:hidden grid grid-cols-2 gap-2 sm:gap-3 w-full">
-              {incomeTypes.map((incomeType) => (
+            {/* Mobile/Tablet: Cards */}
+            <div className="lg:hidden grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {incomeTypes.map((incomeType, index) => (
                 <div
                   key={incomeType.id}
-                  className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2 sm:p-3 space-y-2 min-w-0"
+                  className="bg-white dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/50 rounded-xl p-4 card-hover animate-slide-up opacity-0"
+                  style={{ animationDelay: `${index * 0.03}s`, animationFillMode: 'forwards' }}
                 >
-                  <div className="flex justify-center">
+                  <div className="flex items-center justify-center mb-3">
                     <span
-                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                      className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium"
                       style={{
                         backgroundColor: incomeType.color,
                         color: isDarkColor(incomeType.color) ? '#ffffff' : '#111827',
@@ -214,16 +259,16 @@ export const IncomeTypeManagement = () => {
                       {incomeType.name}
                     </span>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 pt-3 border-t border-slate-200 dark:border-slate-700">
                     <button
                       onClick={() => handleEdit(incomeType)}
-                      className="flex-1 text-xs px-2 py-1 text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 border border-primary-300 dark:border-primary-700 rounded"
+                      className="flex-1 text-sm px-3 py-2 rounded-lg border border-primary-200 dark:border-primary-800 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 font-medium transition-colors"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(incomeType.id, incomeType.name)}
-                      className="flex-1 text-xs px-2 py-1 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 border border-red-300 dark:border-red-700 rounded"
+                      className="flex-1 text-sm px-3 py-2 rounded-lg border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors"
                     >
                       Delete
                     </button>
@@ -233,27 +278,30 @@ export const IncomeTypeManagement = () => {
             </div>
 
             {/* Desktop: Table */}
-            <div className="hidden lg:block overflow-x-auto">
+            <div className="hidden lg:block rounded-xl border border-slate-200/80 dark:border-slate-700/50 overflow-hidden">
               <table className="w-full">
-                <thead className="bg-gray-50 dark:bg-gray-900">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Income Type Name
+                <thead>
+                  <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200/80 dark:border-slate-700/50">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Income Type
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Color
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="divide-y divide-slate-200/80 dark:divide-slate-700/50">
                   {incomeTypes.map((incomeType) => (
                     <tr
                       key={incomeType.id}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                      className="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
                     >
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <td className="px-4 py-4 text-sm">
                         <span
-                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                          className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium"
                           style={{
                             backgroundColor: incomeType.color,
                             color: isDarkColor(incomeType.color) ? '#ffffff' : '#111827',
@@ -262,19 +310,56 @@ export const IncomeTypeManagement = () => {
                           {incomeType.name}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                          onClick={() => handleEdit(incomeType)}
-                          className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 mr-4"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(incomeType.id, incomeType.name)}
-                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                        >
-                          Delete
-                        </button>
+                      <td className="px-4 py-4 text-sm font-mono text-slate-500 dark:text-slate-400">
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-4 h-4 rounded border border-slate-200 dark:border-slate-600"
+                            style={{ backgroundColor: incomeType.color }}
+                          />
+                          {incomeType.color}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 text-sm text-right">
+                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => handleEdit(incomeType)}
+                            className="p-2 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20 text-primary-600 dark:text-primary-400 transition-colors"
+                            title="Edit"
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                              />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleDelete(incomeType.id, incomeType.name)}
+                            className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 transition-colors"
+                            title="Delete"
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

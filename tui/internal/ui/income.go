@@ -458,9 +458,9 @@ func (v IncomeView) View(width, height int) string {
 	}
 
 	if v.loading {
-		return lipgloss.NewStyle().
-			Foreground(ColorMuted).
-			Render("Loading income...")
+		spinner := lipgloss.NewStyle().Foreground(ColorSecondary).Render("◐")
+		loadingText := lipgloss.NewStyle().Foreground(ColorMuted).Render("  Loading income...")
+		return spinner + loadingText
 	}
 
 	var b strings.Builder
@@ -477,24 +477,46 @@ func (v IncomeView) View(width, height int) string {
 	// Message or error
 	if v.message != "" {
 		b.WriteString("\n")
-		b.WriteString(MessageStyle.Render("✓ " + v.message))
+		msgIcon := lipgloss.NewStyle().Foreground(ColorSuccess).Render("✓")
+		msgText := lipgloss.NewStyle().Foreground(ColorSuccess).Render(" " + v.message)
+		b.WriteString(msgIcon + msgText)
 	}
 	if v.err != nil {
 		b.WriteString("\n")
-		b.WriteString(ErrorStyle.Render("✗ " + v.err.Error()))
+		errIcon := lipgloss.NewStyle().Foreground(ColorDanger).Render("✗")
+		errText := lipgloss.NewStyle().Foreground(ColorDanger).Bold(true).Render(" " + v.err.Error())
+		b.WriteString(errIcon + errText)
 	}
 
-	// Help
+	// Help with refined styling
 	b.WriteString("\n")
-	b.WriteString(HelpStyle.Render("n: new | e/Enter: edit | d: delete | p: filter period"))
+	helpItems := []string{
+		RenderKeyHint("n", "new"),
+		RenderKeyHint("e/Enter", "edit"),
+		RenderKeyHint("d", "delete"),
+		RenderKeyHint("p", "filter period"),
+	}
+	help := strings.Join(helpItems, "  │  ")
+	b.WriteString(lipgloss.NewStyle().Foreground(ColorMuted).Render(help))
 
 	return b.String()
 }
 
 func (v IncomeView) renderHeader(width int) string {
-	title := TitleStyle.Render("💵  Income")
+	// Title with icon
+	titleIcon := lipgloss.NewStyle().Foreground(ColorSuccess).Render("💵")
+	titleText := lipgloss.NewStyle().
+		Foreground(ColorText).
+		Bold(true).
+		Render("  Income")
+	title := titleIcon + titleText
 
-	// Filters
+	// Count badge
+	count := lipgloss.NewStyle().
+		Foreground(ColorMuted).
+		Render(fmt.Sprintf("(%d items)", len(v.incomes)))
+
+	// Active filters with badges
 	var filters []string
 	if v.periodFilter != "" {
 		filters = append(filters, BadgeStyle.Render("Period: "+v.periodFilter))
@@ -502,23 +524,22 @@ func (v IncomeView) renderHeader(width int) string {
 
 	filterStr := ""
 	if len(filters) > 0 {
-		filterStr = strings.Join(filters, " ")
+		filterStr = "  " + strings.Join(filters, " ")
 	}
 
-	// Count
-	count := lipgloss.NewStyle().
-		Foreground(ColorMuted).
-		Render(fmt.Sprintf("(%d items)", len(v.incomes)))
-
-	return lipgloss.JoinHorizontal(lipgloss.Left, title, " ", count, "  ", filterStr)
+	return lipgloss.JoinHorizontal(lipgloss.Left, title, " ", count, filterStr)
 }
 
 func (v IncomeView) renderTable(width, height int) string {
 	if len(v.incomes) == 0 {
-		return lipgloss.NewStyle().
+		emptyIcon := lipgloss.NewStyle().Foreground(ColorMuted).Render("📋")
+		emptyText := lipgloss.NewStyle().
 			Foreground(ColorMuted).
+			Italic(true).
+			Render("  No income entries found. Press 'n' to create one.")
+		return lipgloss.NewStyle().
 			Padding(2, 0).
-			Render("No income entries found. Press 'n' to create one.")
+			Render(emptyIcon + emptyText)
 	}
 
 	// Calculate column widths
@@ -528,8 +549,8 @@ func (v IncomeView) renderTable(width, height int) string {
 	amountWidth := 15
 	statusWidth := 10
 
-	// Header
-	header := fmt.Sprintf(
+	// Header row with refined styling
+	headerContent := fmt.Sprintf(
 		"%-*s %-*s %*s %*s %*s",
 		typeWidth, "Type",
 		periodWidth, "Period",
@@ -537,7 +558,7 @@ func (v IncomeView) renderTable(width, height int) string {
 		amountWidth, "Amount",
 		statusWidth, "Status",
 	)
-	headerStyled := TableHeaderStyle.Render(header)
+	headerStyled := TableHeaderStyle.Render(headerContent)
 
 	// Rows
 	visibleRows := height - 3
@@ -560,24 +581,25 @@ func (v IncomeView) renderTable(width, height int) string {
 
 		typeName := v.getIncomeTypeName(inc.IncomeTypeID)
 		if len(typeName) > typeWidth {
-			typeName = typeName[:typeWidth-3] + "..."
+			typeName = typeName[:typeWidth-2] + "…"
 		}
 
 		period := inc.Period
 		if len(period) > periodWidth {
-			period = period[:periodWidth-3] + "..."
+			period = period[:periodWidth-2] + "…"
 		}
 
 		budget := formatCurrency(inc.Budget)
 		amount := formatCurrency(inc.Amount)
 
+		// Status indicator with icon
 		var status string
 		if inc.Amount >= inc.Budget {
-			status = SuccessStyle.Render("COMPLETE")
+			status = SuccessBoldStyle.Render("★DONE")
 		} else if inc.Amount >= inc.Budget*0.5 {
-			status = InfoStyle.Render("PARTIAL")
+			status = InfoBoldStyle.Render("↗HALF")
 		} else {
-			status = WarningStyle.Render("PENDING")
+			status = WarningBoldStyle.Render("○WAIT")
 		}
 
 		row := fmt.Sprintf(
@@ -589,10 +611,14 @@ func (v IncomeView) renderTable(width, height int) string {
 			statusWidth, status,
 		)
 
+		// Apply row styling based on selection
 		if i == v.cursor {
+			// Selected row with highlight
 			rows = append(rows, TableRowSelectedStyle.Render(row))
-		} else {
+		} else if i%2 == 0 {
 			rows = append(rows, TableRowStyle.Render(row))
+		} else {
+			rows = append(rows, TableRowAltStyle.Render(row))
 		}
 	}
 
@@ -611,35 +637,44 @@ func (v IncomeView) renderTable(width, height int) string {
 }
 
 func (v IncomeView) renderForm(width, height int) string {
-	title := "Create Income"
-	if v.formMode == "edit" {
-		title = "Edit Income"
+	// Form title with icon
+	var titleIcon, titleText string
+	if v.formMode == "create" {
+		titleIcon = lipgloss.NewStyle().Foreground(ColorSuccess).Render("✚")
+		titleText = "  Create Income"
+	} else {
+		titleIcon = lipgloss.NewStyle().Foreground(ColorPrimary).Render("✎")
+		titleText = "  Edit Income"
 	}
+	title := lipgloss.NewStyle().
+		Foreground(ColorTextBright).
+		Bold(true).
+		Render(titleIcon + titleText)
+
+	// Accent line
+	accentLine := RenderAccentLine(48, ColorSuccess)
 
 	var b strings.Builder
 
-	b.WriteString(ModalTitleStyle.Render(title))
+	b.WriteString(accentLine)
 	b.WriteString("\n\n")
 
-	// Income Type selector
-	b.WriteString(InputLabelStyle.Render("Income Type"))
-	b.WriteString("\n")
-	typeSelector := v.renderIncomeTypeSelector(v.formFocus == 3)
-	b.WriteString(typeSelector)
-	b.WriteString("\n\n")
+	// Budget field
+	budgetLabelStyle := InputLabelStyle
+	if v.formFocus == 0 {
+		budgetLabelStyle = InputLabelFocusedStyle
+	}
+	b.WriteString(budgetLabelStyle.Render("💵  Budget"))
+	b.WriteString("                ")
 
-	// Period selector
-	b.WriteString(InputLabelStyle.Render("Period"))
+	// Amount field
+	amountLabelStyle := InputLabelStyle
+	if v.formFocus == 1 {
+		amountLabelStyle = InputLabelFocusedStyle
+	}
+	b.WriteString(amountLabelStyle.Render("💰  Amount"))
 	b.WriteString("\n")
-	periodSelector := v.renderPeriodSelector(v.formFocus == 2)
-	b.WriteString(periodSelector)
-	b.WriteString("\n\n")
 
-	// Budget and Amount side by side
-	b.WriteString(InputLabelStyle.Render("Budget"))
-	b.WriteString("                    ")
-	b.WriteString(InputLabelStyle.Render("Amount"))
-	b.WriteString("\n")
 	budgetInput := v.formInputs[0].View()
 	amountInput := v.formInputs[1].View()
 	if v.formFocus == 0 {
@@ -655,40 +690,85 @@ func (v IncomeView) renderForm(width, height int) string {
 	b.WriteString(budgetInput + "  " + amountInput)
 	b.WriteString("\n\n")
 
+	// Period selector
+	periodLabelStyle := InputLabelStyle
+	if v.formFocus == 2 {
+		periodLabelStyle = InputLabelFocusedStyle
+	}
+	b.WriteString(periodLabelStyle.Render("📅  Period"))
+	b.WriteString("\n")
+	periodSelector := v.renderPeriodSelector(v.formFocus == 2)
+	b.WriteString(periodSelector)
+	b.WriteString("\n\n")
+
+	// Income Type selector
+	typeLabelStyle := InputLabelStyle
+	if v.formFocus == 3 {
+		typeLabelStyle = InputLabelFocusedStyle
+	}
+	b.WriteString(typeLabelStyle.Render("📁  Income Type"))
+	b.WriteString("\n")
+	typeSelector := v.renderIncomeTypeSelector(v.formFocus == 3)
+	b.WriteString(typeSelector)
+	b.WriteString("\n\n")
+
 	// Buttons
-	saveBtn := ButtonStyle.Render("  Save (Ctrl+S)  ")
-	cancelBtn := ButtonStyle.Render("  Cancel (Esc)  ")
+	saveBtn := ButtonStyle.Render("  ✓  Save  ")
+	cancelBtn := ButtonSecondaryStyle.Render("  ✗  Cancel  ")
 	b.WriteString(saveBtn + "  " + cancelBtn)
 
 	// Error
 	if v.err != nil {
 		b.WriteString("\n\n")
-		b.WriteString(ErrorStyle.Render("✗ " + v.err.Error()))
+		errIcon := lipgloss.NewStyle().Foreground(ColorDanger).Render("✗")
+		errText := lipgloss.NewStyle().Foreground(ColorDanger).Bold(true).Render(" " + v.err.Error())
+		b.WriteString(errIcon + errText)
 	}
 
+	// Help
+	b.WriteString("\n\n")
+	helpItems := []string{
+		RenderKeyHint("Tab", "navigate"),
+		RenderKeyHint("←/→", "select"),
+		RenderKeyHint("Ctrl+S", "save"),
+		RenderKeyHint("Esc", "cancel"),
+	}
+	help := strings.Join(helpItems, "  │  ")
+	b.WriteString(lipgloss.NewStyle().Foreground(ColorMuted).Render(help))
+
+	// Wrap in modal
 	form := ModalStyle.Render(b.String())
+
+	// Title above modal
+	content := lipgloss.JoinVertical(lipgloss.Center,
+		title,
+		"",
+		form,
+	)
 
 	return lipgloss.Place(
 		width,
 		height,
 		lipgloss.Center,
 		lipgloss.Center,
-		form,
+		content,
 	)
 }
 
 func (v IncomeView) renderPeriodSelector(focused bool) string {
 	if len(v.periods) == 0 {
-		return lipgloss.NewStyle().Foreground(ColorMuted).Render("No periods available")
+		return lipgloss.NewStyle().Foreground(ColorMuted).Italic(true).Render("No periods available")
 	}
 
 	var items []string
 	for i, p := range v.periods {
 		if i == v.formPeriod {
 			if focused {
+				// Active and focused - show arrows
 				items = append(items, BadgeStyle.Render("◀ "+p.Name+" ▶"))
 			} else {
-				items = append(items, BadgeStyle.Render(p.Name))
+				// Active but not focused
+				items = append(items, BadgeSecondaryStyle.Render(p.Name))
 			}
 		} else {
 			items = append(items, lipgloss.NewStyle().Foreground(ColorMuted).Render(p.Name))
@@ -700,7 +780,7 @@ func (v IncomeView) renderPeriodSelector(focused bool) string {
 
 func (v IncomeView) renderIncomeTypeSelector(focused bool) string {
 	if len(v.incomeTypes) == 0 {
-		return lipgloss.NewStyle().Foreground(ColorMuted).Render("No income types available")
+		return lipgloss.NewStyle().Foreground(ColorMuted).Italic(true).Render("No income types available")
 	}
 
 	var items []string
@@ -709,7 +789,7 @@ func (v IncomeView) renderIncomeTypeSelector(focused bool) string {
 			if focused {
 				items = append(items, BadgeStyle.Render("◀ "+t.Name+" ▶"))
 			} else {
-				items = append(items, BadgeStyle.Render(t.Name))
+				items = append(items, BadgeSecondaryStyle.Render(t.Name))
 			}
 		} else {
 			items = append(items, lipgloss.NewStyle().Foreground(ColorMuted).Render(t.Name))
@@ -727,32 +807,57 @@ func (v IncomeView) renderConfirmDialog(width, height int) string {
 	inc := v.incomes[v.cursor]
 	typeName := v.getIncomeTypeName(inc.IncomeTypeID)
 
-	title := ModalTitleStyle.Render("Delete Income")
+	// Warning icon and title
+	titleIcon := lipgloss.NewStyle().Foreground(ColorDanger).Render("⚠")
+	titleText := lipgloss.NewStyle().
+		Foreground(ColorDanger).
+		Bold(true).
+		Render("  Delete Income")
+	title := titleIcon + titleText
+
+	// Accent line in danger color
+	accentLine := RenderAccentLine(44, ColorDanger)
+
+	// Message
 	message := lipgloss.NewStyle().
 		Foreground(ColorText).
-		Render(fmt.Sprintf("Are you sure you want to delete income entry for '%s'?", typeName))
+		Render(fmt.Sprintf("Are you sure you want to delete income for '%s'?", typeName))
 
+	subMessage := lipgloss.NewStyle().
+		Foreground(ColorMuted).
+		Italic(true).
+		Render("This action cannot be undone.")
+
+	// Buttons
 	buttons := lipgloss.JoinHorizontal(lipgloss.Left,
 		ButtonDangerStyle.Render("  Yes (y)  "),
 		"  ",
-		ButtonStyle.Render("  No (n)  "),
+		ButtonSecondaryStyle.Render("  No (n)  "),
 	)
 
-	content := lipgloss.JoinVertical(lipgloss.Center,
-		title,
+	content := lipgloss.JoinVertical(lipgloss.Left,
+		accentLine,
 		"",
 		message,
+		subMessage,
 		"",
 		buttons,
 	)
 
-	dialog := ModalStyle.Render(content)
+	dialog := ModalDangerStyle.Render(content)
+
+	// Title above dialog
+	fullContent := lipgloss.JoinVertical(lipgloss.Center,
+		title,
+		"",
+		dialog,
+	)
 
 	return lipgloss.Place(
 		width,
 		height,
 		lipgloss.Center,
 		lipgloss.Center,
-		dialog,
+		fullContent,
 	)
 }
