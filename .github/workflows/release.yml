@@ -139,9 +139,12 @@ jobs:
           platforms: linux/amd64,linux/arm64
 
       - name: Notify Watchtower of update
-        if: ${{ secrets.WATCHTOWER_TOKEN != '' }}
         continue-on-error: true
         run: |
+          if [ -z "${{ secrets.WATCHTOWER_TOKEN }}" ]; then
+            echo "⚠️ WATCHTOWER_TOKEN not set, skipping notification"
+            exit 0
+          fi
           echo "🔔 Notifying Watchtower of new release..."
           curl -X POST \
             -H "Authorization: Bearer ${{ secrets.WATCHTOWER_TOKEN }}" \
