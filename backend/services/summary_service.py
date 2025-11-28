@@ -63,13 +63,15 @@ class SummaryService:
             total_expenses = sum(expense.cost or 0.0 for expense in expenses)
             difference = total_income - total_expenses
 
-            period_summaries.append({
-                "period": period.name,
-                "color": period.color,
-                "total_income": total_income,
-                "total_expenses": total_expenses,
-                "difference": difference,
-            })
+            period_summaries.append(
+                {
+                    "period": period.name,
+                    "color": period.color,
+                    "total_income": total_income,
+                    "total_expenses": total_expenses,
+                    "difference": difference,
+                }
+            )
 
             grand_total_income += total_income
             grand_total_expenses += total_expenses

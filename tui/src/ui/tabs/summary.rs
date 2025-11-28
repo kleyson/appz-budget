@@ -199,7 +199,8 @@ fn render_period_summary(app: &AppState, frame: &mut Frame, area: Rect) {
                         .style(Style::default().fg(Color::Green)),
                     Cell::from(format_currency(ps.total_expenses))
                         .style(Style::default().fg(Color::Red)),
-                    Cell::from(format_currency(ps.difference)).style(Style::default().fg(diff_color)),
+                    Cell::from(format_currency(ps.difference))
+                        .style(Style::default().fg(diff_color)),
                 ])
             })
             .collect()
@@ -216,12 +217,18 @@ fn render_period_summary(app: &AppState, frame: &mut Frame, area: Rect) {
         };
         let total_row = Row::new(vec![
             Cell::from("Total").style(Style::default().add_modifier(Modifier::BOLD)),
-            Cell::from(format_currency(period_summary.grand_total_income))
-                .style(Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
+            Cell::from(format_currency(period_summary.grand_total_income)).style(
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(Modifier::BOLD),
+            ),
             Cell::from(format_currency(period_summary.grand_total_expenses))
                 .style(Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),
-            Cell::from(format_currency(period_summary.grand_total_difference))
-                .style(Style::default().fg(total_diff_color).add_modifier(Modifier::BOLD)),
+            Cell::from(format_currency(period_summary.grand_total_difference)).style(
+                Style::default()
+                    .fg(total_diff_color)
+                    .add_modifier(Modifier::BOLD),
+            ),
         ]);
         rows.push(total_row);
     }

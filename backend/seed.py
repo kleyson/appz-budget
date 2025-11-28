@@ -4,7 +4,7 @@ import random
 import sys
 from datetime import date, datetime
 
-from database import Base, SessionLocal, engine
+from database import SessionLocal, engine
 from models import SeedRecord
 from repositories import (
     CategoryRepository,
