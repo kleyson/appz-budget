@@ -79,13 +79,11 @@ jobs:
 
       - name: Build TUI binary (native)
         if: ${{ !matrix.cross }}
-        working-directory: ./tui
-        run: cargo build --release --target ${{ matrix.target }}
+        run: cargo build --release --target ${{ matrix.target }} --manifest-path tui/Cargo.toml
 
       - name: Build TUI binary (cross)
         if: matrix.cross
-        working-directory: ./tui
-        run: cross build --release --target ${{ matrix.target }}
+        run: cross build --release --target ${{ matrix.target }} --manifest-path tui/Cargo.toml
 
       - name: Rename binary (Unix)
         if: runner.os != 'Windows'
