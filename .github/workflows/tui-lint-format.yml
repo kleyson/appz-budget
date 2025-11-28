@@ -5,11 +5,13 @@ on:
     branches: [main, develop]
     paths:
       - "tui/**"
+      - "VERSION"
       - ".github/workflows/tui-lint-format.yml"
   pull_request:
     branches: [main, develop]
     paths:
       - "tui/**"
+      - "VERSION"
       - ".github/workflows/tui-lint-format.yml"
 
 jobs:
