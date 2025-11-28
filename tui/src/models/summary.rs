@@ -25,6 +25,23 @@ pub struct IncomeTypeSummary {
     pub total: f64,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PeriodSummary {
+    pub period: String,
+    pub color: String,
+    pub total_income: f64,
+    pub total_expenses: f64,
+    pub difference: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PeriodSummaryResponse {
+    pub periods: Vec<PeriodSummary>,
+    pub grand_total_income: f64,
+    pub grand_total_expenses: f64,
+    pub grand_total_difference: f64,
+}
+
 impl SummaryTotals {
     /// Calculate the balance (income - expenses)
     pub fn balance_budgeted(&self) -> f64 {

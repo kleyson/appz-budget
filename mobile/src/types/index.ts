@@ -75,6 +75,21 @@ export interface SummaryTotals {
   total_current: number;
 }
 
+export interface PeriodSummary {
+  period: string;
+  color: string;
+  total_income: number;
+  total_expenses: number;
+  difference: number;
+}
+
+export interface PeriodSummaryResponse {
+  periods: PeriodSummary[];
+  grand_total_income: number;
+  grand_total_expenses: number;
+  grand_total_difference: number;
+}
+
 export interface Period {
   id: number;
   name: string;

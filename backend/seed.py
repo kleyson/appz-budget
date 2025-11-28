@@ -2,9 +2,10 @@
 
 import random
 import sys
-from datetime import date
+from datetime import date, datetime
 
-from database import SessionLocal
+from database import Base, SessionLocal, engine
+from models import SeedRecord
 from repositories import (
     CategoryRepository,
     IncomeTypeRepository,
@@ -14,6 +15,35 @@ from repositories import (
 )
 from services.month_service import MonthService
 from utils.auth import get_password_hash
+
+# Seed identifiers
+SEED_INITIAL_DATA = "initial_data_v1"
+
+
+def ensure_seed_table_exists():
+    """Ensure the seed_records table exists"""
+    SeedRecord.__table__.create(bind=engine, checkfirst=True)
+
+
+def has_seed_run(seed_id: str) -> bool:
+    """Check if a specific seed has already been run"""
+    db = SessionLocal()
+    try:
+        record = db.query(SeedRecord).filter(SeedRecord.seed_id == seed_id).first()
+        return record is not None
+    finally:
+        db.close()
+
+
+def mark_seed_complete(seed_id: str):
+    """Record that a seed has been executed"""
+    db = SessionLocal()
+    try:
+        record = SeedRecord(seed_id=seed_id, executed_at=datetime.utcnow())
+        db.add(record)
+        db.commit()
+    finally:
+        db.close()
 
 
 def generate_random_color() -> str:
@@ -233,6 +263,14 @@ def seed_periods():
 
 def seed_all():
     """Seed all initial data"""
+    # Ensure seed tracking table exists
+    ensure_seed_table_exists()
+
+    # Check if seed has already run
+    if has_seed_run(SEED_INITIAL_DATA):
+        print(f"Seed '{SEED_INITIAL_DATA}' has already run. Skipping.")
+        return
+
     print("Seeding initial data...")
     print()
     seed_admin_user()
@@ -245,6 +283,9 @@ def seed_all():
     print()
     seed_periods()
     print()
+
+    # Mark seed as complete
+    mark_seed_complete(SEED_INITIAL_DATA)
     print("✓ All initial data seeded successfully!")
 
 

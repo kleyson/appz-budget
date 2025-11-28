@@ -823,6 +823,11 @@ impl App {
         if let Ok(summary) = self.api.income_types().get_summary(None, month_id).await {
             self.state.data.income_type_summary = summary;
         }
+
+        // Load period summary
+        if let Ok(summary) = self.api.summary().get_by_period(month_id).await {
+            self.state.data.period_summary = Some(summary);
+        }
     }
 
     /// Load data for current tab

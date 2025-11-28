@@ -12,18 +12,23 @@ use crate::ui::format_currency;
 /// Render the summary tab
 pub fn render(app: &AppState, frame: &mut Frame, area: Rect) {
     let chunks = Layout::vertical([
-        Constraint::Length(7), // Summary cards
-        Constraint::Length(1), // Spacer
-        Constraint::Min(10),   // Tables
+        Constraint::Length(7),  // Summary cards
+        Constraint::Length(1),  // Spacer
+        Constraint::Length(10), // Period summary table
+        Constraint::Length(1),  // Spacer
+        Constraint::Min(8),     // Category and Income tables
     ])
     .split(area);
 
     // Render summary cards
     render_summary_cards(app, frame, chunks[0]);
 
+    // Render period summary table
+    render_period_summary(app, frame, chunks[2]);
+
     // Split tables area horizontally
     let table_chunks = Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)])
-        .split(chunks[2]);
+        .split(chunks[4]);
 
     // Render category summary table
     render_category_summary(app, frame, table_chunks[0]);
@@ -158,6 +163,82 @@ fn render_card(
     ];
     let bar = Paragraph::new(Line::from(bar_spans));
     frame.render_widget(bar, chunks[2]);
+}
+
+/// Render the period summary table
+fn render_period_summary(app: &AppState, frame: &mut Frame, area: Rect) {
+    let block = Block::default()
+        .title(" Summary by Period ")
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(Color::DarkGray));
+
+    let header_cells = ["Period", "Income", "Expenses", "Difference"]
+        .iter()
+        .map(|h| {
+            Cell::from(*h).style(
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            )
+        });
+    let header = Row::new(header_cells).height(1);
+
+    let mut rows: Vec<Row> = if let Some(ref period_summary) = app.data.period_summary {
+        period_summary
+            .periods
+            .iter()
+            .map(|ps| {
+                let diff_color = if ps.difference >= 0.0 {
+                    Color::Green
+                } else {
+                    Color::Red
+                };
+                Row::new(vec![
+                    Cell::from(ps.period.clone()),
+                    Cell::from(format_currency(ps.total_income))
+                        .style(Style::default().fg(Color::Green)),
+                    Cell::from(format_currency(ps.total_expenses))
+                        .style(Style::default().fg(Color::Red)),
+                    Cell::from(format_currency(ps.difference)).style(Style::default().fg(diff_color)),
+                ])
+            })
+            .collect()
+    } else {
+        vec![]
+    };
+
+    // Add totals row
+    if let Some(ref period_summary) = app.data.period_summary {
+        let total_diff_color = if period_summary.grand_total_difference >= 0.0 {
+            Color::Green
+        } else {
+            Color::Red
+        };
+        let total_row = Row::new(vec![
+            Cell::from("Total").style(Style::default().add_modifier(Modifier::BOLD)),
+            Cell::from(format_currency(period_summary.grand_total_income))
+                .style(Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
+            Cell::from(format_currency(period_summary.grand_total_expenses))
+                .style(Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),
+            Cell::from(format_currency(period_summary.grand_total_difference))
+                .style(Style::default().fg(total_diff_color).add_modifier(Modifier::BOLD)),
+        ]);
+        rows.push(total_row);
+    }
+
+    let table = Table::new(
+        rows,
+        [
+            Constraint::Percentage(25),
+            Constraint::Percentage(25),
+            Constraint::Percentage(25),
+            Constraint::Percentage(25),
+        ],
+    )
+    .header(header)
+    .block(block);
+
+    frame.render_widget(table, area);
 }
 
 /// Render the category summary table

@@ -22,6 +22,7 @@ import type {
   MonthCreate,
   MonthUpdate,
   SummaryTotals,
+  PeriodSummaryResponse,
   UserRegister,
   UserLogin,
   TokenResponse,
@@ -334,6 +335,17 @@ export const summaryApi = {
     const queryString = queryParams.toString();
     return apiClient.get<SummaryTotals>(
       `/api/v1/summary/totals${queryString ? `?${queryString}` : ""}`
+    );
+  },
+  getByPeriod: (params?: {
+    month_id?: number | null;
+  }): Promise<AxiosResponse<PeriodSummaryResponse>> => {
+    const queryParams = new URLSearchParams();
+    if (params?.month_id)
+      queryParams.append("month_id", params.month_id.toString());
+    const queryString = queryParams.toString();
+    return apiClient.get<PeriodSummaryResponse>(
+      `/api/v1/summary/by-period${queryString ? `?${queryString}` : ""}`
     );
   },
 };

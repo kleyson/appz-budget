@@ -78,6 +78,21 @@ class SummaryTotals(BaseModel):
     total_current: float
 
 
+class PeriodSummary(BaseModel):
+    period: str
+    color: str
+    total_income: float
+    total_expenses: float
+    difference: float
+
+
+class PeriodSummaryResponse(BaseModel):
+    periods: list[PeriodSummary]
+    grand_total_income: float
+    grand_total_expenses: float
+    grand_total_difference: float
+
+
 class PeriodResponse(BaseModel):
     name: str
 

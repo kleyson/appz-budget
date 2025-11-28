@@ -2,10 +2,10 @@ import React from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { useCategorySummary } from '../hooks/useCategories';
-import { useIncomeTypeSummary } from '../hooks/useSummary';
+import { useIncomeTypeSummary, usePeriodSummary } from '../hooks/useSummary';
 import { useCategories } from '../hooks/useCategories';
 import { useIncomeTypes } from '../hooks/useIncomeTypes';
-import type { CategorySummary, IncomeTypeSummary, Category, IncomeType } from '../types';
+import type { CategorySummary, IncomeTypeSummary, PeriodSummary, Category, IncomeType } from '../types';
 
 
 interface SummaryProps {
@@ -22,6 +22,9 @@ export const Summary = ({ periodFilter = null, monthId = null }: SummaryProps) =
     month_id: monthId,
   });
   const { data: incomeTypes } = useIncomeTypes();
+  const { data: periodSummary, isLoading: isLoadingPeriodSummary } = usePeriodSummary({
+    month_id: monthId,
+  });
   const styles = getStyles(isDark);
 
   const getCategoryColor = (categoryName: string): string => {
@@ -44,7 +47,7 @@ export const Summary = ({ periodFilter = null, monthId = null }: SummaryProps) =
     return brightness < 128;
   };
 
-  if (isLoading || isLoadingIncomeSummary) {
+  if (isLoading || isLoadingIncomeSummary || isLoadingPeriodSummary) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#3b82f6" />
@@ -55,7 +58,96 @@ export const Summary = ({ periodFilter = null, monthId = null }: SummaryProps) =
 
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionTitle}>Expenses by Category</Text>
+      <Text style={styles.sectionTitle}>Summary by Period</Text>
+
+      {!periodSummary || periodSummary.periods.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No period summary data available.</Text>
+        </View>
+      ) : (
+        <View style={styles.cardsContainer}>
+          {periodSummary.periods.map((item: PeriodSummary) => (
+            <View key={item.period} style={styles.categoryCard}>
+              <View style={styles.categoryCardTopRow}>
+                <View
+                  style={[
+                    styles.chip,
+                    { backgroundColor: item.color },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.chipText,
+                      { color: isDarkColor(item.color) ? '#ffffff' : '#111827' },
+                    ]}
+                  >
+                    {item.period}
+                  </Text>
+                </View>
+                <View style={styles.categoryCardValueContainer}>
+                  <Text style={styles.categoryCardLabel}>Income</Text>
+                  <Text style={[styles.categoryCardValue, styles.textSuccess]}>
+                    ${item.total_income.toFixed(2)}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.categoryCardBottomRow}>
+                <View style={styles.categoryCardValueContainer}>
+                  <Text style={styles.categoryCardLabel}>Expenses</Text>
+                  <Text style={[styles.categoryCardValue, styles.textDanger]}>
+                    ${item.total_expenses.toFixed(2)}
+                  </Text>
+                </View>
+                <View style={styles.categoryCardValueContainer}>
+                  <Text style={styles.categoryCardLabel}>Difference</Text>
+                  <Text
+                    style={[
+                      styles.categoryCardValue,
+                      styles.categoryCardBold,
+                      item.difference >= 0 ? styles.textSuccess : styles.textDanger,
+                    ]}
+                  >
+                    ${item.difference.toFixed(2)}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          ))}
+          <View style={[styles.categoryCard, styles.totalCard]}>
+            <View style={styles.categoryCardTopRow}>
+              <Text style={styles.totalLabel}>Total</Text>
+              <View style={styles.categoryCardValueContainer}>
+                <Text style={styles.categoryCardLabel}>Income</Text>
+                <Text style={[styles.categoryCardValue, styles.textSuccess]}>
+                  ${periodSummary.grand_total_income.toFixed(2)}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.categoryCardBottomRow}>
+              <View style={styles.categoryCardValueContainer}>
+                <Text style={styles.categoryCardLabel}>Expenses</Text>
+                <Text style={[styles.categoryCardValue, styles.textDanger]}>
+                  ${periodSummary.grand_total_expenses.toFixed(2)}
+                </Text>
+              </View>
+              <View style={styles.categoryCardValueContainer}>
+                <Text style={styles.categoryCardLabel}>Difference</Text>
+                <Text
+                  style={[
+                    styles.categoryCardValue,
+                    styles.categoryCardBold,
+                    periodSummary.grand_total_difference >= 0 ? styles.textSuccess : styles.textDanger,
+                  ]}
+                >
+                  ${periodSummary.grand_total_difference.toFixed(2)}
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      )}
+
+      <Text style={[styles.sectionTitle, styles.sectionTitleMargin]}>Expenses by Category</Text>
 
       {!summary || summary.length === 0 ? (
         <View style={styles.emptyContainer}>
@@ -308,6 +400,15 @@ const getStyles = (isDark: boolean) =>
     },
     textDanger: {
       color: '#ef4444',
+    },
+    totalCard: {
+      backgroundColor: isDark ? '#111827' : '#f3f4f6',
+      borderWidth: 2,
+    },
+    totalLabel: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: isDark ? '#ffffff' : '#111827',
     },
   });
 

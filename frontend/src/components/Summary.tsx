@@ -1,5 +1,5 @@
 import { useCategorySummary, useCategories } from '../hooks/useCategories';
-import { useIncomeTypeSummary } from '../hooks/useSummary';
+import { useIncomeTypeSummary, usePeriodSummary } from '../hooks/useSummary';
 import { useIncomeTypes } from '../hooks/useIncomeTypes';
 import { isDarkColor } from '../utils/colors';
 import { formatCurrency } from '../utils/format';
@@ -19,6 +19,9 @@ export const Summary = ({ periodFilter = null, monthId = null }: SummaryProps) =
     month_id: monthId,
   });
   const { data: incomeTypes } = useIncomeTypes();
+  const { data: periodSummary, isLoading: isLoadingPeriodSummary } = usePeriodSummary({
+    month_id: monthId,
+  });
 
   const getCategoryColor = (categoryName: string): string => {
     const category = categories?.find((c) => c.name === categoryName);
@@ -30,7 +33,7 @@ export const Summary = ({ periodFilter = null, monthId = null }: SummaryProps) =
     return incomeType?.color || '#10b981';
   };
 
-  if (isLoading || isLoadingIncomeSummary) {
+  if (isLoading || isLoadingIncomeSummary || isLoadingPeriodSummary) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-gray-500 dark:text-gray-400">Loading summary...</div>
@@ -40,6 +43,106 @@ export const Summary = ({ periodFilter = null, monthId = null }: SummaryProps) =
 
   return (
     <div className="mx-4 my-4">
+      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+        Summary by Period
+      </h3>
+
+      <div className="overflow-x-auto mb-8">
+        {!periodSummary || periodSummary.periods.length === 0 ? (
+          <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+            <p className="text-lg">No period summary data available.</p>
+          </div>
+        ) : (
+          <table className="w-full">
+            <thead className="bg-gray-50 dark:bg-gray-900">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Period
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Income
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Expenses
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Difference
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              {periodSummary.periods.map((item) => (
+                <tr
+                  key={item.period}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                >
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <span
+                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                      style={{
+                        backgroundColor: item.color,
+                        color: isDarkColor(item.color) ? '#ffffff' : '#111827',
+                      }}
+                    >
+                      {item.period}
+                    </span>
+                  </td>
+                  <td
+                    className={`px-6 py-4 whitespace-nowrap text-sm text-right ${
+                      item.total_income === 0
+                        ? 'text-gray-400 dark:text-gray-500'
+                        : 'text-green-600 dark:text-green-400'
+                    }`}
+                  >
+                    {formatCurrency(item.total_income)}
+                  </td>
+                  <td
+                    className={`px-6 py-4 whitespace-nowrap text-sm text-right ${
+                      item.total_expenses === 0
+                        ? 'text-gray-400 dark:text-gray-500'
+                        : 'text-red-600 dark:text-red-400'
+                    }`}
+                  >
+                    {formatCurrency(item.total_expenses)}
+                  </td>
+                  <td
+                    className={`px-6 py-4 whitespace-nowrap text-sm text-right font-semibold ${
+                      item.difference === 0
+                        ? 'text-gray-400 dark:text-gray-500'
+                        : item.difference >= 0
+                          ? 'text-green-600 dark:text-green-400'
+                          : 'text-red-600 dark:text-red-400'
+                    }`}
+                  >
+                    {formatCurrency(item.difference)}
+                  </td>
+                </tr>
+              ))}
+              <tr className="bg-gray-100 dark:bg-gray-900 font-semibold">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                  Total
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-green-600 dark:text-green-400">
+                  {formatCurrency(periodSummary.grand_total_income)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-red-600 dark:text-red-400">
+                  {formatCurrency(periodSummary.grand_total_expenses)}
+                </td>
+                <td
+                  className={`px-6 py-4 whitespace-nowrap text-sm text-right ${
+                    periodSummary.grand_total_difference >= 0
+                      ? 'text-green-600 dark:text-green-400'
+                      : 'text-red-600 dark:text-red-400'
+                  }`}
+                >
+                  {formatCurrency(periodSummary.grand_total_difference)}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        )}
+      </div>
+
       <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
         Expenses by Category
       </h3>

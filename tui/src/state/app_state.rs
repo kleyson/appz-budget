@@ -2,7 +2,7 @@ use ratatui::widgets::TableState;
 
 use crate::models::{
     Category, CategorySummary, Expense, Income, IncomeType, IncomeTypeSummary, Month, Period,
-    SummaryTotals, User,
+    PeriodSummaryResponse, SummaryTotals, User,
 };
 
 /// Current screen/view
@@ -202,6 +202,7 @@ pub struct DataState {
     pub summary_totals: Option<SummaryTotals>,
     pub category_summary: Vec<CategorySummary>,
     pub income_type_summary: Vec<IncomeTypeSummary>,
+    pub period_summary: Option<PeriodSummaryResponse>,
 }
 
 /// UI-specific state

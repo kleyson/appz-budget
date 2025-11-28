@@ -1,5 +1,5 @@
 use crate::api::client::{ApiClient, ApiError};
-use crate::models::SummaryTotals;
+use crate::models::{PeriodSummaryResponse, SummaryTotals};
 
 pub struct SummaryApi<'a> {
     client: &'a ApiClient,
@@ -25,6 +25,20 @@ impl<'a> SummaryApi<'a> {
         }
         self.client
             .get_with_params("/summary/totals", &params)
+            .await
+    }
+
+    /// Get summary by period
+    pub async fn get_by_period(
+        &self,
+        month_id: Option<i32>,
+    ) -> Result<PeriodSummaryResponse, ApiError> {
+        let mut params: Vec<(&str, String)> = Vec::new();
+        if let Some(id) = month_id {
+            params.push(("month_id", id.to_string()));
+        }
+        self.client
+            .get_with_params("/summary/by-period", &params)
             .await
     }
 }
