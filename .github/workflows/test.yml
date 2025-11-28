@@ -77,15 +77,26 @@ jobs:
         run: |
           npm run build || exit 1
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: "1.25"
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-action@stable
 
-      - name: Install TUI dependencies
-        working-directory: ./tui
-        run: go mod download
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            tui/target
+          key: ${{ runner.os }}-cargo-test-${{ hashFiles('tui/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-test-
 
       - name: Run TUI tests
         working-directory: ./tui
-        run: go test -v ./...
+        run: |
+          cargo test || exit 1
+
+      - name: Build TUI
+        working-directory: ./tui
+        run: |
+          cargo build --release || exit 1

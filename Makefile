@@ -1,4 +1,4 @@
-.PHONY: help install dev backend frontend backend-dev frontend-dev test clean migrate verify version
+.PHONY: help install dev backend frontend backend-dev frontend-dev test clean migrate verify version tui tui-dev tui-build tui-build-release tui-build-all
 
 # Default API key for development
 DEFAULT_API_KEY ?= your-secret-api-key-change-this
@@ -190,7 +190,78 @@ verify: ## Run all linting, type checking, formatting checks, and tests
 	@$(MAKE) test-frontend || (echo "❌ Frontend tests failed" && exit 1)
 	@echo "✅ Frontend tests passed"
 	@echo ""
+	@echo "8. TUI: Checking formatting..."
+	@$(MAKE) tui-format-check || (echo "❌ TUI formatting check failed" && exit 1)
+	@echo "✅ TUI formatting OK"
+	@echo ""
+	@echo "9. TUI: Linting..."
+	@$(MAKE) tui-lint || (echo "❌ TUI linting failed" && exit 1)
+	@echo "✅ TUI linting OK"
+	@echo ""
+	@echo "10. TUI: Running tests..."
+	@$(MAKE) tui-test || (echo "❌ TUI tests failed" && exit 1)
+	@echo "✅ TUI tests passed"
+	@echo ""
 	@echo "=========================================="
 	@echo "✅ All checks passed!"
 	@echo "=========================================="
+
+# ============================================
+# TUI (Terminal User Interface) targets
+# ============================================
+
+tui: tui-build-release ## Build TUI for current platform (release)
+
+tui-dev: ## Run TUI in development mode
+	@echo "Starting TUI in development mode..."
+	cd tui && cargo run
+
+tui-build: ## Build TUI (debug)
+	@echo "Building TUI (debug)..."
+	cd tui && cargo build
+
+tui-build-release: ## Build TUI (release, optimized)
+	@echo "Building TUI (release)..."
+	cd tui && cargo build --release
+	@echo "Binary: tui/target/release/budget-tui"
+
+tui-test: ## Run TUI tests
+	cd tui && cargo test
+
+tui-lint: ## Lint TUI code
+	cd tui && cargo clippy -- -D warnings
+
+tui-format: ## Format TUI code
+	cd tui && cargo fmt
+
+tui-format-check: ## Check TUI code formatting
+	cd tui && cargo fmt -- --check
+
+tui-clean: ## Clean TUI build artifacts
+	cd tui && cargo clean
+
+# Cross-compilation targets (requires cross: cargo install cross)
+tui-build-linux-x64: ## Build TUI for Linux x86_64
+	cd tui && cross build --release --target x86_64-unknown-linux-gnu
+	@echo "Binary: tui/target/x86_64-unknown-linux-gnu/release/budget-tui"
+
+tui-build-linux-arm64: ## Build TUI for Linux ARM64
+	cd tui && cross build --release --target aarch64-unknown-linux-gnu
+	@echo "Binary: tui/target/aarch64-unknown-linux-gnu/release/budget-tui"
+
+tui-build-windows: ## Build TUI for Windows x86_64
+	cd tui && cross build --release --target x86_64-pc-windows-gnu
+	@echo "Binary: tui/target/x86_64-pc-windows-gnu/release/budget-tui.exe"
+
+tui-build-macos-x64: ## Build TUI for macOS x86_64 (requires macOS)
+	cd tui && cargo build --release --target x86_64-apple-darwin
+	@echo "Binary: tui/target/x86_64-apple-darwin/release/budget-tui"
+
+tui-build-macos-arm64: ## Build TUI for macOS ARM64 (requires macOS)
+	cd tui && cargo build --release --target aarch64-apple-darwin
+	@echo "Binary: tui/target/aarch64-apple-darwin/release/budget-tui"
+
+tui-build-all: tui-build-linux-x64 tui-build-linux-arm64 tui-build-windows ## Build TUI for all platforms (Linux + Windows via cross)
+	@echo "Built binaries for Linux x64, Linux ARM64, and Windows x64"
+	@echo "macOS builds require native macOS runners"
 

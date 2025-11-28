@@ -5,7 +5,19 @@
       "Skill(example-skills:frontend-design)",
       "Bash(go build:*)",
       "Bash(find:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(cat:*)",
+      "Bash(cargo check:*)",
+      "Bash(cargo build:*)",
+      "Bash(cargo test:*)",
+      "Bash(cargo clippy:*)",
+      "Bash(cargo fmt:*)",
+      "Bash(grep:*)",
+      "Bash(RUSTFLAGS=\"-W unused\" cargo build:*)",
+      "Bash(make tui-format-check:*)",
+      "Bash(make tui-format:*)",
+      "Bash(make tui-lint:*)",
+      "Bash(make tui-test:*)"
     ],
     "deny": [],
     "ask": []

@@ -101,3 +101,26 @@ eas.json
 # Generated native folders
 /ios
 /android
+
+# Rust / Cargo
+target/
+tui/target/
+**/*.rs.bk
+*.rlib
+*.rmeta
+*.d
+
+# Rust debug artifacts
+*.pdb
+
+# Rust incremental compilation
+incremental/
+
+# Rust coverage
+*.gcda
+*.gcno
+tarpaulin-report.html
+cobertura.xml
+
+# Cross compilation
+cross.log
