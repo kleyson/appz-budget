@@ -210,6 +210,9 @@ fn test_app_state_month_navigation() {
             name: "January 2024".to_string(),
             start_date: "2024-01-01".to_string(),
             end_date: "2024-01-31".to_string(),
+            is_closed: false,
+            closed_at: None,
+            closed_by: None,
         },
         Month {
             id: 2,
@@ -218,6 +221,9 @@ fn test_app_state_month_navigation() {
             name: "February 2024".to_string(),
             start_date: "2024-02-01".to_string(),
             end_date: "2024-02-29".to_string(),
+            is_closed: false,
+            closed_at: None,
+            closed_by: None,
         },
         Month {
             id: 3,
@@ -226,6 +232,9 @@ fn test_app_state_month_navigation() {
             name: "March 2024".to_string(),
             start_date: "2024-03-01".to_string(),
             end_date: "2024-03-31".to_string(),
+            is_closed: false,
+            closed_at: None,
+            closed_by: None,
         },
     ];
 
@@ -270,6 +279,9 @@ fn test_app_state_select_current_month() {
             name: "January 2024".to_string(),
             start_date: "2024-01-01".to_string(),
             end_date: "2024-01-31".to_string(),
+            is_closed: false,
+            closed_at: None,
+            closed_by: None,
         },
         Month {
             id: 2,
@@ -278,6 +290,9 @@ fn test_app_state_select_current_month() {
             name: "February 2024".to_string(),
             start_date: "2024-02-01".to_string(),
             end_date: "2024-02-29".to_string(),
+            is_closed: false,
+            closed_at: None,
+            closed_by: None,
         },
         Month {
             id: 3,
@@ -286,6 +301,9 @@ fn test_app_state_select_current_month() {
             name: "March 2024".to_string(),
             start_date: "2024-03-01".to_string(),
             end_date: "2024-03-31".to_string(),
+            is_closed: false,
+            closed_at: None,
+            closed_by: None,
         },
     ];
 
@@ -296,6 +314,9 @@ fn test_app_state_select_current_month() {
         name: "February 2024".to_string(),
         start_date: "2024-02-01".to_string(),
         end_date: "2024-02-29".to_string(),
+        is_closed: false,
+        closed_at: None,
+        closed_by: None,
     });
 
     state.select_current_month();
@@ -327,6 +348,7 @@ fn test_app_state_filtered_expenses() {
             month_id: 1,
             purchases: None,
             order: 0,
+            expense_date: None,
         },
         Expense {
             id: 2,
@@ -339,6 +361,7 @@ fn test_app_state_filtered_expenses() {
             month_id: 1,
             purchases: None,
             order: 1,
+            expense_date: None,
         },
         Expense {
             id: 3,
@@ -351,6 +374,7 @@ fn test_app_state_filtered_expenses() {
             month_id: 1,
             purchases: None,
             order: 2,
+            expense_date: None,
         },
     ];
 

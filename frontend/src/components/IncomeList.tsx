@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useIncomes, useDeleteIncome } from '../hooks/useIncomes';
 import { usePeriods } from '../hooks/usePeriods';
 import { useIncomeTypes } from '../hooks/useIncomeTypes';
+import { useMonth } from '../hooks/useMonths';
 import { IncomeForm } from './IncomeForm';
 import type { Income } from '../types';
 import { formatCurrency } from '../utils/format';
@@ -23,8 +24,11 @@ export const IncomeList = ({ periodFilter = null, monthId = null }: IncomeListPr
   });
   const { data: periods } = usePeriods();
   const { data: incomeTypes } = useIncomeTypes();
+  const { data: currentMonthData } = useMonth(monthId || 0);
   const deleteMutation = useDeleteIncome();
   const { showConfirm, showAlert } = useDialog();
+
+  const isMonthClosed = currentMonthData?.is_closed ?? false;
 
   const getPeriodColor = (periodName: string): string => {
     const period = periods?.find((p) => p.name === periodName);
@@ -146,7 +150,12 @@ export const IncomeList = ({ periodFilter = null, monthId = null }: IncomeListPr
             {incomes?.length || 0} {incomes?.length === 1 ? 'entry' : 'entries'}
           </p>
         </div>
-        <button onClick={() => setShowForm(true)} className="btn-primary text-sm">
+        <button
+          onClick={() => setShowForm(true)}
+          disabled={isMonthClosed}
+          className="btn-primary text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          title={isMonthClosed ? 'Month is closed' : undefined}
+        >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
@@ -261,13 +270,15 @@ export const IncomeList = ({ periodFilter = null, monthId = null }: IncomeListPr
                     <div className="flex gap-2 pt-3 border-t border-slate-200 dark:border-slate-700">
                       <button
                         onClick={() => setEditingIncome(income)}
-                        className="flex-1 text-sm px-3 py-2 rounded-lg border border-primary-200 dark:border-primary-800 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 font-medium transition-colors"
+                        disabled={isMonthClosed}
+                        className="flex-1 text-sm px-3 py-2 rounded-lg border border-primary-200 dark:border-primary-800 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleDelete(income.id)}
-                        className="flex-1 text-sm px-3 py-2 rounded-lg border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors"
+                        disabled={isMonthClosed}
+                        className="flex-1 text-sm px-3 py-2 rounded-lg border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Delete
                       </button>
@@ -361,8 +372,9 @@ export const IncomeList = ({ periodFilter = null, monthId = null }: IncomeListPr
                           <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button
                               onClick={() => setEditingIncome(income)}
-                              className="p-2 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20 text-primary-600 dark:text-primary-400 transition-colors"
-                              title="Edit"
+                              disabled={isMonthClosed}
+                              className="p-2 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20 text-primary-600 dark:text-primary-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              title={isMonthClosed ? 'Month is closed' : 'Edit'}
                             >
                               <svg
                                 className="w-4 h-4"
@@ -380,8 +392,9 @@ export const IncomeList = ({ periodFilter = null, monthId = null }: IncomeListPr
                             </button>
                             <button
                               onClick={() => handleDelete(income.id)}
-                              className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 transition-colors"
-                              title="Delete"
+                              disabled={isMonthClosed}
+                              className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              title={isMonthClosed ? 'Month is closed' : 'Delete'}
                             >
                               <svg
                                 className="w-4 h-4"

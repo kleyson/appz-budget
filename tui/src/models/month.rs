@@ -8,6 +8,10 @@ pub struct Month {
     pub name: String,
     pub start_date: String,
     pub end_date: String,
+    #[serde(default)]
+    pub is_closed: bool,
+    pub closed_at: Option<String>,
+    pub closed_by: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -36,4 +40,14 @@ impl Month {
         };
         format!("{} {}", month_name, self.year)
     }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct MonthCloseResponse {
+    pub id: i32,
+    pub name: String,
+    pub is_closed: bool,
+    pub closed_at: Option<String>,
+    pub closed_by: Option<String>,
+    pub message: String,
 }

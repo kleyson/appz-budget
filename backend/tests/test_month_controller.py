@@ -245,3 +245,98 @@ class TestMonthController:
         """Test getting months without API key"""
         response = client.get("/api/v1/months")
         assert response.status_code == 403
+
+
+class TestMonthCloseOpenController:
+    """Tests for month close/open endpoints"""
+
+    def test_close_month(self, client, test_db, api_headers, sample_month):
+        """Test closing a month via API"""
+        response = client.post(
+            f"/api/v1/months/{sample_month.id}/close",
+            headers=api_headers,
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["is_closed"] is True
+        assert data["closed_at"] is not None
+        assert "has been closed" in data["message"]
+
+    def test_close_month_already_closed(self, client, test_db, api_headers, sample_month):
+        """Test closing an already closed month via API"""
+        # Close the month first
+        client.post(f"/api/v1/months/{sample_month.id}/close", headers=api_headers)
+        # Try to close again
+        response = client.post(
+            f"/api/v1/months/{sample_month.id}/close",
+            headers=api_headers,
+        )
+        assert response.status_code == 400
+        assert "already closed" in response.json()["detail"].lower()
+
+    def test_close_month_not_found(self, client, api_headers):
+        """Test closing a non-existent month via API"""
+        response = client.post("/api/v1/months/999/close", headers=api_headers)
+        assert response.status_code == 404
+
+    def test_close_month_no_api_key(self, client, test_db, sample_month):
+        """Test closing a month without API key"""
+        response = client.post(f"/api/v1/months/{sample_month.id}/close")
+        assert response.status_code == 403
+
+    def test_open_month(self, client, test_db, api_headers, sample_month):
+        """Test opening a closed month via API"""
+        # First close the month
+        client.post(f"/api/v1/months/{sample_month.id}/close", headers=api_headers)
+        # Then open it
+        response = client.post(
+            f"/api/v1/months/{sample_month.id}/open",
+            headers=api_headers,
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["is_closed"] is False
+        assert data["closed_at"] is None
+        assert "has been reopened" in data["message"]
+
+    def test_open_month_not_closed(self, client, test_db, api_headers, sample_month):
+        """Test opening a month that is not closed via API"""
+        response = client.post(
+            f"/api/v1/months/{sample_month.id}/open",
+            headers=api_headers,
+        )
+        assert response.status_code == 400
+        assert "is not closed" in response.json()["detail"].lower()
+
+    def test_open_month_not_found(self, client, api_headers):
+        """Test opening a non-existent month via API"""
+        response = client.post("/api/v1/months/999/open", headers=api_headers)
+        assert response.status_code == 404
+
+    def test_open_month_no_api_key(self, client, test_db, sample_month):
+        """Test opening a month without API key"""
+        response = client.post(f"/api/v1/months/{sample_month.id}/open")
+        assert response.status_code == 403
+
+    def test_get_month_returns_closed_status(self, client, test_db, api_headers, sample_month):
+        """Test that get month returns closed status"""
+        # Close the month
+        client.post(f"/api/v1/months/{sample_month.id}/close", headers=api_headers)
+        # Get the month
+        response = client.get(f"/api/v1/months/{sample_month.id}", headers=api_headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["is_closed"] is True
+        assert data["closed_at"] is not None
+
+    def test_get_months_returns_closed_status(self, client, test_db, api_headers, sample_month):
+        """Test that get all months returns closed status"""
+        # Close the month
+        client.post(f"/api/v1/months/{sample_month.id}/close", headers=api_headers)
+        # Get all months
+        response = client.get("/api/v1/months", headers=api_headers)
+        assert response.status_code == 200
+        data = response.json()
+        closed_month = next((m for m in data if m["id"] == sample_month.id), None)
+        assert closed_month is not None
+        assert closed_month["is_closed"] is True

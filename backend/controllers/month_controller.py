@@ -3,10 +3,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Security
 from sqlalchemy.orm import Session
 
-from dependencies import get_api_key, get_client_info, get_db
+from dependencies import get_api_key, get_client_info, get_db, get_user_name
 from exceptions import ConflictError, NotFoundError, ValidationError
 from repositories import MonthRepository
-from schemas import MonthCreate, MonthResponse, MonthUpdate
+from schemas import MonthCloseResponse, MonthCreate, MonthResponse, MonthUpdate
 from services import MonthService
 
 router = APIRouter(prefix="/api/v1/months", tags=["months"])
@@ -18,12 +18,13 @@ def create_month(
     db: Session = Depends(get_db),
     api_key: str = Security(get_api_key),
     client_info: str | None = Depends(get_client_info),
+    user_name: str | None = Depends(get_user_name),
 ):
     """Create a new month"""
     repository = MonthRepository(db)
     service = MonthService(repository)
     try:
-        return service.create(month.model_dump())
+        return service.create(month.model_dump(), user_name)
     except ConflictError as e:
         raise HTTPException(status_code=409, detail=str(e)) from None
     except ValidationError as e:
@@ -97,12 +98,13 @@ def update_month(
     db: Session = Depends(get_db),
     api_key: str = Security(get_api_key),
     client_info: str | None = Depends(get_client_info),
+    user_name: str | None = Depends(get_user_name),
 ):
     """Update a month"""
     repository = MonthRepository(db)
     service = MonthService(repository)
     try:
-        return service.update(month_id, month_update.model_dump(exclude_unset=True))
+        return service.update(month_id, month_update.model_dump(exclude_unset=True), user_name)
     except NotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e)) from None
     except ConflictError as e:
@@ -124,6 +126,44 @@ def delete_month(
     try:
         service.delete(month_id)
         return {"message": "Month deleted successfully"}
+    except NotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from None
+    except ValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from None
+
+
+@router.post("/{month_id}/close", response_model=MonthCloseResponse)
+def close_month(
+    month_id: int,
+    db: Session = Depends(get_db),
+    api_key: str = Security(get_api_key),
+    client_info: str | None = Depends(get_client_info),
+    user_name: str | None = Depends(get_user_name),
+):
+    """Close a month, preventing new expenses/incomes from being added"""
+    repository = MonthRepository(db)
+    service = MonthService(repository)
+    try:
+        return service.close_month(month_id, user_name)
+    except NotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from None
+    except ValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from None
+
+
+@router.post("/{month_id}/open", response_model=MonthCloseResponse)
+def open_month(
+    month_id: int,
+    db: Session = Depends(get_db),
+    api_key: str = Security(get_api_key),
+    client_info: str | None = Depends(get_client_info),
+    user_name: str | None = Depends(get_user_name),
+):
+    """Reopen a closed month, allowing new expenses/incomes"""
+    repository = MonthRepository(db)
+    service = MonthService(repository)
+    try:
+        return service.open_month(month_id, user_name)
     except NotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e)) from None
     except ValidationError as e:

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { monthsApi } from '../api/client';
-import type { Month, MonthCreate, MonthUpdate } from '../types';
+import type { Month, MonthCreate, MonthUpdate, MonthCloseResponse } from '../types';
 
 export const useMonths = () => {
   return useQuery<Month[]>({
@@ -60,6 +60,28 @@ export const useDeleteMonth = () => {
 
   return useMutation<void, Error, number>({
     mutationFn: (id) => monthsApi.delete(id).then(() => undefined),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['months'] });
+    },
+  });
+};
+
+export const useCloseMonth = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<MonthCloseResponse, Error, number>({
+    mutationFn: (id) => monthsApi.close(id).then((res) => res.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['months'] });
+    },
+  });
+};
+
+export const useOpenMonth = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<MonthCloseResponse, Error, number>({
+    mutationFn: (id) => monthsApi.open(id).then((res) => res.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['months'] });
     },

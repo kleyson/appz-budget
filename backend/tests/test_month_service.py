@@ -279,3 +279,86 @@ class TestMonthService:
         # Verify both expense and income are deleted
         assert expense_repo.get_by_id(sample_expense.id) is None
         assert income_repo.get_by_id(income.id) is None
+
+
+class TestMonthCloseOpen:
+    """Tests for month close/open functionality"""
+
+    def test_close_month(self, test_db, sample_month):
+        """Test closing a month"""
+        repo = MonthRepository(test_db)
+        service = MonthService(repo)
+        result = service.close_month(sample_month.id, "test_user")
+        assert result["is_closed"] is True
+        assert result["closed_at"] is not None
+        assert result["closed_by"] == "test_user"
+        assert "has been closed" in result["message"]
+
+    def test_close_month_already_closed(self, test_db, sample_month):
+        """Test closing an already closed month"""
+        repo = MonthRepository(test_db)
+        service = MonthService(repo)
+        # Close the month first
+        service.close_month(sample_month.id)
+        # Try to close again
+        with pytest.raises(ValidationError) as exc_info:
+            service.close_month(sample_month.id)
+        assert "already closed" in str(exc_info.value)
+
+    def test_close_month_not_found(self, test_db):
+        """Test closing a non-existent month"""
+        repo = MonthRepository(test_db)
+        service = MonthService(repo)
+        with pytest.raises(NotFoundError) as exc_info:
+            service.close_month(999)
+        assert "Month with ID 999 not found" in str(exc_info.value)
+
+    def test_open_month(self, test_db, sample_month):
+        """Test opening a closed month"""
+        repo = MonthRepository(test_db)
+        service = MonthService(repo)
+        # First close the month
+        service.close_month(sample_month.id, "test_user")
+        # Then open it
+        result = service.open_month(sample_month.id, "test_user")
+        assert result["is_closed"] is False
+        assert result["closed_at"] is None
+        assert result["closed_by"] is None
+        assert "has been reopened" in result["message"]
+
+    def test_open_month_not_closed(self, test_db, sample_month):
+        """Test opening a month that is not closed"""
+        repo = MonthRepository(test_db)
+        service = MonthService(repo)
+        with pytest.raises(ValidationError) as exc_info:
+            service.open_month(sample_month.id)
+        assert "is not closed" in str(exc_info.value)
+
+    def test_open_month_not_found(self, test_db):
+        """Test opening a non-existent month"""
+        repo = MonthRepository(test_db)
+        service = MonthService(repo)
+        with pytest.raises(NotFoundError) as exc_info:
+            service.open_month(999)
+        assert "Month with ID 999 not found" in str(exc_info.value)
+
+    def test_is_month_closed_false(self, test_db, sample_month):
+        """Test checking if a month is closed when it's not"""
+        repo = MonthRepository(test_db)
+        service = MonthService(repo)
+        assert service.is_month_closed(sample_month.id) is False
+
+    def test_is_month_closed_true(self, test_db, sample_month):
+        """Test checking if a month is closed when it is"""
+        repo = MonthRepository(test_db)
+        service = MonthService(repo)
+        service.close_month(sample_month.id)
+        assert service.is_month_closed(sample_month.id) is True
+
+    def test_is_month_closed_not_found(self, test_db):
+        """Test checking if a non-existent month is closed"""
+        repo = MonthRepository(test_db)
+        service = MonthService(repo)
+        with pytest.raises(NotFoundError) as exc_info:
+            service.is_month_closed(999)
+        assert "Month with ID 999 not found" in str(exc_info.value)

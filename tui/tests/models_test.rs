@@ -20,8 +20,10 @@ fn test_expense_serialization() {
         purchases: Some(vec![Purchase {
             name: "Walmart".to_string(),
             amount: 150.0,
+            date: None,
         }]),
         order: 0,
+        expense_date: None,
     };
 
     let json = serde_json::to_string(&expense).unwrap();
@@ -45,6 +47,7 @@ fn test_expense_create_serialization() {
         notes: None,
         month_id: 1,
         purchases: None,
+        expense_date: None,
     };
 
     let json = serde_json::to_string(&create).unwrap();
@@ -202,6 +205,9 @@ fn test_month_serialization() {
         name: "January 2024".to_string(),
         start_date: "2024-01-01".to_string(),
         end_date: "2024-01-31".to_string(),
+        is_closed: false,
+        closed_at: None,
+        closed_by: None,
     };
 
     let json = serde_json::to_string(&month).unwrap();
@@ -218,6 +224,7 @@ fn test_purchase_serialization() {
     let purchase = Purchase {
         name: "Store A".to_string(),
         amount: 25.50,
+        date: None,
     };
 
     let json = serde_json::to_string(&purchase).unwrap();

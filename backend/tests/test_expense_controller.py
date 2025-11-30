@@ -450,3 +450,267 @@ class TestExpenseController:
 
         response = client.post("/api/v1/expenses/reorder", json={"expense_ids": [expense.id]})
         assert response.status_code == 403
+
+
+class TestExpenseClosedMonthController:
+    """Tests for expense operations on closed months via API"""
+
+    def test_create_expense_closed_month(self, client, test_db, api_headers, sample_month):
+        """Test creating an expense in a closed month via API"""
+        # Close the month
+        client.post(f"/api/v1/months/{sample_month.id}/close", headers=api_headers)
+
+        # Try to create an expense
+        response = client.post(
+            "/api/v1/expenses",
+            json={
+                "expense_name": "Test Expense",
+                "period": "Period 1",
+                "category": "Category 1",
+                "budget": 100.0,
+                "cost": 90.0,
+                "month_id": sample_month.id,
+            },
+            headers=api_headers,
+        )
+        assert response.status_code == 400
+        assert "closed" in response.json()["detail"].lower()
+
+    def test_update_expense_closed_month(self, client, test_db, api_headers, sample_month):
+        """Test updating an expense in a closed month via API"""
+        # Create an expense first
+        expense = Expense(
+            expense_name="Test Expense",
+            period="Period 1",
+            category="Category 1",
+            budget=100.0,
+            cost=90.0,
+            month_id=sample_month.id,
+        )
+        test_db.add(expense)
+        test_db.commit()
+        test_db.refresh(expense)
+
+        # Close the month
+        client.post(f"/api/v1/months/{sample_month.id}/close", headers=api_headers)
+
+        # Try to update the expense
+        response = client.put(
+            f"/api/v1/expenses/{expense.id}",
+            json={"expense_name": "Updated Expense"},
+            headers=api_headers,
+        )
+        assert response.status_code == 400
+        assert "closed" in response.json()["detail"].lower()
+
+    def test_delete_expense_closed_month(self, client, test_db, api_headers, sample_month):
+        """Test deleting an expense in a closed month via API"""
+        # Create an expense first
+        expense = Expense(
+            expense_name="Test Expense",
+            period="Period 1",
+            category="Category 1",
+            budget=100.0,
+            cost=90.0,
+            month_id=sample_month.id,
+        )
+        test_db.add(expense)
+        test_db.commit()
+        test_db.refresh(expense)
+
+        # Close the month
+        client.post(f"/api/v1/months/{sample_month.id}/close", headers=api_headers)
+
+        # Try to delete the expense
+        response = client.delete(f"/api/v1/expenses/{expense.id}", headers=api_headers)
+        assert response.status_code == 400
+        assert "closed" in response.json()["detail"].lower()
+
+    def test_expense_operations_allowed_after_reopening(
+        self, client, test_db, api_headers, sample_month
+    ):
+        """Test expense operations are allowed after reopening month via API"""
+        # Create an expense
+        expense = Expense(
+            expense_name="Test Expense",
+            period="Period 1",
+            category="Category 1",
+            budget=100.0,
+            cost=90.0,
+            month_id=sample_month.id,
+        )
+        test_db.add(expense)
+        test_db.commit()
+        test_db.refresh(expense)
+
+        # Close the month
+        client.post(f"/api/v1/months/{sample_month.id}/close", headers=api_headers)
+
+        # Reopen the month
+        client.post(f"/api/v1/months/{sample_month.id}/open", headers=api_headers)
+
+        # Now update should work
+        response = client.put(
+            f"/api/v1/expenses/{expense.id}",
+            json={"expense_name": "Updated Expense"},
+            headers=api_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["expense_name"] == "Updated Expense"
+
+        # Create should work
+        response = client.post(
+            "/api/v1/expenses",
+            json={
+                "expense_name": "New Expense",
+                "period": "Period 1",
+                "category": "Category 1",
+                "budget": 50.0,
+                "cost": 40.0,
+                "month_id": sample_month.id,
+            },
+            headers=api_headers,
+        )
+        assert response.status_code == 200
+
+        # Delete should work
+        new_expense_id = response.json()["id"]
+        response = client.delete(f"/api/v1/expenses/{new_expense_id}", headers=api_headers)
+        assert response.status_code == 200
+
+
+class TestExpensePayController:
+    """Tests for expense pay endpoint"""
+
+    def test_pay_expense(self, client, test_db, api_headers, sample_month):
+        """Test paying an expense via API"""
+        # Create an expense
+        expense = Expense(
+            expense_name="Test Expense",
+            period="Period 1",
+            category="Category 1",
+            budget=100.0,
+            cost=0.0,
+            month_id=sample_month.id,
+        )
+        test_db.add(expense)
+        test_db.commit()
+        test_db.refresh(expense)
+
+        # Pay the expense
+        response = client.post(
+            f"/api/v1/expenses/{expense.id}/pay",
+            headers=api_headers,
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["cost"] == 100.0
+        assert data["purchases"] is not None
+        assert len(data["purchases"]) == 1
+        assert data["purchases"][0]["name"] == "Payment"
+        assert data["purchases"][0]["amount"] == 100.0
+
+    def test_pay_expense_with_custom_amount(self, client, test_db, api_headers, sample_month):
+        """Test paying an expense with a custom amount via API"""
+        # Create an expense
+        expense = Expense(
+            expense_name="Test Expense",
+            period="Period 1",
+            category="Category 1",
+            budget=100.0,
+            cost=0.0,
+            month_id=sample_month.id,
+        )
+        test_db.add(expense)
+        test_db.commit()
+        test_db.refresh(expense)
+
+        # Pay with custom amount
+        response = client.post(
+            f"/api/v1/expenses/{expense.id}/pay",
+            json={"amount": 75.0},
+            headers=api_headers,
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["cost"] == 75.0
+        assert data["purchases"][0]["amount"] == 75.0
+
+    def test_pay_expense_not_found(self, client, api_headers):
+        """Test paying a non-existent expense via API"""
+        response = client.post("/api/v1/expenses/999/pay", headers=api_headers)
+        assert response.status_code == 404
+
+    def test_pay_expense_no_api_key(self, client, test_db, sample_month):
+        """Test paying an expense without API key"""
+        expense = Expense(
+            expense_name="Test Expense",
+            period="Period 1",
+            category="Category 1",
+            budget=100.0,
+            cost=0.0,
+            month_id=sample_month.id,
+        )
+        test_db.add(expense)
+        test_db.commit()
+        test_db.refresh(expense)
+
+        response = client.post(f"/api/v1/expenses/{expense.id}/pay")
+        assert response.status_code == 403
+
+    def test_pay_expense_closed_month(self, client, test_db, api_headers, sample_month):
+        """Test paying an expense in a closed month via API"""
+        # Create an expense
+        expense = Expense(
+            expense_name="Test Expense",
+            period="Period 1",
+            category="Category 1",
+            budget=100.0,
+            cost=0.0,
+            month_id=sample_month.id,
+        )
+        test_db.add(expense)
+        test_db.commit()
+        test_db.refresh(expense)
+
+        # Close the month
+        client.post(f"/api/v1/months/{sample_month.id}/close", headers=api_headers)
+
+        # Try to pay the expense
+        response = client.post(
+            f"/api/v1/expenses/{expense.id}/pay",
+            headers=api_headers,
+        )
+        assert response.status_code == 400
+        assert "closed" in response.json()["detail"].lower()
+
+    def test_pay_expense_adds_to_existing_purchases(
+        self, client, test_db, api_headers, sample_month
+    ):
+        """Test paying an expense adds to existing purchases via API"""
+        # Create an expense with existing purchases
+        expense = Expense(
+            expense_name="Test Expense",
+            period="Period 1",
+            category="Category 1",
+            budget=100.0,
+            cost=50.0,
+            month_id=sample_month.id,
+            purchases=[{"name": "Initial purchase", "amount": 50.0}],
+        )
+        test_db.add(expense)
+        test_db.commit()
+        test_db.refresh(expense)
+
+        # Pay the expense
+        response = client.post(
+            f"/api/v1/expenses/{expense.id}/pay",
+            json={"amount": 25.0},
+            headers=api_headers,
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["purchases"]) == 2
+        assert data["purchases"][0]["name"] == "Initial purchase"
+        assert data["purchases"][1]["name"] == "Payment"
+        assert data["cost"] == 75.0

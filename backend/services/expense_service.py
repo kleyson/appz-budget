@@ -1,5 +1,7 @@
 """Expense service for business logic"""
 
+from datetime import date
+
 from exceptions import NotFoundError, ValidationError
 from repositories import ExpenseRepository, IncomeRepository, MonthRepository
 from schemas import ExpenseCreate, ExpenseUpdate
@@ -20,13 +22,25 @@ class ExpenseService:
 
     def create_expense(self, expense_data: ExpenseCreate, user_name: str | None = None):
         """Create a new expense"""
-        # Validate month_id exists if month_repository is provided
+        # Validate month_id exists and is not closed
         if self.month_repository:
             month = self.month_repository.get_by_id(expense_data.month_id)
             if not month:
                 raise ValidationError(f"Month with ID {expense_data.month_id} not found")
+            if month.is_closed:
+                raise ValidationError(f"Cannot add expense: Month '{month.name}' is closed")
 
         expense_dict = expense_data.model_dump()
+
+        # Set expense_date to today if not provided
+        if not expense_dict.get("expense_date"):
+            expense_dict["expense_date"] = date.today()
+        elif isinstance(expense_dict["expense_date"], str):
+            from datetime import datetime
+
+            expense_dict["expense_date"] = datetime.fromisoformat(
+                expense_dict["expense_date"]
+            ).date()
 
         # Calculate cost from purchases if they exist and are not empty
         if expense_dict.get("purchases") and len(expense_dict["purchases"]) > 0:
@@ -74,11 +88,23 @@ class ExpenseService:
 
         update_data = expense_update.model_dump(exclude_unset=True)
 
-        # Validate month_id exists if it's being updated and month_repository is provided
-        if "month_id" in update_data and self.month_repository:
-            month = self.month_repository.get_by_id(update_data["month_id"])
+        # Validate month_id exists and is not closed
+        month_id_to_check = update_data.get("month_id", expense.month_id)
+        if self.month_repository:
+            month = self.month_repository.get_by_id(month_id_to_check)
             if not month:
-                raise ValidationError(f"Month with ID {update_data['month_id']} not found")
+                raise ValidationError(f"Month with ID {month_id_to_check} not found")
+            if month.is_closed:
+                raise ValidationError(f"Cannot update expense: Month '{month.name}' is closed")
+
+        # Convert expense_date string to date if provided
+        if "expense_date" in update_data and update_data["expense_date"]:
+            if isinstance(update_data["expense_date"], str):
+                from datetime import datetime
+
+                update_data["expense_date"] = datetime.fromisoformat(
+                    update_data["expense_date"]
+                ).date()
 
         # Calculate cost from purchases if they're being updated
         if "purchases" in update_data:
@@ -101,6 +127,12 @@ class ExpenseService:
         expense = self.repository.get_by_id(expense_id)
         if not expense:
             raise NotFoundError("Expense not found")
+
+        # Check if month is closed
+        if self.month_repository:
+            month = self.month_repository.get_by_id(expense.month_id)
+            if month and month.is_closed:
+                raise ValidationError(f"Cannot delete expense: Month '{month.name}' is closed")
 
         self.repository.delete(expense)
         return {"message": "Expense deleted successfully"}
@@ -234,3 +266,37 @@ class ExpenseService:
             "next_month_id": next_month.id,
             "next_month_name": next_month.name,
         }
+
+    def pay_expense(
+        self, expense_id: int, amount: float | None = None, user_name: str | None = None
+    ):
+        """Pay an expense by adding a payment purchase entry with the budget amount.
+        Creates a new expense entry with title 'Payment' and the cost set to budget.
+        """
+        expense = self.repository.get_by_id(expense_id)
+        if not expense:
+            raise NotFoundError("Expense not found")
+
+        # Check if month is closed
+        if self.month_repository:
+            month = self.month_repository.get_by_id(expense.month_id)
+            if month and month.is_closed:
+                raise ValidationError(f"Cannot pay expense: Month '{month.name}' is closed")
+
+        # Use provided amount or budget amount
+        payment_amount = amount if amount is not None else expense.budget
+
+        # Add payment as a purchase entry with today's date
+        today = date.today().isoformat()
+        payment_entry = {"name": "Payment", "amount": payment_amount, "date": today}
+
+        # Get existing purchases or create new list (create a copy to ensure SQLAlchemy detects the change)
+        current_purchases = list(expense.purchases) if expense.purchases else []
+        current_purchases.append(payment_entry)
+
+        # Calculate new cost from all purchases
+        total_cost = sum(p.get("amount", 0.0) for p in current_purchases)
+
+        update_data = {"purchases": current_purchases, "cost": total_cost}
+
+        return self.repository.update(expense, update_data, user_name)

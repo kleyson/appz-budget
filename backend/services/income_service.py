@@ -20,11 +20,13 @@ class IncomeService:
 
     def create_income(self, income_data: IncomeCreate, user_name: str | None = None):
         """Create a new income"""
-        # Validate month_id exists if month_repository is provided
+        # Validate month_id exists and is not closed
         if self.month_repository:
             month = self.month_repository.get_by_id(income_data.month_id)
             if not month:
                 raise ValidationError(f"Month with ID {income_data.month_id} not found")
+            if month.is_closed:
+                raise ValidationError(f"Cannot add income: Month '{month.name}' is closed")
 
         # Validate income_type_id exists if income_type_repository is provided
         if self.income_type_repository:
@@ -68,11 +70,14 @@ class IncomeService:
 
         income_dict = income_data.model_dump(exclude_unset=True)
 
-        # Validate month_id if provided
-        if "month_id" in income_dict and self.month_repository:
-            month = self.month_repository.get_by_id(income_dict["month_id"])
+        # Validate month_id exists and is not closed
+        month_id_to_check = income_dict.get("month_id", income.month_id)
+        if self.month_repository:
+            month = self.month_repository.get_by_id(month_id_to_check)
             if not month:
-                raise ValidationError(f"Month with ID {income_dict['month_id']} not found")
+                raise ValidationError(f"Month with ID {month_id_to_check} not found")
+            if month.is_closed:
+                raise ValidationError(f"Cannot update income: Month '{month.name}' is closed")
 
         # Validate income_type_id if provided
         if "income_type_id" in income_dict and self.income_type_repository:
@@ -89,4 +94,11 @@ class IncomeService:
         income = self.repository.get_by_id(income_id)
         if not income:
             raise NotFoundError(f"Income with ID {income_id} not found")
+
+        # Check if month is closed
+        if self.month_repository:
+            month = self.month_repository.get_by_id(income.month_id)
+            if month and month.is_closed:
+                raise ValidationError(f"Cannot delete income: Month '{month.name}' is closed")
+
         self.repository.delete(income)

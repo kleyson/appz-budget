@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 pub struct Purchase {
     pub name: String,
     pub amount: f64,
+    pub date: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -18,6 +19,7 @@ pub struct Expense {
     pub month_id: i32,
     pub purchases: Option<Vec<Purchase>>,
     pub order: i32,
+    pub expense_date: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -30,6 +32,7 @@ pub struct ExpenseCreate {
     pub notes: Option<String>,
     pub month_id: i32,
     pub purchases: Option<Vec<Purchase>>,
+    pub expense_date: Option<String>,
 }
 
 #[derive(Debug, Clone, Default, Serialize)]
@@ -50,6 +53,8 @@ pub struct ExpenseUpdate {
     pub month_id: Option<i32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub purchases: Option<Vec<Purchase>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub expense_date: Option<String>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -87,4 +92,10 @@ pub struct CloneResponse {
     pub cloned_income_count: i32,
     pub next_month_id: i32,
     pub next_month_name: String,
+}
+
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct PayExpenseRequest {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub amount: Option<f64>,
 }

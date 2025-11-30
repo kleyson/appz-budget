@@ -53,6 +53,7 @@ describe('useMonths', () => {
         name: 'November 2024',
         start_date: '2024-11-01',
         end_date: '2024-11-30',
+        is_closed: false,
       },
       {
         id: 2,
@@ -61,6 +62,7 @@ describe('useMonths', () => {
         name: 'December 2024',
         start_date: '2024-12-01',
         end_date: '2024-12-31',
+        is_closed: false,
       },
     ];
 
@@ -105,6 +107,7 @@ describe('useCurrentMonth', () => {
       name: 'November 2024',
       start_date: '2024-11-01',
       end_date: '2024-11-30',
+      is_closed: false,
     };
 
     vi.mocked(monthsApi.getCurrent).mockResolvedValue({
@@ -148,6 +151,7 @@ describe('useMonth', () => {
       name: 'November 2024',
       start_date: '2024-11-01',
       end_date: '2024-11-30',
+      is_closed: false,
     };
 
     vi.mocked(monthsApi.getById).mockResolvedValue({
@@ -203,6 +207,7 @@ describe('useMonthByYearMonth', () => {
       name: 'November 2024',
       start_date: '2024-11-01',
       end_date: '2024-11-30',
+      is_closed: false,
     };
 
     vi.mocked(monthsApi.getByYearMonth).mockResolvedValue({
@@ -263,6 +268,7 @@ describe('useCreateMonth', () => {
       name: 'December 2024',
       start_date: '2024-12-01',
       end_date: '2024-12-31',
+      is_closed: false,
     };
 
     vi.mocked(monthsApi.create).mockResolvedValue({
@@ -319,6 +325,7 @@ describe('useUpdateMonth', () => {
       name: 'Updated November 2024',
       start_date: '2024-11-01',
       end_date: '2024-11-30',
+      is_closed: false,
     };
 
     vi.mocked(monthsApi.update).mockResolvedValue({

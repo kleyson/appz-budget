@@ -53,6 +53,33 @@ def get_db():
         db.close()
 
 
+def get_user_name(
+    x_user_name: str | None = Header(None, alias="X-User-Name"),
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
+    db: Session = Depends(get_db),
+) -> str | None:
+    """Extract user name for audit tracking.
+
+    Priority:
+    1. Try to get user name from JWT token (if authenticated)
+    2. Fall back to X-User-Name header (for API key only auth)
+    """
+    # First, try to get user from JWT token
+    if credentials:
+        token = credentials.credentials
+        payload = decode_access_token(token)
+        if payload:
+            user_id: int | None = payload.get("user_id")
+            if user_id:
+                user_repository = UserRepository(db)
+                user = user_repository.get_by_id(user_id)
+                if user and user.is_active:
+                    return user.full_name or user.email
+
+    # Fall back to X-User-Name header
+    return x_user_name
+
+
 def get_current_user_id(
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
     db: Session = Depends(get_db),

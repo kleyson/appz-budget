@@ -63,6 +63,7 @@ describe('useImport', () => {
       name: 'November 2024',
       start_date: '2024-11-01',
       end_date: '2024-11-30',
+      is_closed: false,
     };
 
     vi.mocked(useCurrentMonth).mockReturnValue({

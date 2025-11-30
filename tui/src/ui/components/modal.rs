@@ -36,7 +36,7 @@ fn render_expense_form(frame: &mut Frame, is_edit: bool) {
     } else {
         "Add Expense"
     };
-    let area = centered_rect_fixed(60, 20, frame.area());
+    let area = centered_rect_fixed(60, 22, frame.area());
 
     let block = Block::default()
         .title(format!(" {} ", title))
@@ -54,7 +54,8 @@ fn render_expense_form(frame: &mut Frame, is_edit: bool) {
         Constraint::Length(2), // Period
         Constraint::Length(2), // Category
         Constraint::Length(2), // Budget
-        Constraint::Length(2), // Cost
+        Constraint::Length(2), // Purchases
+        Constraint::Length(2), // Calculated Cost (read-only)
         Constraint::Length(2), // Notes
         Constraint::Min(2),    // Spacer
         Constraint::Length(1), // Instructions
@@ -63,18 +64,24 @@ fn render_expense_form(frame: &mut Frame, is_edit: bool) {
 
     // Placeholder form fields
     let fields = [
-        ("Name:", "Enter expense name..."),
-        ("Period:", "Select period..."),
-        ("Category:", "Select category..."),
-        ("Budget:", "0.00"),
-        ("Cost:", "0.00"),
-        ("Notes:", "Optional notes..."),
+        ("Name:", "Enter expense name...", false),
+        ("Period:", "Select period...", false),
+        ("Category:", "Select category...", false),
+        ("Budget:", "0.00", false),
+        ("Purchases:", "Add purchases... (+ to add)", false),
+        ("Calc. Cost:", "0.00 (from purchases)", true), // Read-only
+        ("Notes:", "Optional notes...", false),
     ];
 
-    for (i, (label, placeholder)) in fields.iter().enumerate() {
+    for (i, (label, placeholder, is_readonly)) in fields.iter().enumerate() {
         if i < chunks.len() - 2 {
             let text = format!("{:12} {}", label, placeholder);
-            let para = Paragraph::new(text).style(Style::default().fg(Color::DarkGray));
+            let style = if *is_readonly {
+                Style::default().fg(Color::Rgb(100, 100, 100))
+            } else {
+                Style::default().fg(Color::DarkGray)
+            };
+            let para = Paragraph::new(text).style(style);
             frame.render_widget(para, chunks[i]);
         }
     }
@@ -83,6 +90,8 @@ fn render_expense_form(frame: &mut Frame, is_edit: bool) {
     let instructions = Line::from(vec![
         Span::styled("Tab", Style::default().fg(Color::Cyan)),
         Span::raw(": Next  "),
+        Span::styled("+", Style::default().fg(Color::Cyan)),
+        Span::raw(": Add Purchase  "),
         Span::styled("Enter", Style::default().fg(Color::Cyan)),
         Span::raw(": Save  "),
         Span::styled("Esc", Style::default().fg(Color::Cyan)),
@@ -91,7 +100,7 @@ fn render_expense_form(frame: &mut Frame, is_edit: bool) {
     let instructions_para = Paragraph::new(instructions)
         .alignment(Alignment::Center)
         .style(Style::default().fg(Color::DarkGray));
-    frame.render_widget(instructions_para, chunks[7]);
+    frame.render_widget(instructions_para, chunks[8]);
 }
 
 /// Render income form modal

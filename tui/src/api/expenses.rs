@@ -1,6 +1,7 @@
 use crate::api::client::{ApiClient, ApiError};
 use crate::models::{
     CloneResponse, Expense, ExpenseCreate, ExpenseFilters, ExpenseReorderRequest, ExpenseUpdate,
+    PayExpenseRequest,
 };
 
 pub struct ExpensesApi<'a> {
@@ -50,6 +51,18 @@ impl<'a> ExpensesApi<'a> {
     pub async fn clone_to_next_month(&self, month_id: i32) -> Result<CloneResponse, ApiError> {
         self.client
             .post(&format!("/expenses/clone-to-next-month/{}", month_id), &())
+            .await
+    }
+
+    /// Pay an expense (adds a payment entry with the budget amount)
+    pub async fn pay(
+        &self,
+        id: i32,
+        request: Option<&PayExpenseRequest>,
+    ) -> Result<Expense, ApiError> {
+        let body = request.cloned().unwrap_or_default();
+        self.client
+            .post(&format!("/expenses/{}/pay", id), &body)
             .await
     }
 }

@@ -1,13 +1,14 @@
 """Pydantic schemas for request/response validation"""
 
-from datetime import datetime
+from datetime import date, datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 
 
 class Purchase(BaseModel):
     name: str
     amount: float
+    date: str | None = None  # ISO date string when purchase was made
 
 
 class ExpenseBase(BaseModel):
@@ -20,6 +21,7 @@ class ExpenseBase(BaseModel):
     month_id: int
     purchases: list[Purchase] | None = None
     order: int = 0
+    expense_date: str | None = None  # ISO date string when expense was added
 
 
 class ExpenseCreate(ExpenseBase):
@@ -36,16 +38,25 @@ class ExpenseUpdate(BaseModel):
     month_id: int | None = None
     purchases: list[Purchase] | None = None
     order: int | None = None
+    expense_date: str | None = None
 
 
 class ExpenseResponse(ExpenseBase):
     id: int
+    expense_date: str | date | None = None  # Override to accept both date and string
     created_at: datetime
     updated_at: datetime
     created_by: str | None = None
     updated_by: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+    @model_validator(mode="after")
+    def convert_expense_date(self):
+        """Convert expense_date from date to string if needed"""
+        if self.expense_date is not None and isinstance(self.expense_date, date):
+            self.expense_date = self.expense_date.isoformat()
+        return self
 
 
 class ExpenseReorderRequest(BaseModel):
@@ -147,6 +158,9 @@ class MonthBase(BaseModel):
     name: str
     start_date: str  # ISO date string
     end_date: str  # ISO date string
+    is_closed: bool = False
+    closed_at: datetime | None = None
+    closed_by: str | None = None
 
 
 class MonthCreate(BaseModel):
@@ -169,6 +183,9 @@ class MonthResponse(BaseModel):
     name: str
     start_date: str
     end_date: str
+    is_closed: bool = False
+    closed_at: datetime | None = None
+    closed_by: str | None = None
     created_at: datetime
     updated_at: datetime
     created_by: str | None = None
@@ -310,3 +327,20 @@ class IncomeResponse(IncomeBase):
     updated_by: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class PayExpenseRequest(BaseModel):
+    """Request to pay an expense - creates a payment entry"""
+
+    amount: float | None = None  # If not provided, uses budget amount
+
+
+class MonthCloseResponse(BaseModel):
+    """Response when closing/opening a month"""
+
+    id: int
+    name: str
+    is_closed: bool
+    closed_at: datetime | None = None
+    closed_by: str | None = None
+    message: str

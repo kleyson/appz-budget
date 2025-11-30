@@ -17,7 +17,12 @@
       "Bash(make tui-format-check:*)",
       "Bash(make tui-format:*)",
       "Bash(make tui-lint:*)",
-      "Bash(make tui-test:*)"
+      "Bash(make tui-test:*)",
+      "Bash(python -m alembic:*)",
+      "Bash(source .venv/bin/activate)",
+      "Bash(alembic upgrade:*)",
+      "Bash(.venv/bin/python -m alembic upgrade head:*)",
+      "Bash(.venv/bin/python -m pytest:*)"
     ],
     "deny": [],
     "ask": []

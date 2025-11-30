@@ -5,13 +5,14 @@ use crate::models::{
 };
 
 /// Form field indices for expense form
+/// Note: Cost is not included as it's always calculated from purchases
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ExpenseField {
     Name,
     Period,
     Category,
     Budget,
-    Cost,
+    Purchases,
     Notes,
 }
 
@@ -22,7 +23,7 @@ impl ExpenseField {
             ExpenseField::Period,
             ExpenseField::Category,
             ExpenseField::Budget,
-            ExpenseField::Cost,
+            ExpenseField::Purchases,
             ExpenseField::Notes,
         ]
     }
@@ -33,7 +34,7 @@ impl ExpenseField {
             ExpenseField::Period => 1,
             ExpenseField::Category => 2,
             ExpenseField::Budget => 3,
-            ExpenseField::Cost => 4,
+            ExpenseField::Purchases => 4,
             ExpenseField::Notes => 5,
         }
     }
@@ -44,7 +45,7 @@ impl ExpenseField {
             1 => ExpenseField::Period,
             2 => ExpenseField::Category,
             3 => ExpenseField::Budget,
-            4 => ExpenseField::Cost,
+            4 => ExpenseField::Purchases,
             5 => ExpenseField::Notes,
             _ => ExpenseField::Name,
         }
@@ -112,9 +113,14 @@ impl ExpenseFormState {
         }
     }
 
+    /// Calculate cost from purchases (always calculated, never manually editable)
+    pub fn calculated_cost(&self) -> f64 {
+        self.purchases.iter().map(|p| p.amount).sum()
+    }
+
     pub fn to_create(&self, month_id: i32) -> Option<ExpenseCreate> {
         let budget = self.budget.parse().ok()?;
-        let cost = self.cost.parse().ok()?;
+        let cost = self.calculated_cost();
         Some(ExpenseCreate {
             expense_name: self.name.clone(),
             period: self.period.clone(),
@@ -132,12 +138,13 @@ impl ExpenseFormState {
             } else {
                 Some(self.purchases.clone())
             },
+            expense_date: None,
         })
     }
 
     pub fn to_update(&self) -> Option<ExpenseUpdate> {
         let budget = self.budget.parse().ok()?;
-        let cost = self.cost.parse().ok()?;
+        let cost = self.calculated_cost();
         Some(ExpenseUpdate {
             expense_name: Some(self.name.clone()),
             period: Some(self.period.clone()),
@@ -164,8 +171,10 @@ impl ExpenseFormState {
         if self.budget.parse::<f64>().is_err() {
             errors.push("Budget must be a valid number".to_string());
         }
-        if self.cost.parse::<f64>().is_err() {
-            errors.push("Cost must be a valid number".to_string());
+        if self.purchases.is_empty() {
+            errors.push("At least one purchase is required".to_string());
+        } else if self.calculated_cost() == 0.0 {
+            errors.push("Purchases must have amounts".to_string());
         }
         errors
     }

@@ -36,22 +36,17 @@ export const ExpenseForm = ({
     purchases: expense?.purchases || [],
   });
 
-  // Check if any purchases exist in the array (even if empty)
+  // Get purchases array
   const purchases = formData.purchases || [];
-  const hasPurchases = purchases.length > 0;
 
-  // Calculate cost from purchases if they exist
-  const calculatedCost = hasPurchases
-    ? purchases.reduce((sum, item) => sum + (item.amount || 0), 0)
-    : formData.cost;
+  // Calculate cost from purchases (always calculated, never manually editable)
+  const calculatedCost = purchases.reduce((sum, item) => sum + (item.amount || 0), 0);
 
-  // Update cost when purchases change (only when purchases exist)
+  // Update cost when purchases change
   useEffect(() => {
-    if (hasPurchases) {
-      const total = purchases.reduce((sum, item) => sum + (item.amount || 0), 0);
-      setFormData((prev) => ({ ...prev, cost: total }));
-    }
-  }, [purchases, hasPurchases]);
+    const total = purchases.reduce((sum, item) => sum + (item.amount || 0), 0);
+    setFormData((prev) => ({ ...prev, cost: total }));
+  }, [purchases]);
 
   // Update month_id if defaultMonth changes
   useEffect(() => {
@@ -209,17 +204,14 @@ export const ExpenseForm = ({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Cost{' '}
-                {hasPurchases && (
-                  <span className="text-xs text-gray-500">(calculated from purchases)</span>
-                )}
+                Calculated Cost
               </label>
               <CurrencyInput
                 name="cost"
-                value={hasPurchases ? calculatedCost : formData.cost}
-                onChange={(value) => setFormData((prev) => ({ ...prev, cost: value }))}
-                disabled={hasPurchases}
-                readOnly={hasPurchases}
+                value={calculatedCost}
+                onChange={() => {}}
+                disabled
+                readOnly
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 dark:disabled:bg-gray-900 disabled:cursor-not-allowed"
               />
             </div>
@@ -240,7 +232,7 @@ export const ExpenseForm = ({
               </button>
             </div>
 
-            {hasPurchases ? (
+            {purchases.length > 0 ? (
               <div className="space-y-2 border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-gray-50 dark:bg-gray-900/50">
                 {purchases.map((purchase, index) => (
                   <div key={index} className="flex gap-2 items-center">
@@ -290,7 +282,7 @@ export const ExpenseForm = ({
               </div>
             ) : (
               <p className="text-sm text-gray-500 dark:text-gray-400 italic">
-                No purchases. Add purchases to automatically calculate cost, or enter cost manually.
+                No purchases. Add purchases to calculate cost.
               </p>
             )}
           </div>

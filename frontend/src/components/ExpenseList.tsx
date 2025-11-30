@@ -16,9 +16,15 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useExpenses, useDeleteExpense, useReorderExpenses } from '../hooks/useExpenses';
+import {
+  useExpenses,
+  useDeleteExpense,
+  useReorderExpenses,
+  usePayExpense,
+} from '../hooks/useExpenses';
 import { useCategories } from '../hooks/useCategories';
 import { usePeriods } from '../hooks/usePeriods';
+import { useMonth } from '../hooks/useMonths';
 import { ExpenseForm } from './ExpenseForm';
 import type { Expense } from '../types';
 import { isDarkColor } from '../utils/colors';
@@ -42,6 +48,8 @@ interface SortableExpenseRowProps {
   togglePurchases: (expenseId: number) => void;
   setEditingExpense: (expense: Expense) => void;
   handleDelete: (id: number) => void;
+  handlePay: (expense: Expense) => void;
+  isMonthClosed: boolean;
 }
 
 function SortableExpenseRow({
@@ -55,6 +63,8 @@ function SortableExpenseRow({
   togglePurchases,
   setEditingExpense,
   handleDelete,
+  handlePay,
+  isMonthClosed,
 }: SortableExpenseRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: expense.id,
@@ -155,10 +165,29 @@ function SortableExpenseRow({
             <button
               onClick={(e) => {
                 e.stopPropagation();
+                handlePay(expense);
+              }}
+              disabled={isMonthClosed}
+              className="p-2 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 text-green-600 dark:text-green-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title={isMonthClosed ? 'Month is closed' : 'Pay expense'}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                />
+              </svg>
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
                 setEditingExpense(expense);
               }}
-              className="p-2 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20 text-primary-600 dark:text-primary-400 transition-colors"
-              title="Edit"
+              disabled={isMonthClosed}
+              className="p-2 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20 text-primary-600 dark:text-primary-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title={isMonthClosed ? 'Month is closed' : 'Edit'}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
@@ -174,8 +203,9 @@ function SortableExpenseRow({
                 e.stopPropagation();
                 handleDelete(expense.id);
               }}
-              className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 transition-colors"
-              title="Delete"
+              disabled={isMonthClosed}
+              className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title={isMonthClosed ? 'Month is closed' : 'Delete'}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
@@ -258,9 +288,13 @@ export const ExpenseList = ({
   });
   const { data: categories } = useCategories();
   const { data: periods } = usePeriods();
+  const { data: currentMonthData } = useMonth(monthId || 0);
   const deleteMutation = useDeleteExpense();
   const reorderMutation = useReorderExpenses();
+  const payMutation = usePayExpense();
   const { showConfirm, showAlert } = useDialog();
+
+  const isMonthClosed = currentMonthData?.is_closed ?? false;
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -296,6 +330,34 @@ export const ExpenseList = ({
         await showAlert({
           title: 'Error',
           message: 'Failed to delete expense. Please try again.',
+          type: 'error',
+        });
+      }
+    }
+  };
+
+  const handlePay = async (expense: Expense) => {
+    const confirmed = await showConfirm({
+      title: 'Pay Expense',
+      message: `Add a payment of ${formatCurrency(expense.budget)} to "${expense.expense_name}"?`,
+      type: 'info',
+      confirmText: 'Pay',
+      cancelText: 'Cancel',
+    });
+
+    if (confirmed) {
+      try {
+        await payMutation.mutateAsync({ id: expense.id });
+        await showAlert({
+          title: 'Payment Added',
+          message: `Payment of ${formatCurrency(expense.budget)} has been added to the expense.`,
+          type: 'success',
+        });
+      } catch (error) {
+        console.error('Error paying expense:', error);
+        await showAlert({
+          title: 'Error',
+          message: 'Failed to pay expense. Please try again.',
           type: 'error',
         });
       }
@@ -419,7 +481,12 @@ export const ExpenseList = ({
             {expenses?.length || 0} {expenses?.length === 1 ? 'expense' : 'expenses'}
           </p>
         </div>
-        <button onClick={() => setShowForm(true)} className="btn-primary text-sm">
+        <button
+          onClick={() => setShowForm(true)}
+          disabled={isMonthClosed}
+          className="btn-primary text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          title={isMonthClosed ? 'Month is closed' : undefined}
+        >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
@@ -574,14 +641,23 @@ export const ExpenseList = ({
                     )}
                   <div className="flex gap-2 pt-3 border-t border-slate-200 dark:border-slate-700">
                     <button
+                      onClick={() => handlePay(expense)}
+                      disabled={isMonthClosed}
+                      className="flex-1 text-sm px-3 py-2 rounded-lg border border-green-200 dark:border-green-800 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Pay
+                    </button>
+                    <button
                       onClick={() => setEditingExpense(expense)}
-                      className="flex-1 text-sm px-3 py-2 rounded-lg border border-primary-200 dark:border-primary-800 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 font-medium transition-colors"
+                      disabled={isMonthClosed}
+                      className="flex-1 text-sm px-3 py-2 rounded-lg border border-primary-200 dark:border-primary-800 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(expense.id)}
-                      className="flex-1 text-sm px-3 py-2 rounded-lg border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors"
+                      disabled={isMonthClosed}
+                      className="flex-1 text-sm px-3 py-2 rounded-lg border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Delete
                     </button>
@@ -644,6 +720,8 @@ export const ExpenseList = ({
                           togglePurchases={togglePurchases}
                           setEditingExpense={setEditingExpense}
                           handleDelete={handleDelete}
+                          handlePay={handlePay}
+                          isMonthClosed={isMonthClosed}
                         />
                       ))}
                     </tbody>

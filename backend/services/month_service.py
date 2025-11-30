@@ -19,6 +19,9 @@ def _month_to_dict(month) -> dict:
         "name": month.name,
         "start_date": month.start_date.isoformat(),
         "end_date": month.end_date.isoformat(),
+        "is_closed": month.is_closed if month.is_closed is not None else False,
+        "closed_at": month.closed_at,
+        "closed_by": month.closed_by,
         "created_at": created_at,
         "updated_at": updated_at,
         "created_by": month.created_by,
@@ -158,18 +161,7 @@ class MonthService:
             update_data["end_date"] = datetime.fromisoformat(update_data["end_date"]).date()
 
         updated_month = self.repository.update(month, update_data, user_name)
-        return {
-            "id": updated_month.id,
-            "year": updated_month.year,
-            "month": updated_month.month,
-            "name": updated_month.name,
-            "start_date": updated_month.start_date.isoformat(),
-            "end_date": updated_month.end_date.isoformat(),
-            "created_at": updated_month.created_at,
-            "updated_at": updated_month.updated_at,
-            "created_by": updated_month.created_by,
-            "updated_by": updated_month.updated_by,
-        }
+        return _month_to_dict(updated_month)
 
     def delete(self, month_id: int) -> None:
         """Delete a month and all associated expenses and incomes"""
@@ -191,3 +183,50 @@ class MonthService:
 
         # Delete the month itself
         self.repository.delete(month)
+
+    def close_month(self, month_id: int, user_name: str | None = None) -> dict:
+        """Close a month, preventing new expenses/incomes from being added"""
+        month = self.repository.get_by_id(month_id)
+        if not month:
+            raise NotFoundError(f"Month with ID {month_id} not found")
+
+        if month.is_closed:
+            raise ValidationError(f"Month {month.name} is already closed")
+
+        update_data = {
+            "is_closed": True,
+            "closed_at": datetime.utcnow(),
+            "closed_by": user_name,
+        }
+
+        updated_month = self.repository.update(month, update_data, user_name)
+        result = _month_to_dict(updated_month)
+        result["message"] = f"Month {updated_month.name} has been closed"
+        return result
+
+    def open_month(self, month_id: int, user_name: str | None = None) -> dict:
+        """Reopen a closed month, allowing new expenses/incomes"""
+        month = self.repository.get_by_id(month_id)
+        if not month:
+            raise NotFoundError(f"Month with ID {month_id} not found")
+
+        if not month.is_closed:
+            raise ValidationError(f"Month {month.name} is not closed")
+
+        update_data = {
+            "is_closed": False,
+            "closed_at": None,
+            "closed_by": None,
+        }
+
+        updated_month = self.repository.update(month, update_data, user_name)
+        result = _month_to_dict(updated_month)
+        result["message"] = f"Month {updated_month.name} has been reopened"
+        return result
+
+    def is_month_closed(self, month_id: int) -> bool:
+        """Check if a month is closed"""
+        month = self.repository.get_by_id(month_id)
+        if not month:
+            raise NotFoundError(f"Month with ID {month_id} not found")
+        return month.is_closed if month.is_closed is not None else False

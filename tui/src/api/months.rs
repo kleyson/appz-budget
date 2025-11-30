@@ -1,5 +1,5 @@
 use crate::api::client::{ApiClient, ApiError};
-use crate::models::{Month, MonthCreate};
+use crate::models::{Month, MonthCloseResponse, MonthCreate};
 
 pub struct MonthsApi<'a> {
     client: &'a ApiClient,
@@ -33,5 +33,17 @@ impl<'a> MonthsApi<'a> {
     /// Delete a month
     pub async fn delete(&self, id: i32) -> Result<(), ApiError> {
         self.client.delete(&format!("/months/{}", id)).await
+    }
+
+    /// Close a month (prevents adding expenses/incomes)
+    pub async fn close(&self, id: i32) -> Result<MonthCloseResponse, ApiError> {
+        self.client
+            .post(&format!("/months/{}/close", id), &())
+            .await
+    }
+
+    /// Open a closed month (allows adding expenses/incomes)
+    pub async fn open(&self, id: i32) -> Result<MonthCloseResponse, ApiError> {
+        self.client.post(&format!("/months/{}/open", id), &()).await
     }
 }

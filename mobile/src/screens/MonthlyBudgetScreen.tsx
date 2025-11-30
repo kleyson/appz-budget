@@ -80,10 +80,38 @@ export const MonthlyBudgetScreen = () => {
   });
 
   useEffect(() => {
-    if (currentMonth && selectedMonthId === null) {
-      setSelectedMonthId(currentMonth.id);
+    if (selectedMonthId === null && months && months.length > 0) {
+      // Find the best default month:
+      // 1. Start with current month
+      // 2. If current month is closed, find the closest non-closed month looking to the future first
+      // 3. If no future non-closed month exists, fall back to current month
+
+      let defaultMonth = currentMonth;
+
+      if (currentMonth?.is_closed && months.length > 0) {
+        // Months are sorted newest first (year desc, month desc)
+        // Find current month index
+        const currentIdx = months.findIndex((m: Month) => m.id === currentMonth.id);
+
+        // Look for non-closed months in the future (lower indices = newer months)
+        for (let i = currentIdx - 1; i >= 0; i--) {
+          if (!months[i].is_closed) {
+            defaultMonth = months[i];
+            break;
+          }
+        }
+
+        // If no future non-closed month found, keep current month as default
+      }
+
+      if (defaultMonth) {
+        setSelectedMonthId(defaultMonth.id);
+      } else if (months.length > 0) {
+        // Fallback to first available month
+        setSelectedMonthId(months[0].id);
+      }
     }
-  }, [currentMonth, selectedMonthId]);
+  }, [currentMonth, months, selectedMonthId]);
 
   const handleCloneToNextMonth = async () => {
     if (!selectedMonthId) {

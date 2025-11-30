@@ -1,6 +1,7 @@
 export interface Purchase {
   name: string;
   amount: number;
+  date?: string | null;
 }
 
 export interface Expense {
@@ -13,6 +14,7 @@ export interface Expense {
   notes?: string | null;
   month_id: number;
   purchases?: Purchase[] | null;
+  expense_date?: string | null;
 }
 
 export interface ExpenseCreate {
@@ -24,6 +26,7 @@ export interface ExpenseCreate {
   notes?: string | null;
   month_id: number;
   purchases?: Purchase[] | null;
+  expense_date?: string | null;
 }
 
 export interface ExpenseUpdate {
@@ -35,6 +38,7 @@ export interface ExpenseUpdate {
   notes?: string | null;
   month_id?: number;
   purchases?: Purchase[] | null;
+  expense_date?: string | null;
 }
 
 export interface Category {
@@ -119,6 +123,9 @@ export interface Month {
   name: string;
   start_date: string;
   end_date: string;
+  is_closed: boolean;
+  closed_at?: string | null;
+  closed_by?: string | null;
 }
 
 export interface MonthCreate {
@@ -224,5 +231,18 @@ export interface IncomeUpdate {
   budget?: number;
   amount?: number;
   month_id?: number;
+}
+
+export interface PayExpenseRequest {
+  amount?: number | null;
+}
+
+export interface MonthCloseResponse {
+  id: number;
+  name: string;
+  is_closed: boolean;
+  closed_at?: string | null;
+  closed_by?: string | null;
+  message: string;
 }
 

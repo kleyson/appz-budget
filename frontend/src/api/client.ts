@@ -20,6 +20,8 @@ import type {
   Month,
   MonthCreate,
   MonthUpdate,
+  MonthCloseResponse,
+  PayExpenseRequest,
   SummaryTotals,
   PeriodSummaryResponse,
   UserRegister,
@@ -162,6 +164,8 @@ export const expensesApi = {
       next_month_id: number;
       next_month_name: string;
     }>(`/api/v1/expenses/clone-to-next-month/${monthId}`),
+  pay: (id: number, data?: PayExpenseRequest): Promise<AxiosResponse<Expense>> =>
+    apiClient.post<Expense>(`/api/v1/expenses/${id}/pay`, data || {}),
 };
 
 // Category endpoints
@@ -206,6 +210,10 @@ export const monthsApi = {
   update: (id: number, data: MonthUpdate): Promise<AxiosResponse<Month>> =>
     apiClient.put<Month>(`/api/v1/months/${id}`, data),
   delete: (id: number): Promise<AxiosResponse<void>> => apiClient.delete(`/api/v1/months/${id}`),
+  close: (id: number): Promise<AxiosResponse<MonthCloseResponse>> =>
+    apiClient.post<MonthCloseResponse>(`/api/v1/months/${id}/close`),
+  open: (id: number): Promise<AxiosResponse<MonthCloseResponse>> =>
+    apiClient.post<MonthCloseResponse>(`/api/v1/months/${id}/open`),
 };
 
 // Income Type endpoints

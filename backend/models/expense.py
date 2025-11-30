@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import JSON, Column, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, Column, Date, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from database import Base
@@ -22,7 +22,8 @@ class Expense(Base):
     order = Column(Integer, nullable=False, default=0, index=True)
     purchases = Column(
         JSON, nullable=True
-    )  # JSON array of purchases: [{"name": "...", "amount": 0.0}, ...]
+    )  # JSON array of purchases: [{"name": "...", "amount": 0.0, "date": "YYYY-MM-DD"}, ...]
+    expense_date = Column(Date, nullable=True)  # Date when the expense was added
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     created_by = Column(String, nullable=True)

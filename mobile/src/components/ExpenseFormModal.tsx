@@ -65,18 +65,14 @@ export const ExpenseFormModal = ({
     }
   }, [expense, visible]);
 
-  // Calculate cost from purchases if they exist
+  // Calculate cost from purchases (always calculated, never manually editable)
   const hasPurchases = purchases.length > 0;
-  const calculatedCost = hasPurchases
-    ? purchases.reduce((sum, item) => sum + (item.amount || 0), 0)
-    : parseFloat(cost) || 0;
+  const calculatedCost = purchases.reduce((sum, item) => sum + (item.amount || 0), 0);
 
   // Update cost when purchases change
   useEffect(() => {
-    if (purchases.length > 0) {
-      const total = purchases.reduce((sum, item) => sum + (item.amount || 0), 0);
-      setCost(total.toString());
-    }
+    const total = purchases.reduce((sum, item) => sum + (item.amount || 0), 0);
+    setCost(total.toString());
   }, [purchases]);
 
   const handleAddPurchase = () => {
@@ -110,9 +106,8 @@ export const ExpenseFormModal = ({
       return;
     }
 
-    const finalCost = hasPurchases ? calculatedCost : parseFloat(cost) || 0;
-    if (!finalCost) {
-      Alert.alert('Error', 'Please enter a cost or add purchases');
+    if (!calculatedCost) {
+      Alert.alert('Error', 'Please add purchases with amounts');
       return;
     }
 
@@ -121,12 +116,10 @@ export const ExpenseFormModal = ({
       period: selectedPeriod,
       category: selectedCategory,
       budget: parseFloat(budget),
-      cost: finalCost,
+      cost: calculatedCost,
       notes: notes || null,
       month_id: monthId,
-      purchases: hasPurchases
-        ? purchases.filter((item) => item.name.trim() !== '' || item.amount > 0)
-        : null,
+      purchases: purchases.filter((item) => item.name.trim() !== '' || item.amount > 0),
     };
 
     try {
@@ -225,22 +218,13 @@ export const ExpenseFormModal = ({
             />
 
             <TextInput
-              style={[
-                styles.input,
-                hasPurchases && styles.inputDisabled,
-              ]}
-              placeholder="Cost"
+              style={[styles.input, styles.inputDisabled]}
+              placeholder="Calculated Cost"
               placeholderTextColor={isDark ? '#9ca3af' : '#6b7280'}
-              value={hasPurchases ? calculatedCost.toFixed(2) : cost}
-              onChangeText={setCost}
+              value={calculatedCost.toFixed(2)}
               keyboardType="decimal-pad"
-              editable={!hasPurchases}
+              editable={false}
             />
-            {hasPurchases && (
-              <Text style={styles.costHint}>
-                Cost is calculated from purchases
-              </Text>
-            )}
 
             {/* Purchases Section */}
             <Text style={styles.label}>Purchases</Text>
@@ -294,7 +278,7 @@ export const ExpenseFormModal = ({
               </View>
             ) : (
               <Text style={styles.purchasesHint}>
-                No purchases. Add purchases to automatically calculate cost, or enter cost manually.
+                No purchases. Add purchases to calculate cost.
               </Text>
             )}
 

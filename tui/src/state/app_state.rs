@@ -306,15 +306,50 @@ impl AppState {
         }
     }
 
-    /// Set the current month as selected
+    /// Set the current month as selected, or the closest non-closed month in the future
     pub fn select_current_month(&mut self) {
+        if self.data.months.is_empty() {
+            return;
+        }
+
+        // Find the best default month:
+        // 1. Start with current month
+        // 2. If current month is closed, find the closest non-closed month looking to the future first
+        // 3. If no future non-closed month exists, fall back to current month
+
+        let mut default_index: Option<usize> = None;
+
         if let Some(current) = &self.data.current_month {
-            for (i, month) in self.data.months.iter().enumerate() {
-                if month.id == current.id {
-                    self.ui.selected_month_index = i;
-                    break;
+            // Find current month index in the months list
+            // Months are sorted oldest first (year asc, month asc) - index 0 = oldest
+            let current_idx = self.data.months.iter().position(|m| m.id == current.id);
+
+            if let Some(idx) = current_idx {
+                if current.is_closed {
+                    // Look for non-closed months in the future (higher indices = newer months)
+                    for i in (idx + 1)..self.data.months.len() {
+                        if !self.data.months[i].is_closed {
+                            default_index = Some(i);
+                            break;
+                        }
+                    }
+
+                    // If no future non-closed month found, fall back to current month
+                    if default_index.is_none() {
+                        default_index = Some(idx);
+                    }
+                } else {
+                    default_index = Some(idx);
                 }
             }
+        }
+
+        // Set the selected index
+        if let Some(idx) = default_index {
+            self.ui.selected_month_index = idx;
+        } else if !self.data.months.is_empty() {
+            // Fallback to first available month
+            self.ui.selected_month_index = 0;
         }
     }
 

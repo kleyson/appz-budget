@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { expensesApi } from '../api/client';
-import type { Expense, ExpenseCreate, ExpenseUpdate, ExpenseFilters } from '../types';
+import type { Expense, ExpenseCreate, ExpenseUpdate, ExpenseFilters, PayExpenseRequest } from '../types';
 
 export const useExpenses = (filters: ExpenseFilters = {}) => {
   return useQuery<Expense[]>({
@@ -67,6 +67,18 @@ export const useCloneExpensesToNextMonth = () => {
       queryClient.invalidateQueries({ queryKey: ['months'] });
       queryClient.invalidateQueries({ queryKey: ['categories'] });
       queryClient.invalidateQueries({ queryKey: ['incomes'] });
+    },
+  });
+};
+
+export const usePayExpense = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<Expense, Error, { id: number; data?: PayExpenseRequest }>({
+    mutationFn: ({ id, data }) => expensesApi.pay(id, data).then((res) => res.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
     },
   });
 };

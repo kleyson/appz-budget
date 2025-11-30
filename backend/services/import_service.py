@@ -199,7 +199,7 @@ class ImportService:
             "notes": notes,
             "month_id": month.id,
         }
-        self.expense_repository.create(expense_data)
+        self.expense_repository.create(expense_data, user_name="import")
 
         return True
 

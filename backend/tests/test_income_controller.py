@@ -139,3 +139,91 @@ class TestIncomeController:
             headers=api_headers,
         )
         assert response.status_code == 400
+
+
+class TestIncomeClosedMonthController:
+    """Tests for income operations on closed months via API"""
+
+    def test_create_income_closed_month(
+        self, client, test_db, api_headers, sample_month, sample_income_type
+    ):
+        """Test creating an income in a closed month via API"""
+        # Close the month
+        client.post(f"/api/v1/months/{sample_month.id}/close", headers=api_headers)
+
+        # Try to create an income
+        response = client.post(
+            "/api/v1/incomes",
+            json={
+                "income_type_id": sample_income_type.id,
+                "period": "Period 1",
+                "budget": 5000.0,
+                "amount": 5000.0,
+                "month_id": sample_month.id,
+            },
+            headers=api_headers,
+        )
+        assert response.status_code == 400
+        assert "closed" in response.json()["detail"].lower()
+
+    def test_update_income_closed_month(self, client, test_db, api_headers, sample_income):
+        """Test updating an income in a closed month via API"""
+        # Close the month
+        client.post(f"/api/v1/months/{sample_income.month_id}/close", headers=api_headers)
+
+        # Try to update the income
+        response = client.put(
+            f"/api/v1/incomes/{sample_income.id}",
+            json={"amount": 6000.0},
+            headers=api_headers,
+        )
+        assert response.status_code == 400
+        assert "closed" in response.json()["detail"].lower()
+
+    def test_delete_income_closed_month(self, client, test_db, api_headers, sample_income):
+        """Test deleting an income in a closed month via API"""
+        # Close the month
+        client.post(f"/api/v1/months/{sample_income.month_id}/close", headers=api_headers)
+
+        # Try to delete the income
+        response = client.delete(f"/api/v1/incomes/{sample_income.id}", headers=api_headers)
+        assert response.status_code == 400
+        assert "closed" in response.json()["detail"].lower()
+
+    def test_income_operations_allowed_after_reopening(
+        self, client, test_db, api_headers, sample_month, sample_income_type, sample_income
+    ):
+        """Test income operations are allowed after reopening month via API"""
+        # Close the month
+        client.post(f"/api/v1/months/{sample_month.id}/close", headers=api_headers)
+
+        # Reopen the month
+        client.post(f"/api/v1/months/{sample_month.id}/open", headers=api_headers)
+
+        # Now update should work
+        response = client.put(
+            f"/api/v1/incomes/{sample_income.id}",
+            json={"amount": 6000.0},
+            headers=api_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["amount"] == 6000.0
+
+        # Create should work
+        response = client.post(
+            "/api/v1/incomes",
+            json={
+                "income_type_id": sample_income_type.id,
+                "period": "Period 2",
+                "budget": 3000.0,
+                "amount": 3000.0,
+                "month_id": sample_month.id,
+            },
+            headers=api_headers,
+        )
+        assert response.status_code == 200
+
+        # Delete should work
+        new_income_id = response.json()["id"]
+        response = client.delete(f"/api/v1/incomes/{new_income_id}", headers=api_headers)
+        assert response.status_code == 200
