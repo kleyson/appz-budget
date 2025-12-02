@@ -162,24 +162,26 @@ function SortableExpenseRow({
         </td>
         <td className="px-4 py-4 text-sm text-right">
           <div className="flex items-center justify-end gap-2">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handlePay(expense);
-              }}
-              disabled={isMonthClosed}
-              className="p-2 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 text-green-600 dark:text-green-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title={isMonthClosed ? 'Month is closed' : 'Pay expense'}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
-                />
-              </svg>
-            </button>
+            {!(expense.purchases && expense.purchases.length > 0) && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePay(expense);
+                }}
+                disabled={isMonthClosed}
+                className="p-2 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 text-green-600 dark:text-green-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title={isMonthClosed ? 'Month is closed' : 'Pay expense'}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                  />
+                </svg>
+              </button>
+            )}
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -640,13 +642,15 @@ export const ExpenseList = ({
                       </div>
                     )}
                   <div className="flex gap-2 pt-3 border-t border-slate-200 dark:border-slate-700">
-                    <button
-                      onClick={() => handlePay(expense)}
-                      disabled={isMonthClosed}
-                      className="flex-1 text-sm px-3 py-2 rounded-lg border border-green-200 dark:border-green-800 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Pay
-                    </button>
+                    {!(expense.purchases && expense.purchases.length > 0) && (
+                      <button
+                        onClick={() => handlePay(expense)}
+                        disabled={isMonthClosed}
+                        className="flex-1 text-sm px-3 py-2 rounded-lg border border-green-200 dark:border-green-800 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Pay
+                      </button>
+                    )}
                     <button
                       onClick={() => setEditingExpense(expense)}
                       disabled={isMonthClosed}

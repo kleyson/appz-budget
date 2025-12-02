@@ -25,6 +25,11 @@ pub fn render(frame: &mut Frame, modal: &Modal) {
             entity_type,
             ..
         } => render_confirm_delete(frame, message, *entity_type),
+        Modal::ConfirmPay {
+            expense_name,
+            amount,
+            ..
+        } => render_confirm_pay(frame, expense_name, *amount),
         Modal::Help => render_help(frame),
     }
 }
@@ -299,6 +304,51 @@ fn render_confirm_delete(frame: &mut Frame, message: &str, _entity_type: EntityT
     frame.render_widget(buttons_para, chunks[2]);
 }
 
+/// Render pay confirmation dialog
+fn render_confirm_pay(frame: &mut Frame, expense_name: &str, amount: f64) {
+    let area = centered_rect_fixed(50, 9, frame.area());
+
+    let block = Block::default()
+        .title(" Confirm Payment ")
+        .title_alignment(Alignment::Center)
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(Color::Green))
+        .style(Style::default().bg(Color::Rgb(30, 30, 35)));
+
+    frame.render_widget(Clear, area);
+    frame.render_widget(block.clone(), area);
+
+    let inner = block.inner(area);
+    let chunks = Layout::vertical([
+        Constraint::Length(2), // Expense name
+        Constraint::Length(1), // Amount
+        Constraint::Min(1),    // Spacer
+        Constraint::Length(1), // Buttons
+    ])
+    .split(inner);
+
+    let name_para = Paragraph::new(format!("Pay expense '{}'?", expense_name))
+        .style(Style::default().fg(Color::White))
+        .alignment(Alignment::Center);
+    frame.render_widget(name_para, chunks[0]);
+
+    let amount_para = Paragraph::new(format!("Amount: ${:.2}", amount))
+        .style(Style::default().fg(Color::Green))
+        .alignment(Alignment::Center);
+    frame.render_widget(amount_para, chunks[1]);
+
+    let buttons = Line::from(vec![
+        Span::styled("[y]", Style::default().fg(Color::Green)),
+        Span::raw(" Yes, Pay  "),
+        Span::styled("[n]", Style::default().fg(Color::Yellow)),
+        Span::raw(" No, Cancel"),
+    ]);
+    let buttons_para = Paragraph::new(buttons)
+        .alignment(Alignment::Center)
+        .style(Style::default().fg(Color::White));
+    frame.render_widget(buttons_para, chunks[3]);
+}
+
 /// Render help overlay
 fn render_help(frame: &mut Frame) {
     let area = centered_rect_fixed(60, 20, frame.area());
@@ -364,6 +414,10 @@ fn render_help(frame: &mut Frame) {
         Line::from(vec![
             Span::styled("  d", Style::default().fg(Color::Yellow)),
             Span::raw("           Delete item"),
+        ]),
+        Line::from(vec![
+            Span::styled("  p", Style::default().fg(Color::Yellow)),
+            Span::raw("           Pay expense"),
         ]),
         Line::from(""),
         Line::from(vec![Span::styled(

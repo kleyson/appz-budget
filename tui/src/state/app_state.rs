@@ -177,6 +177,11 @@ pub enum Modal {
         id: i32,
         entity_type: EntityType,
     },
+    ConfirmPay {
+        expense_name: String,
+        expense_id: i32,
+        amount: f64,
+    },
     Help,
 }
 

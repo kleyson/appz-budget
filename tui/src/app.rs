@@ -428,6 +428,9 @@ impl App {
             KeyCode::Char('d') => {
                 self.open_delete_confirmation();
             }
+            KeyCode::Char('p') => {
+                self.open_pay_confirmation();
+            }
             _ => {}
         }
     }
@@ -441,10 +444,14 @@ impl App {
             KeyCode::Char('y') => {
                 if matches!(self.state.ui.modal, Some(Modal::ConfirmDelete { .. })) {
                     self.confirm_delete().await;
+                } else if matches!(self.state.ui.modal, Some(Modal::ConfirmPay { .. })) {
+                    self.confirm_pay().await;
                 }
             }
             KeyCode::Char('n') => {
-                if matches!(self.state.ui.modal, Some(Modal::ConfirmDelete { .. })) {
+                if matches!(self.state.ui.modal, Some(Modal::ConfirmDelete { .. }))
+                    || matches!(self.state.ui.modal, Some(Modal::ConfirmPay { .. }))
+                {
                     self.state.ui.modal = None;
                 }
             }
@@ -750,6 +757,55 @@ impl App {
                 }
                 Err(e) => {
                     self.state.set_error(format!("Failed to delete: {}", e));
+                }
+            }
+        }
+    }
+
+    /// Open pay confirmation dialog for an expense
+    fn open_pay_confirmation(&mut self) {
+        // Only available in Expenses tab
+        if self.state.ui.selected_tab != DashboardTab::Expenses {
+            return;
+        }
+
+        if let Some(idx) = self.state.ui.expense_table.selected() {
+            let filtered = self.state.filtered_expenses();
+            if let Some(expense) = filtered.get(idx) {
+                // Don't show pay option if expense already has purchases
+                if expense.purchases.as_ref().is_some_and(|p| !p.is_empty()) {
+                    self.state.set_error("Expense already has purchases");
+                    return;
+                }
+
+                self.state.ui.modal = Some(Modal::ConfirmPay {
+                    expense_name: expense.expense_name.clone(),
+                    expense_id: expense.id,
+                    amount: expense.budget,
+                });
+            }
+        }
+    }
+
+    /// Confirm and execute pay
+    async fn confirm_pay(&mut self) {
+        if let Some(Modal::ConfirmPay { expense_id, .. }) = &self.state.ui.modal {
+            let id = *expense_id;
+
+            self.state.ui.is_loading = true;
+
+            let result = self.api.expenses().pay(id, None).await;
+
+            self.state.ui.is_loading = false;
+            self.state.ui.modal = None;
+
+            match result {
+                Ok(_) => {
+                    self.state.set_success("Payment added successfully");
+                    self.load_tab_data().await;
+                }
+                Err(e) => {
+                    self.state.set_error(format!("Failed to pay: {}", e));
                 }
             }
         }

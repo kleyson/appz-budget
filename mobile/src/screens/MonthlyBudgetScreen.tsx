@@ -15,6 +15,7 @@ import {
   useExpenses,
   useDeleteExpense,
   useCloneExpensesToNextMonth,
+  usePayExpense,
 } from "../hooks/useExpenses";
 import { useIncomes, useDeleteIncome } from "../hooks/useIncomes";
 import { useMonths, useCurrentMonth, useDeleteMonth } from "../hooks/useMonths";
@@ -60,6 +61,7 @@ export const MonthlyBudgetScreen = () => {
   const { data: months } = useMonths();
   const cloneMutation = useCloneExpensesToNextMonth();
   const deleteExpenseMutation = useDeleteExpense();
+  const payExpenseMutation = usePayExpense();
   const deleteIncomeMutation = useDeleteIncome();
   const deleteMonthMutation = useDeleteMonth();
 
@@ -195,6 +197,33 @@ export const MonthlyBudgetScreen = () => {
               Alert.alert(
                 "Error",
                 "Failed to delete expense. Please try again."
+              );
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handlePayExpense = (expense: Expense) => {
+    Alert.alert(
+      "Pay Expense",
+      `Add a payment of $${expense.budget.toFixed(2)} to "${expense.expense_name}"?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Pay",
+          onPress: async () => {
+            try {
+              await payExpenseMutation.mutateAsync({ id: expense.id });
+              Alert.alert(
+                "Success",
+                `Payment of $${expense.budget.toFixed(2)} has been added.`
+              );
+            } catch (error) {
+              Alert.alert(
+                "Error",
+                "Failed to pay expense. Please try again."
               );
             }
           },
@@ -377,6 +406,7 @@ export const MonthlyBudgetScreen = () => {
                 setShowExpenseForm(true);
               }}
               onDelete={handleDeleteExpense}
+              onPay={handlePayExpense}
               onAdd={() => setShowExpenseForm(true)}
               theme={theme}
               isDark={isDark}
@@ -445,6 +475,7 @@ interface ExpenseListProps {
   periods: Period[];
   onEdit: (expense: Expense) => void;
   onDelete: (id: number) => void;
+  onPay: (expense: Expense) => void;
   onAdd: () => void;
   theme: ReturnType<typeof getThemeColors>;
   isDark: boolean;
@@ -457,6 +488,7 @@ const ExpenseList = ({
   periods,
   onEdit,
   onDelete,
+  onPay,
   onAdd,
   theme,
   isDark,
@@ -569,6 +601,15 @@ const ExpenseList = ({
               </View>
             </View>
             <View style={styles.listItemActions}>
+              {!(expense.purchases && expense.purchases.length > 0) && (
+                <TouchableOpacity
+                  style={styles.actionIcon}
+                  onPress={() => onPay(expense)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="cash-outline" size={20} color={theme.success} />
+                </TouchableOpacity>
+              )}
               <TouchableOpacity
                 style={styles.actionIcon}
                 onPress={() => onEdit(expense)}
