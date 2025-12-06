@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -10,17 +10,20 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-} from 'react-native';
-import { useTheme } from '../../contexts/ThemeContext';
-import { authApi } from '../../api/client';
-import { Ionicons } from '@expo/vector-icons';
-import { getErrorMessage } from '../../utils/errorHandler';
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { useTheme } from "../../contexts/ThemeContext";
+import { authApi } from "../../api/client";
+import { Ionicons } from "@expo/vector-icons";
+import { getErrorMessage } from "../../utils/errorHandler";
+import { getThemeColors, colors, getShadow, gradientColors, radius } from "../../utils/colors";
 
 export const ChangePasswordScreen = () => {
   const { isDark } = useTheme();
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const theme = getThemeColors(isDark);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -28,22 +31,25 @@ export const ChangePasswordScreen = () => {
 
   const handleSubmit = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert("Error", "Please fill in all fields");
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      Alert.alert('Error', 'New passwords do not match');
+      Alert.alert("Error", "New passwords do not match");
       return;
     }
 
     if (newPassword.length < 8) {
-      Alert.alert('Error', 'New password must be at least 8 characters long');
+      Alert.alert("Error", "New password must be at least 8 characters long");
       return;
     }
 
     if (currentPassword === newPassword) {
-      Alert.alert('Error', 'New password must be different from current password');
+      Alert.alert(
+        "Error",
+        "New password must be different from current password"
+      );
       return;
     }
 
@@ -53,105 +59,138 @@ export const ChangePasswordScreen = () => {
         current_password: currentPassword,
         new_password: newPassword,
       });
-      Alert.alert('Success', response.data.message, [
+      Alert.alert("Success", response.data.message, [
         {
-          text: 'OK',
+          text: "OK",
           onPress: () => {
-            setCurrentPassword('');
-            setNewPassword('');
-            setConfirmPassword('');
+            setCurrentPassword("");
+            setNewPassword("");
+            setConfirmPassword("");
           },
         },
       ]);
     } catch (err: unknown) {
-      Alert.alert('Error', getErrorMessage(err, 'Failed to change password. Please try again.'));
+      Alert.alert(
+        "Error",
+        getErrorMessage(err, "Failed to change password. Please try again.")
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
-  const styles = getStyles(isDark);
+  const styles = getStyles(isDark, theme);
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.content}>
-          <Text style={styles.title}>Change Password</Text>
-          <Text style={styles.description}>
-            Enter your current password and choose a new password.
-          </Text>
+          {/* Header */}
+          <View style={styles.header}>
+            <View style={[styles.iconContainer, { backgroundColor: theme.primaryBg }]}>
+              <Ionicons name="lock-closed" size={24} color={theme.primary} />
+            </View>
+            <View>
+              <Text style={styles.title}>Change Password</Text>
+              <Text style={styles.description}>
+                Update your account password for security
+              </Text>
+            </View>
+          </View>
 
-          <View style={styles.form}>
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder="Current Password"
-                placeholderTextColor={isDark ? '#9ca3af' : '#6b7280'}
-                value={currentPassword}
-                onChangeText={setCurrentPassword}
-                secureTextEntry={!showCurrentPassword}
-                autoComplete="password"
-              />
-              <View style={styles.eyeButtonContainer}>
+          {/* Form Card */}
+          <View style={styles.card}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Current Password</Text>
+              <View style={styles.inputWrapper}>
+                <View style={styles.inputIconWrapper}>
+                  <Ionicons name="key-outline" size={18} color={theme.textMuted} />
+                </View>
+                <TextInput
+                  style={[styles.input, styles.passwordInput]}
+                  placeholder="Enter current password"
+                  placeholderTextColor={theme.placeholder}
+                  value={currentPassword}
+                  onChangeText={setCurrentPassword}
+                  secureTextEntry={!showCurrentPassword}
+                  autoComplete="password"
+                />
                 <TouchableOpacity
                   style={styles.eyeButton}
                   onPress={() => setShowCurrentPassword(!showCurrentPassword)}
+                  activeOpacity={0.7}
                 >
                   <Ionicons
-                    name={showCurrentPassword ? 'eye-off' : 'eye'}
-                    size={20}
-                    color={isDark ? '#9ca3af' : '#6b7280'}
+                    name={showCurrentPassword ? "eye-off" : "eye"}
+                    size={18}
+                    color={theme.textSecondary}
                   />
                 </TouchableOpacity>
               </View>
             </View>
 
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder="New Password (min. 8 characters)"
-                placeholderTextColor={isDark ? '#9ca3af' : '#6b7280'}
-                value={newPassword}
-                onChangeText={setNewPassword}
-                secureTextEntry={!showNewPassword}
-                autoComplete="password-new"
-              />
-              <View style={styles.eyeButtonContainer}>
+            <View style={styles.divider} />
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>New Password</Text>
+              <View style={styles.inputWrapper}>
+                <View style={styles.inputIconWrapper}>
+                  <Ionicons name="lock-closed-outline" size={18} color={theme.textMuted} />
+                </View>
+                <TextInput
+                  style={[styles.input, styles.passwordInput]}
+                  placeholder="Min. 8 characters"
+                  placeholderTextColor={theme.placeholder}
+                  value={newPassword}
+                  onChangeText={setNewPassword}
+                  secureTextEntry={!showNewPassword}
+                  autoComplete="password-new"
+                />
                 <TouchableOpacity
                   style={styles.eyeButton}
                   onPress={() => setShowNewPassword(!showNewPassword)}
+                  activeOpacity={0.7}
                 >
                   <Ionicons
-                    name={showNewPassword ? 'eye-off' : 'eye'}
-                    size={20}
-                    color={isDark ? '#9ca3af' : '#6b7280'}
+                    name={showNewPassword ? "eye-off" : "eye"}
+                    size={18}
+                    color={theme.textSecondary}
                   />
                 </TouchableOpacity>
               </View>
             </View>
 
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder="Confirm New Password"
-                placeholderTextColor={isDark ? '#9ca3af' : '#6b7280'}
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry={!showConfirmPassword}
-                autoComplete="password-new"
-              />
-              <View style={styles.eyeButtonContainer}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Confirm New Password</Text>
+              <View style={styles.inputWrapper}>
+                <View style={styles.inputIconWrapper}>
+                  <Ionicons name="lock-closed-outline" size={18} color={theme.textMuted} />
+                </View>
+                <TextInput
+                  style={[styles.input, styles.passwordInput]}
+                  placeholder="Re-enter new password"
+                  placeholderTextColor={theme.placeholder}
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry={!showConfirmPassword}
+                  autoComplete="password-new"
+                />
                 <TouchableOpacity
                   style={styles.eyeButton}
                   onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                  activeOpacity={0.7}
                 >
                   <Ionicons
-                    name={showConfirmPassword ? 'eye-off' : 'eye'}
-                    size={20}
-                    color={isDark ? '#9ca3af' : '#6b7280'}
+                    name={showConfirmPassword ? "eye-off" : "eye"}
+                    size={18}
+                    color={theme.textSecondary}
                   />
                 </TouchableOpacity>
               </View>
@@ -161,16 +200,32 @@ export const ChangePasswordScreen = () => {
               style={[styles.submitButton, isLoading && styles.submitButtonDisabled]}
               onPress={handleSubmit}
               disabled={isLoading}
+              activeOpacity={0.8}
             >
-              {isLoading ? (
-                <ActivityIndicator color="#ffffff" />
-              ) : (
-                <>
-                  <Ionicons name="lock-closed" size={20} color="#ffffff" />
-                  <Text style={styles.submitButtonText}>Change Password</Text>
-                </>
-              )}
+              <LinearGradient
+                colors={gradientColors.teal}
+                style={styles.submitGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#ffffff" size="small" />
+                ) : (
+                  <>
+                    <Ionicons name="shield-checkmark" size={18} color="#ffffff" />
+                    <Text style={styles.submitButtonText}>Update Password</Text>
+                  </>
+                )}
+              </LinearGradient>
             </TouchableOpacity>
+          </View>
+
+          {/* Security Notice */}
+          <View style={styles.notice}>
+            <Ionicons name="information-circle-outline" size={16} color={theme.textMuted} />
+            <Text style={styles.noticeText}>
+              Choose a strong password with at least 8 characters including letters and numbers.
+            </Text>
           </View>
         </View>
       </ScrollView>
@@ -178,78 +233,127 @@ export const ChangePasswordScreen = () => {
   );
 };
 
-const getStyles = (isDark: boolean) =>
+const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: isDark ? '#111827' : '#f9fafb',
+      backgroundColor: "transparent",
     },
     scrollContent: {
       flexGrow: 1,
-      padding: 20,
-    },
-    content: {
-      width: '100%',
-      maxWidth: 400,
-      alignSelf: 'center',
-    },
-    title: {
-      fontSize: 24,
-      fontWeight: 'bold',
-      color: isDark ? '#ffffff' : '#111827',
-      marginBottom: 8,
-    },
-    description: {
-      fontSize: 14,
-      color: isDark ? '#9ca3af' : '#6b7280',
-      marginBottom: 24,
-    },
-    form: {
-      width: '100%',
-    },
-    inputContainer: {
-      position: 'relative',
-      marginBottom: 16,
-    },
-    input: {
-      backgroundColor: isDark ? '#1f2937' : '#ffffff',
-      borderWidth: 1,
-      borderColor: isDark ? '#374151' : '#d1d5db',
-      borderRadius: 8,
-      padding: 12,
-      paddingRight: 45,
-      fontSize: 16,
-      lineHeight: 20,
-      color: isDark ? '#ffffff' : '#111827',
-    },
-    eyeButtonContainer: {
-      position: 'absolute',
-      right: 12,
-      top: 12,
-      height: 20,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    eyeButton: {
       padding: 0,
     },
-    submitButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
+    content: {
+      width: "100%",
+      maxWidth: 440,
+      alignSelf: "center",
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 14,
+      marginBottom: 20,
+    },
+    iconContainer: {
+      width: 48,
+      height: 48,
+      borderRadius: radius.md,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    title: {
+      fontSize: 20,
+      fontWeight: "700",
+      color: theme.text,
+      letterSpacing: -0.3,
+    },
+    description: {
+      fontSize: 13,
+      color: theme.textSecondary,
+      marginTop: 2,
+    },
+    card: {
+      backgroundColor: theme.cardSolid,
+      borderRadius: radius.xl,
+      padding: 20,
+      borderWidth: 1,
+      borderColor: theme.border,
+      gap: 16,
+      ...getShadow(isDark, "sm"),
+    },
+    divider: {
+      height: 1,
+      backgroundColor: theme.border,
+      marginVertical: 4,
+    },
+    inputGroup: {
       gap: 8,
-      backgroundColor: '#3b82f6',
-      padding: 14,
-      borderRadius: 8,
-      marginTop: 8,
+    },
+    inputLabel: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: theme.textSecondary,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+    inputWrapper: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: theme.inputBg,
+      borderWidth: 1,
+      borderColor: theme.inputBorder,
+      borderRadius: radius.md,
+    },
+    inputIconWrapper: {
+      paddingLeft: 12,
+    },
+    input: {
+      flex: 1,
+      padding: 12,
+      paddingLeft: 8,
+      fontSize: 15,
+      color: theme.text,
+    },
+    passwordInput: {
+      paddingRight: 44,
+    },
+    eyeButton: {
+      position: "absolute",
+      right: 12,
+      padding: 4,
+    },
+    submitButton: {
+      marginTop: 4,
+      borderRadius: radius.md,
+      overflow: "hidden",
+      ...getShadow(isDark, "sm"),
     },
     submitButtonDisabled: {
-      opacity: 0.5,
+      opacity: 0.7,
+    },
+    submitGradient: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 14,
+      gap: 8,
     },
     submitButtonText: {
-      color: '#ffffff',
-      fontSize: 16,
-      fontWeight: '600',
+      color: "#ffffff",
+      fontSize: 15,
+      fontWeight: "600",
+    },
+    notice: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: 8,
+      marginTop: 16,
+      paddingHorizontal: 4,
+    },
+    noticeText: {
+      flex: 1,
+      fontSize: 12,
+      color: theme.textMuted,
+      lineHeight: 18,
     },
   });
-

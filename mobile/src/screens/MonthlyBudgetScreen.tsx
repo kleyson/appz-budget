@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../contexts/ThemeContext";
-import { getThemeColors, colors, getShadow, isDarkColor } from "../utils/colors";
+import { getThemeColors, colors, getShadow, isDarkColor, radius, gradientColors } from "../utils/colors";
 import {
   useExpenses,
   useDeleteExpense,
@@ -83,33 +83,22 @@ export const MonthlyBudgetScreen = () => {
 
   useEffect(() => {
     if (selectedMonthId === null && months && months.length > 0) {
-      // Find the best default month:
-      // 1. Start with current month
-      // 2. If current month is closed, find the closest non-closed month looking to the future first
-      // 3. If no future non-closed month exists, fall back to current month
-
       let defaultMonth = currentMonth;
 
       if (currentMonth?.is_closed && months.length > 0) {
-        // Months are sorted newest first (year desc, month desc)
-        // Find current month index
         const currentIdx = months.findIndex((m: Month) => m.id === currentMonth.id);
 
-        // Look for non-closed months in the future (lower indices = newer months)
         for (let i = currentIdx - 1; i >= 0; i--) {
           if (!months[i].is_closed) {
             defaultMonth = months[i];
             break;
           }
         }
-
-        // If no future non-closed month found, keep current month as default
       }
 
       if (defaultMonth) {
         setSelectedMonthId(defaultMonth.id);
       } else if (months.length > 0) {
-        // Fallback to first available month
         setSelectedMonthId(months[0].id);
       }
     }
@@ -257,9 +246,9 @@ export const MonthlyBudgetScreen = () => {
   };
 
   const tabs: { id: TabId; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-    { id: "summary", label: "Summary", icon: "stats-chart-outline" },
-    { id: "expenses", label: "Expenses", icon: "wallet-outline" },
-    { id: "income", label: "Income", icon: "cash-outline" },
+    { id: "summary", label: "Summary", icon: "stats-chart" },
+    { id: "expenses", label: "Expenses", icon: "wallet" },
+    { id: "income", label: "Income", icon: "cash" },
   ];
 
   const styles = getStyles(isDark, theme);
@@ -271,71 +260,10 @@ export const MonthlyBudgetScreen = () => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerTop}>
-            <View>
-              <Text style={styles.title}>Monthly Budget</Text>
-              <Text style={styles.subtitle}>Track your expenses and income</Text>
-            </View>
-          </View>
-          <View style={styles.headerButtons}>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => setShowExpenseForm(true)}
-              activeOpacity={0.8}
-            >
-              <LinearGradient
-                colors={[colors.success.light, "#059669"]}
-                style={styles.actionButtonGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <Ionicons name="add" size={18} color="#ffffff" />
-                <Text style={styles.actionButtonText}>New</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-            {selectedMonthId && (
-              <>
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={handleDeleteMonth}
-                  disabled={deleteMonthMutation.isPending}
-                  activeOpacity={0.8}
-                >
-                  <LinearGradient
-                    colors={[colors.danger.light, "#dc2626"]}
-                    style={styles.actionButtonGradient}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                  >
-                    <Ionicons name="trash-outline" size={18} color="#ffffff" />
-                  </LinearGradient>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={handleCloneToNextMonth}
-                  disabled={cloneMutation.isPending}
-                  activeOpacity={0.8}
-                >
-                  <LinearGradient
-                    colors={[colors.primary[500], colors.primary[600]]}
-                    style={styles.actionButtonGradient}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                  >
-                    <Ionicons name="copy-outline" size={18} color="#ffffff" />
-                    <Text style={styles.actionButtonText}>Clone</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-              </>
-            )}
-          </View>
-        </View>
-
-        {/* Filters */}
-        <View style={styles.filters}>
-          <View style={styles.filterRow}>
+        {/* Header Section */}
+        <View style={styles.headerSection}>
+          {/* Row 1: Month Selector + Filter Button */}
+          <View style={styles.headerRow}>
             <View style={styles.monthSelectorContainer}>
               <MonthSelector
                 selectedMonthId={selectedMonthId}
@@ -343,54 +271,113 @@ export const MonthlyBudgetScreen = () => {
               />
             </View>
             {(activeTab === "expenses" || activeTab === "income") && (
-              <FilterToggleButton
-                showFilters={showFilters}
-                onToggle={() => setShowFilters(!showFilters)}
-              />
-            )}
-          </View>
-          {showFilters &&
-            (activeTab === "expenses" || activeTab === "income") && (
-              <FilterBar
-                periods={periods || []}
-                categories={categories || []}
-                selectedPeriod={selectedPeriod}
-                selectedCategory={selectedCategory}
-                onPeriodChange={setSelectedPeriod}
-                onCategoryChange={setSelectedCategory}
-                showCategoryFilter={activeTab === "expenses"}
-                showFilters={showFilters}
-                onToggleFilters={() => setShowFilters(!showFilters)}
-              />
-            )}
-        </View>
-
-        {/* Tabs */}
-        <View style={styles.tabsContainer}>
-          <View style={styles.tabs}>
-            {tabs.map((tab) => (
               <TouchableOpacity
-                key={tab.id}
-                style={[styles.tab, activeTab === tab.id && styles.activeTab]}
-                onPress={() => setActiveTab(tab.id)}
+                style={[styles.filterButton, showFilters && styles.filterButtonActive]}
+                onPress={() => setShowFilters(!showFilters)}
                 activeOpacity={0.7}
               >
                 <Ionicons
-                  name={tab.icon}
-                  size={18}
-                  color={activeTab === tab.id ? theme.primary : theme.textSecondary}
+                  name={showFilters ? "filter" : "filter-outline"}
+                  size={20}
+                  color={showFilters ? theme.primary : theme.textSecondary}
                 />
-                <Text
-                  style={[
-                    styles.tabText,
-                    activeTab === tab.id && styles.activeTabText,
-                  ]}
-                >
-                  {tab.label}
-                </Text>
               </TouchableOpacity>
-            ))}
+            )}
           </View>
+
+          {/* Row 2: Action Buttons (Add, Clone, Delete) - Full Width */}
+          {selectedMonthId && (
+            <View style={styles.actionsRow}>
+              <TouchableOpacity
+                style={styles.actionButtonFull}
+                onPress={() => activeTab === "income" ? setShowIncomeForm(true) : setShowExpenseForm(true)}
+                activeOpacity={0.7}
+              >
+                <LinearGradient
+                  colors={activeTab === "income" ? gradientColors.emerald : gradientColors.teal}
+                  style={styles.actionButtonGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <Ionicons name="add" size={18} color="#ffffff" />
+                  <Text style={styles.actionButtonGradientText}>Add</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.actionButtonFull}
+                onPress={handleCloneToNextMonth}
+                disabled={cloneMutation.isPending}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.actionButtonFullInner, { backgroundColor: theme.primaryBg, borderColor: isDark ? "rgba(20, 184, 166, 0.3)" : "rgba(20, 184, 166, 0.2)" }]}>
+                  <Ionicons name="copy-outline" size={18} color={theme.primary} />
+                  <Text style={[styles.actionButtonFullText, { color: theme.primary }]}>Clone</Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.actionButtonFull}
+                onPress={handleDeleteMonth}
+                disabled={deleteMonthMutation.isPending}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.actionButtonFullInner, { backgroundColor: theme.dangerBg, borderColor: isDark ? "rgba(239, 68, 68, 0.3)" : "rgba(239, 68, 68, 0.2)" }]}>
+                  <Ionicons name="trash-outline" size={18} color={theme.danger} />
+                  <Text style={[styles.actionButtonFullText, { color: theme.danger }]}>Delete</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Filter Bar */}
+          {showFilters && (activeTab === "expenses" || activeTab === "income") && (
+            <FilterBar
+              periods={periods || []}
+              categories={categories || []}
+              selectedPeriod={selectedPeriod}
+              selectedCategory={selectedCategory}
+              onPeriodChange={setSelectedPeriod}
+              onCategoryChange={setSelectedCategory}
+              showCategoryFilter={activeTab === "expenses"}
+              showFilters={showFilters}
+              onToggleFilters={() => setShowFilters(!showFilters)}
+            />
+          )}
+        </View>
+
+        {/* Tabs - Consistent with Settings */}
+        <View style={styles.tabsWrapper}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.tabsContainer}
+          >
+            {tabs.map((tab) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <TouchableOpacity
+                  key={tab.id}
+                  style={[styles.tab, isActive && styles.activeTab]}
+                  onPress={() => setActiveTab(tab.id)}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.tabIconWrapper, isActive && styles.activeTabIconWrapper]}>
+                    <Ionicons
+                      name={tab.icon}
+                      size={16}
+                      color={isActive ? "#ffffff" : theme.textMuted}
+                    />
+                  </View>
+                  <Text
+                    style={[styles.tabText, isActive && styles.activeTabText]}
+                  >
+                    {tab.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
         </View>
 
         {/* Content */}
@@ -507,6 +494,13 @@ const ExpenseList = ({
     return period?.color || colors.primary[500];
   };
 
+  const formatCurrency = (value: number) => {
+    return `$${value.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  };
+
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -523,110 +517,139 @@ const ExpenseList = ({
         onPress={onAdd}
         activeOpacity={0.7}
       >
-        <View style={styles.addButtonIcon}>
-          <Ionicons name="add" size={24} color={theme.primary} />
+        <View style={[styles.addButtonIcon, { backgroundColor: theme.dangerBg }]}>
+          <Ionicons name="wallet-outline" size={20} color={theme.danger} />
         </View>
         <Text style={styles.addButtonText}>Add Expense</Text>
+        <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
       </TouchableOpacity>
 
       {expenses.length === 0 ? (
         <View style={styles.emptyContainer}>
           <View style={styles.emptyIcon}>
-            <Ionicons name="wallet-outline" size={48} color={theme.textMuted} />
+            <Ionicons name="wallet-outline" size={40} color={theme.textMuted} />
           </View>
           <Text style={styles.emptyTitle}>No expenses yet</Text>
           <Text style={styles.emptyText}>
-            Add your first expense to start tracking your budget
+            Add your first expense to start tracking
           </Text>
         </View>
       ) : (
-        expenses.map((expense: Expense) => (
-          <View key={expense.id} style={styles.listItem}>
-            <View style={styles.listItemAccent} />
-            <View style={styles.listItemContent}>
-              <Text style={styles.listItemTitle}>{expense.expense_name}</Text>
-              <View style={styles.chipsContainer}>
-                <View
-                  style={[
-                    styles.chip,
-                    { backgroundColor: getCategoryColor(expense.category) },
-                  ]}
-                >
-                  <Text
+        expenses.map((expense: Expense) => {
+          const categoryColor = getCategoryColor(expense.category);
+          const periodColor = getPeriodColor(expense.period);
+          const isOnBudget = expense.cost <= expense.budget;
+          const progress = expense.budget > 0 ? Math.min((expense.cost / expense.budget) * 100, 100) : 0;
+
+          return (
+            <View key={expense.id} style={styles.listItem}>
+              <View style={[styles.listItemAccent, { backgroundColor: categoryColor }]} />
+              <View style={styles.listItemContent}>
+                <View style={styles.listItemHeader}>
+                  <Text style={styles.listItemTitle} numberOfLines={1}>
+                    {expense.expense_name}
+                  </Text>
+                  <View
                     style={[
-                      styles.chipText,
-                      { color: isDarkColor(getCategoryColor(expense.category)) ? "#fff" : "#000" },
+                      styles.statusBadge,
+                      isOnBudget ? styles.statusSuccess : styles.statusDanger,
                     ]}
                   >
-                    {expense.category}
-                  </Text>
+                    <Ionicons
+                      name={isOnBudget ? "checkmark" : "alert"}
+                      size={10}
+                      color={isOnBudget ? theme.success : theme.danger}
+                    />
+                  </View>
                 </View>
-                <View
-                  style={[
-                    styles.chip,
-                    { backgroundColor: getPeriodColor(expense.period) },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.chipText,
-                      { color: isDarkColor(getPeriodColor(expense.period)) ? "#fff" : "#000" },
-                    ]}
+
+                <View style={styles.chipsContainer}>
+                  <View
+                    style={[styles.chip, { backgroundColor: categoryColor }]}
                   >
-                    {expense.period}
-                  </Text>
+                    <Text
+                      style={[
+                        styles.chipText,
+                        { color: isDarkColor(categoryColor) ? "#fff" : "#0f172a" },
+                      ]}
+                    >
+                      {expense.category}
+                    </Text>
+                  </View>
+                  <View
+                    style={[styles.chip, { backgroundColor: periodColor }]}
+                  >
+                    <Text
+                      style={[
+                        styles.chipText,
+                        { color: isDarkColor(periodColor) ? "#fff" : "#0f172a" },
+                      ]}
+                    >
+                      {expense.period}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Progress Bar */}
+                <View style={styles.progressContainer}>
+                  <View style={styles.progressBar}>
+                    <View
+                      style={[
+                        styles.progressFill,
+                        {
+                          width: `${progress}%`,
+                          backgroundColor: isOnBudget ? theme.success : theme.danger,
+                        },
+                      ]}
+                    />
+                  </View>
+                  <Text style={styles.progressText}>{progress.toFixed(0)}%</Text>
+                </View>
+
+                <View style={styles.amountRow}>
+                  <View>
+                    <Text style={styles.amountLabel}>Spent</Text>
+                    <Text style={[styles.listItemAmount, { color: isOnBudget ? theme.text : theme.danger }]}>
+                      {formatCurrency(expense.cost)}
+                    </Text>
+                  </View>
+                  <View style={styles.amountDivider} />
+                  <View>
+                    <Text style={styles.amountLabel}>Budget</Text>
+                    <Text style={styles.listItemBudget}>
+                      {formatCurrency(expense.budget)}
+                    </Text>
+                  </View>
                 </View>
               </View>
-              <View style={styles.amountRow}>
-                <Text style={styles.listItemAmount}>
-                  ${expense.cost.toFixed(2)}
-                </Text>
-                <Text style={styles.listItemBudget}>
-                  / ${expense.budget.toFixed(2)}
-                </Text>
-                <View
-                  style={[
-                    styles.statusBadge,
-                    expense.cost <= expense.budget
-                      ? styles.statusSuccess
-                      : styles.statusDanger,
-                  ]}
-                >
-                  <Ionicons
-                    name={expense.cost <= expense.budget ? "checkmark" : "alert"}
-                    size={12}
-                    color={expense.cost <= expense.budget ? theme.success : theme.danger}
-                  />
-                </View>
-              </View>
-            </View>
-            <View style={styles.listItemActions}>
-              {!(expense.purchases && expense.purchases.length > 0) && (
+              <View style={styles.listItemActions}>
+                {!(expense.purchases && expense.purchases.length > 0) && (
+                  <TouchableOpacity
+                    style={[styles.actionIcon, { backgroundColor: theme.successBg }]}
+                    onPress={() => onPay(expense)}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="card-outline" size={16} color={theme.success} />
+                  </TouchableOpacity>
+                )}
                 <TouchableOpacity
-                  style={styles.actionIcon}
-                  onPress={() => onPay(expense)}
+                  style={[styles.actionIcon, { backgroundColor: theme.primaryBg }]}
+                  onPress={() => onEdit(expense)}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="cash-outline" size={20} color={theme.success} />
+                  <Ionicons name="pencil" size={14} color={theme.primary} />
                 </TouchableOpacity>
-              )}
-              <TouchableOpacity
-                style={styles.actionIcon}
-                onPress={() => onEdit(expense)}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="pencil-outline" size={20} color={theme.primary} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.actionIcon}
-                onPress={() => onDelete(expense.id)}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="trash-outline" size={20} color={theme.danger} />
-              </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.actionIcon, { backgroundColor: theme.dangerBg }]}
+                  onPress={() => onDelete(expense.id)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="trash" size={14} color={theme.danger} />
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-        ))
+          );
+        })
       )}
     </View>
   );
@@ -677,6 +700,13 @@ const IncomeList = ({
     return period?.color || colors.primary[500];
   };
 
+  const formatCurrency = (value: number) => {
+    return `$${value.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  };
+
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -693,91 +723,117 @@ const IncomeList = ({
         onPress={onAdd}
         activeOpacity={0.7}
       >
-        <View style={styles.addButtonIcon}>
-          <Ionicons name="add" size={24} color={theme.success} />
+        <View style={[styles.addButtonIcon, { backgroundColor: theme.successBg }]}>
+          <Ionicons name="trending-up-outline" size={20} color={theme.success} />
         </View>
-        <Text style={[styles.addButtonText, { color: theme.success }]}>
-          Add Income
-        </Text>
+        <Text style={styles.addButtonText}>Add Income</Text>
+        <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
       </TouchableOpacity>
 
       {incomes.length === 0 ? (
         <View style={styles.emptyContainer}>
           <View style={styles.emptyIcon}>
-            <Ionicons name="cash-outline" size={48} color={theme.textMuted} />
+            <Ionicons name="cash-outline" size={40} color={theme.textMuted} />
           </View>
           <Text style={styles.emptyTitle}>No income yet</Text>
           <Text style={styles.emptyText}>
-            Add your income sources to track your earnings
+            Add your income to track your earnings
           </Text>
         </View>
       ) : (
-        incomes.map((income: Income) => (
-          <View key={income.id} style={styles.listItem}>
-            <View style={[styles.listItemAccent, { backgroundColor: theme.success }]} />
-            <View style={styles.listItemContent}>
-              <Text style={styles.listItemTitle}>
-                {getIncomeTypeName(income.income_type_id)}
-              </Text>
-              <View style={styles.chipsContainer}>
-                <View
-                  style={[
-                    styles.chip,
-                    { backgroundColor: getIncomeTypeColor(income.income_type_id) },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.chipText,
-                      { color: isDarkColor(getIncomeTypeColor(income.income_type_id)) ? "#fff" : "#000" },
-                    ]}
-                  >
+        incomes.map((income: Income) => {
+          const incomeTypeColor = getIncomeTypeColor(income.income_type_id);
+          const periodColor = getPeriodColor(income.period);
+          const progress = income.budget > 0 ? Math.min((income.amount / income.budget) * 100, 100) : 0;
+
+          return (
+            <View key={income.id} style={styles.listItem}>
+              <View style={[styles.listItemAccent, { backgroundColor: theme.success }]} />
+              <View style={styles.listItemContent}>
+                <View style={styles.listItemHeader}>
+                  <Text style={styles.listItemTitle} numberOfLines={1}>
                     {getIncomeTypeName(income.income_type_id)}
                   </Text>
                 </View>
-                <View
-                  style={[
-                    styles.chip,
-                    { backgroundColor: getPeriodColor(income.period) },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.chipText,
-                      { color: isDarkColor(getPeriodColor(income.period)) ? "#fff" : "#000" },
-                    ]}
+
+                <View style={styles.chipsContainer}>
+                  <View
+                    style={[styles.chip, { backgroundColor: incomeTypeColor }]}
                   >
-                    {income.period}
-                  </Text>
+                    <Text
+                      style={[
+                        styles.chipText,
+                        { color: isDarkColor(incomeTypeColor) ? "#fff" : "#0f172a" },
+                      ]}
+                    >
+                      {getIncomeTypeName(income.income_type_id)}
+                    </Text>
+                  </View>
+                  <View
+                    style={[styles.chip, { backgroundColor: periodColor }]}
+                  >
+                    <Text
+                      style={[
+                        styles.chipText,
+                        { color: isDarkColor(periodColor) ? "#fff" : "#0f172a" },
+                      ]}
+                    >
+                      {income.period}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Progress Bar */}
+                <View style={styles.progressContainer}>
+                  <View style={styles.progressBar}>
+                    <View
+                      style={[
+                        styles.progressFill,
+                        {
+                          width: `${progress}%`,
+                          backgroundColor: theme.success,
+                        },
+                      ]}
+                    />
+                  </View>
+                  <Text style={styles.progressText}>{progress.toFixed(0)}%</Text>
+                </View>
+
+                <View style={styles.amountRow}>
+                  <View>
+                    <Text style={styles.amountLabel}>Received</Text>
+                    <Text style={[styles.listItemAmount, { color: theme.success }]}>
+                      {formatCurrency(income.amount)}
+                    </Text>
+                  </View>
+                  <View style={styles.amountDivider} />
+                  <View>
+                    <Text style={styles.amountLabel}>Expected</Text>
+                    <Text style={styles.listItemBudget}>
+                      {formatCurrency(income.budget)}
+                    </Text>
+                  </View>
                 </View>
               </View>
-              <View style={styles.amountRow}>
-                <Text style={[styles.listItemAmount, { color: theme.success }]}>
-                  ${income.amount.toFixed(2)}
-                </Text>
-                <Text style={styles.listItemBudget}>
-                  / ${income.budget.toFixed(2)}
-                </Text>
+              <View style={styles.listItemActions}>
+                <TouchableOpacity
+                  style={[styles.actionIcon, { backgroundColor: theme.primaryBg }]}
+                  onPress={() => onEdit(income)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="pencil" size={14} color={theme.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.actionIcon, { backgroundColor: theme.dangerBg }]}
+                  onPress={() => onDelete(income.id)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="trash" size={14} color={theme.danger} />
+                </TouchableOpacity>
               </View>
             </View>
-            <View style={styles.listItemActions}>
-              <TouchableOpacity
-                style={styles.actionIcon}
-                onPress={() => onEdit(income)}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="pencil-outline" size={20} color={theme.primary} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.actionIcon}
-                onPress={() => onDelete(income.id)}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="trash-outline" size={20} color={theme.danger} />
-              </TouchableOpacity>
-            </View>
-          </View>
-        ))
+          );
+        })
       )}
     </View>
   );
@@ -795,105 +851,119 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
     scrollContent: {
       flexGrow: 1,
     },
-    header: {
+    headerSection: {
       padding: 16,
       paddingTop: 8,
-      backgroundColor: theme.card,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.border,
-    },
-    headerTop: {
-      marginBottom: 16,
-    },
-    title: {
-      fontSize: 24,
-      fontWeight: "700",
-      color: theme.text,
-      letterSpacing: -0.3,
-    },
-    subtitle: {
-      fontSize: 14,
-      color: theme.textSecondary,
-      marginTop: 4,
-    },
-    headerButtons: {
-      flexDirection: "row",
-      gap: 8,
-      alignItems: "center",
-    },
-    actionButton: {
-      borderRadius: 12,
-      overflow: "hidden",
-      ...getShadow(isDark, "sm"),
-    },
-    actionButtonGradient: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingHorizontal: 14,
-      paddingVertical: 10,
-      gap: 6,
-    },
-    actionButtonText: {
-      color: "#ffffff",
-      fontWeight: "600",
-      fontSize: 14,
-    },
-    filters: {
-      padding: 16,
-      backgroundColor: theme.card,
+      backgroundColor: theme.cardSolid,
       borderBottomWidth: 1,
       borderBottomColor: theme.border,
       gap: 12,
     },
-    filterRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 8,
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
     },
     monthSelectorContainer: {
       flex: 1,
     },
-    tabsContainer: {
-      backgroundColor: theme.card,
-      paddingHorizontal: 16,
-      paddingBottom: 12,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.border,
+    filterButton: {
+      width: 48,
+      height: 48,
+      borderRadius: radius.md,
+      backgroundColor: isDark ? "rgba(51, 65, 85, 0.4)" : colors.slate[100],
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: theme.borderGlass,
     },
-    tabs: {
+    filterButtonActive: {
+      backgroundColor: theme.primaryBg,
+      borderColor: isDark ? "rgba(20, 184, 166, 0.3)" : "rgba(20, 184, 166, 0.2)",
+    },
+    actionsRow: {
       flexDirection: "row",
-      backgroundColor: theme.tabBg,
-      borderRadius: 12,
-      padding: 4,
+      gap: 8,
     },
-    tab: {
+    actionButtonFull: {
       flex: 1,
+      borderRadius: radius.md,
+      overflow: "hidden",
+    },
+    actionButtonGradient: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
-      paddingVertical: 10,
-      paddingHorizontal: 12,
-      borderRadius: 10,
+      paddingVertical: 12,
       gap: 6,
     },
+    actionButtonGradientText: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: "#ffffff",
+    },
+    actionButtonFullInner: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 12,
+      gap: 6,
+      borderRadius: radius.md,
+      borderWidth: 1,
+    },
+    actionButtonFullText: {
+      fontSize: 14,
+      fontWeight: "600",
+    },
+    tabsWrapper: {
+      backgroundColor: theme.cardSolid,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.border,
+    },
+    tabsContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      gap: 8,
+    },
+    tab: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      gap: 8,
+      borderRadius: radius.md,
+      backgroundColor: isDark ? "rgba(51, 65, 85, 0.3)" : colors.slate[100],
+    },
     activeTab: {
-      backgroundColor: theme.tabActiveBg,
-      ...getShadow(isDark, "sm"),
+      backgroundColor: theme.primaryBg,
+    },
+    tabIconWrapper: {
+      width: 28,
+      height: 28,
+      borderRadius: radius.sm,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: isDark ? "rgba(51, 65, 85, 0.5)" : colors.slate[200],
+    },
+    activeTabIconWrapper: {
+      backgroundColor: theme.primary,
     },
     tabText: {
-      fontSize: 14,
+      fontSize: 13,
       fontWeight: "500",
-      color: theme.tabInactive,
+      color: theme.textSecondary,
     },
     activeTabText: {
-      color: theme.text,
+      color: theme.primary,
       fontWeight: "600",
     },
     content: {
       padding: 16,
     },
     summaryContainer: {
-      gap: 16,
+      gap: 24,
     },
   });
 
@@ -909,60 +979,62 @@ const getListStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>
     loadingText: {
       marginTop: 12,
       color: theme.textSecondary,
+      fontSize: 14,
     },
     addButton: {
       flexDirection: "row",
       alignItems: "center",
       gap: 12,
       padding: 14,
-      backgroundColor: theme.card,
-      borderRadius: 14,
+      backgroundColor: theme.cardSolid,
+      borderRadius: radius.lg,
       borderWidth: 1,
       borderColor: theme.border,
       borderStyle: "dashed",
     },
     addButtonIcon: {
-      width: 40,
-      height: 40,
-      borderRadius: 12,
-      backgroundColor: theme.primaryBg,
+      width: 38,
+      height: 38,
+      borderRadius: radius.sm,
       alignItems: "center",
       justifyContent: "center",
     },
     addButtonText: {
-      color: theme.primary,
+      flex: 1,
       fontWeight: "600",
-      fontSize: 16,
+      fontSize: 15,
+      color: theme.text,
     },
     emptyContainer: {
       padding: 48,
       alignItems: "center",
     },
     emptyIcon: {
-      width: 80,
-      height: 80,
-      borderRadius: 20,
+      width: 72,
+      height: 72,
+      borderRadius: radius.xl,
       backgroundColor: theme.backgroundTertiary,
       alignItems: "center",
       justifyContent: "center",
       marginBottom: 16,
     },
     emptyTitle: {
-      fontSize: 18,
+      fontSize: 17,
       fontWeight: "600",
       color: theme.text,
-      marginBottom: 8,
+      marginBottom: 6,
     },
     emptyText: {
       textAlign: "center",
       color: theme.textSecondary,
+      fontSize: 14,
       lineHeight: 20,
     },
     listItem: {
       flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: theme.card,
-      borderRadius: 14,
+      alignItems: "stretch",
+      backgroundColor: theme.cardSolid,
+      borderRadius: radius.lg,
       borderWidth: 1,
       borderColor: theme.border,
       overflow: "hidden",
@@ -970,55 +1042,30 @@ const getListStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>
     },
     listItemAccent: {
       width: 4,
-      alignSelf: "stretch",
-      backgroundColor: theme.primary,
     },
     listItemContent: {
       flex: 1,
       padding: 14,
+      gap: 10,
+    },
+    listItemHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
     },
     listItemTitle: {
       fontSize: 16,
       fontWeight: "600",
       color: theme.text,
-      marginBottom: 8,
-    },
-    chipsContainer: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      gap: 6,
-      marginBottom: 10,
-    },
-    chip: {
-      paddingHorizontal: 10,
-      paddingVertical: 4,
-      borderRadius: 8,
-    },
-    chipText: {
-      fontSize: 12,
-      fontWeight: "600",
-    },
-    amountRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 4,
-    },
-    listItemAmount: {
-      fontSize: 18,
-      fontWeight: "700",
-      color: theme.primary,
-    },
-    listItemBudget: {
-      fontSize: 14,
-      color: theme.textSecondary,
+      flex: 1,
     },
     statusBadge: {
-      marginLeft: 8,
       width: 20,
       height: 20,
       borderRadius: 10,
       alignItems: "center",
       justifyContent: "center",
+      marginLeft: 8,
     },
     statusSuccess: {
       backgroundColor: theme.successBg,
@@ -1026,16 +1073,80 @@ const getListStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>
     statusDanger: {
       backgroundColor: theme.dangerBg,
     },
-    listItemActions: {
+    chipsContainer: {
       flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 6,
+    },
+    chip: {
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: radius.sm,
+    },
+    chipText: {
+      fontSize: 11,
+      fontWeight: "600",
+    },
+    progressContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
       gap: 8,
-      paddingRight: 14,
+    },
+    progressBar: {
+      flex: 1,
+      height: 5,
+      backgroundColor: isDark ? colors.slate[800] : colors.slate[200],
+      borderRadius: 3,
+      overflow: 'hidden',
+    },
+    progressFill: {
+      height: '100%',
+      borderRadius: 3,
+    },
+    progressText: {
+      fontSize: 10,
+      fontWeight: '600',
+      color: theme.textSecondary,
+      width: 32,
+      textAlign: 'right',
+    },
+    amountRow: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    amountLabel: {
+      fontSize: 10,
+      color: theme.textMuted,
+      textTransform: 'uppercase',
+      fontWeight: '600',
+      letterSpacing: 0.5,
+      marginBottom: 2,
+    },
+    amountDivider: {
+      width: 1,
+      height: 24,
+      backgroundColor: theme.border,
+      marginHorizontal: 12,
+    },
+    listItemAmount: {
+      fontSize: 16,
+      fontWeight: "700",
+    },
+    listItemBudget: {
+      fontSize: 14,
+      color: theme.textSecondary,
+      fontWeight: '500',
+    },
+    listItemActions: {
+      flexDirection: "column",
+      gap: 6,
+      padding: 10,
+      justifyContent: 'center',
     },
     actionIcon: {
-      width: 36,
-      height: 36,
-      borderRadius: 10,
-      backgroundColor: theme.backgroundTertiary,
+      width: 32,
+      height: 32,
+      borderRadius: radius.sm,
       alignItems: "center",
       justifyContent: "center",
     },

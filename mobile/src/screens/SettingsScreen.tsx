@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Alert,
   ScrollView,
 } from "react-native";
 import { useTheme } from "../contexts/ThemeContext";
@@ -16,6 +15,7 @@ import { UserManagement } from "../components/settings/UserManagement";
 import { ChangePasswordScreen } from "./auth/ChangePasswordScreen";
 import { APP_VERSION, getVersionFromBackend } from "../utils/version";
 import { useApiConfig } from "../contexts/ApiConfigContext";
+import { getThemeColors, colors, radius } from "../utils/colors";
 
 type SettingsTab =
   | "categories"
@@ -26,6 +26,7 @@ type SettingsTab =
 
 export const SettingsScreen = () => {
   const { isDark } = useTheme();
+  const theme = getThemeColors(isDark);
   const { apiUrl } = useApiConfig();
   const [activeTab, setActiveTab] = useState<SettingsTab>("categories");
   const scrollViewRef = useRef<ScrollView>(null);
@@ -36,7 +37,6 @@ export const SettingsScreen = () => {
   const [backendVersion, setBackendVersion] = useState<string | null>(null);
 
   useEffect(() => {
-    // Try to get version from backend if API URL is configured
     if (apiUrl) {
       getVersionFromBackend(apiUrl).then(setBackendVersion);
     } else {
@@ -51,12 +51,12 @@ export const SettingsScreen = () => {
   }[] = [
     { id: "categories", label: "Categories", icon: "pricetag" },
     { id: "periods", label: "Periods", icon: "calendar" },
-    { id: "income-types", label: "Income Types", icon: "cash" },
+    { id: "income-types", label: "Income", icon: "cash" },
     { id: "users", label: "Users", icon: "people" },
-    { id: "change-password", label: "Change Password", icon: "lock-closed" },
+    { id: "change-password", label: "Password", icon: "lock-closed" },
   ];
 
-  const styles = getStyles(isDark);
+  const styles = getStyles(isDark, theme);
 
   const handleScroll = (event: any) => {
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
@@ -80,20 +80,14 @@ export const SettingsScreen = () => {
 
   return (
     <View style={styles.container}>
+      {/* Tab Navigation */}
       <View style={styles.tabsWrapper}>
         {showLeftIndicator && (
-          <View
-            style={[
-              styles.scrollIndicator,
-              styles.leftIndicator,
-              isDark && styles.leftIndicatorDark,
-            ]}
-          >
+          <View style={[styles.scrollIndicator, styles.leftIndicator]}>
             <Ionicons
               name="chevron-back"
-              size={16}
-              color={isDark ? "#9ca3af" : "#6b7280"}
-              style={styles.indicatorIcon}
+              size={14}
+              color={theme.textMuted}
             />
           </View>
         )}
@@ -108,53 +102,44 @@ export const SettingsScreen = () => {
           onContentSizeChange={handleContentSizeChange}
           onLayout={handleLayout}
         >
-          {tabs.map((tab) => (
-            <TouchableOpacity
-              key={tab.id}
-              style={[styles.tab, activeTab === tab.id && styles.activeTab]}
-              onPress={() => setActiveTab(tab.id)}
-            >
-              <Ionicons
-                name={tab.icon}
-                size={18}
-                color={
-                  activeTab === tab.id
-                    ? "#3b82f6"
-                    : isDark
-                    ? "#9ca3af"
-                    : "#6b7280"
-                }
-              />
-              <Text
-                style={[
-                  styles.tabText,
-                  activeTab === tab.id && styles.activeTabText,
-                ]}
-                numberOfLines={1}
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <TouchableOpacity
+                key={tab.id}
+                style={[styles.tab, isActive && styles.activeTab]}
+                onPress={() => setActiveTab(tab.id)}
+                activeOpacity={0.7}
               >
-                {tab.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <View style={[styles.tabIconWrapper, isActive && styles.activeTabIconWrapper]}>
+                  <Ionicons
+                    name={tab.icon}
+                    size={16}
+                    color={isActive ? "#ffffff" : theme.textMuted}
+                  />
+                </View>
+                <Text
+                  style={[styles.tabText, isActive && styles.activeTabText]}
+                  numberOfLines={1}
+                >
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
         {showRightIndicator && (
-          <View
-            style={[
-              styles.scrollIndicator,
-              styles.rightIndicator,
-              isDark && styles.rightIndicatorDark,
-            ]}
-          >
+          <View style={[styles.scrollIndicator, styles.rightIndicator]}>
             <Ionicons
               name="chevron-forward"
-              size={16}
-              color={isDark ? "#9ca3af" : "#6b7280"}
-              style={styles.indicatorIcon}
+              size={14}
+              color={theme.textMuted}
             />
           </View>
         )}
       </View>
 
+      {/* Content */}
       <View style={styles.content}>
         {activeTab === "categories" && <CategoryManagement />}
         {activeTab === "periods" && <PeriodManagement />}
@@ -163,53 +148,89 @@ export const SettingsScreen = () => {
         {activeTab === "change-password" && <ChangePasswordScreen />}
       </View>
 
-      {/* Version display */}
+      {/* Version Footer */}
       <View style={styles.versionContainer}>
-        <Text style={styles.versionText}>App Version: {APP_VERSION}</Text>
-        {backendVersion && (
-          <Text style={styles.versionText}>
-            Backend Version: {backendVersion}
-          </Text>
-        )}
-        {!backendVersion && apiUrl && (
-          <Text style={[styles.versionText, styles.versionTextMuted]}>
-            Backend Version: Unable to fetch
-          </Text>
-        )}
+        <View style={styles.versionRow}>
+          <View style={styles.versionItem}>
+            <Ionicons name="phone-portrait-outline" size={12} color={theme.textMuted} />
+            <Text style={styles.versionText}>App {APP_VERSION}</Text>
+          </View>
+          {backendVersion && (
+            <>
+              <View style={styles.versionDot} />
+              <View style={styles.versionItem}>
+                <Ionicons name="server-outline" size={12} color={theme.textMuted} />
+                <Text style={styles.versionText}>API {backendVersion}</Text>
+              </View>
+            </>
+          )}
+          {!backendVersion && apiUrl && (
+            <>
+              <View style={styles.versionDot} />
+              <Text style={[styles.versionText, styles.versionTextMuted]}>
+                API unavailable
+              </Text>
+            </>
+          )}
+        </View>
       </View>
     </View>
   );
 };
 
-const getStyles = (isDark: boolean) =>
+const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: isDark ? "#111827" : "#f9fafb",
+      backgroundColor: theme.background,
     },
     tabsWrapper: {
       position: "relative",
-      backgroundColor: isDark ? "#1f2937" : "#ffffff",
+      backgroundColor: theme.cardSolid,
       borderBottomWidth: 1,
-      borderBottomColor: isDark ? "#374151" : "#e5e7eb",
+      borderBottomColor: theme.border,
     },
     tabsScrollView: {
-      maxHeight: 50,
+      maxHeight: 56,
     },
     tabsContainer: {
       flexDirection: "row",
       alignItems: "center",
-      paddingHorizontal: 8,
-      minHeight: 48,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      gap: 8,
     },
     tab: {
       flexDirection: "row",
       alignItems: "center",
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      gap: 8,
+      borderRadius: radius.md,
+      backgroundColor: isDark ? "rgba(51, 65, 85, 0.3)" : colors.slate[100],
+    },
+    activeTab: {
+      backgroundColor: theme.primaryBg,
+    },
+    tabIconWrapper: {
+      width: 28,
+      height: 28,
+      borderRadius: radius.sm,
+      alignItems: "center",
       justifyContent: "center",
-      paddingVertical: 10,
-      paddingHorizontal: 14,
-      gap: 6,
-      minWidth: 100,
+      backgroundColor: isDark ? "rgba(51, 65, 85, 0.5)" : colors.slate[200],
+    },
+    activeTabIconWrapper: {
+      backgroundColor: theme.primary,
+    },
+    tabText: {
+      fontSize: 13,
+      fontWeight: "500",
+      color: theme.textSecondary,
+    },
+    activeTabText: {
+      color: theme.primary,
+      fontWeight: "600",
     },
     scrollIndicator: {
       position: "absolute",
@@ -220,48 +241,49 @@ const getStyles = (isDark: boolean) =>
       pointerEvents: "none",
       justifyContent: "center",
       alignItems: "center",
-      backgroundColor: "transparent",
     },
     leftIndicator: {
       left: 0,
-    },
-    leftIndicatorDark: {
-      // No special styling needed
+      background: isDark
+        ? "linear-gradient(to right, rgba(15,23,42,1), transparent)"
+        : "linear-gradient(to right, rgba(255,255,255,1), transparent)",
     },
     rightIndicator: {
       right: 0,
-    },
-    rightIndicatorDark: {
-      // No special styling needed
-    },
-    indicatorIcon: {
-      opacity: 0.7,
-    },
-    activeTab: {
-      borderBottomWidth: 2,
-      borderBottomColor: "#3b82f6",
-    },
-    tabText: {
-      fontSize: 14,
-      color: isDark ? "#9ca3af" : "#6b7280",
-    },
-    activeTabText: {
-      color: "#3b82f6",
-      fontWeight: "600",
     },
     content: {
       flex: 1,
       padding: 16,
     },
     versionContainer: {
-      padding: 16,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
       borderTopWidth: 1,
-      borderTopColor: isDark ? "#374151" : "#e5e7eb",
+      borderTopColor: theme.border,
+      backgroundColor: theme.cardSolid,
+    },
+    versionRow: {
+      flexDirection: "row",
       alignItems: "center",
+      justifyContent: "center",
+      gap: 6,
+    },
+    versionItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+    },
+    versionDot: {
+      width: 3,
+      height: 3,
+      borderRadius: 1.5,
+      backgroundColor: theme.textMuted,
+      marginHorizontal: 4,
     },
     versionText: {
-      fontSize: 12,
-      color: isDark ? "#6b7280" : "#9ca3af",
+      fontSize: 11,
+      color: theme.textMuted,
+      fontWeight: "500",
     },
     versionTextMuted: {
       opacity: 0.6,

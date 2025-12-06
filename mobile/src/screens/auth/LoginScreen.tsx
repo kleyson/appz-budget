@@ -16,7 +16,7 @@ import { router } from "expo-router";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import { getErrorMessage } from "../../utils/errorHandler";
-import { getThemeColors, colors, getShadow } from "../../utils/colors";
+import { getThemeColors, colors, getShadow, gradientColors, radius } from "../../utils/colors";
 import { Ionicons } from "@expo/vector-icons";
 import {
   isBiometricAvailable,
@@ -185,37 +185,43 @@ export const LoginScreen = () => {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
         {/* Background gradient orbs */}
         <View style={styles.backgroundOrbs}>
           <View style={[styles.orb, styles.orb1]} />
           <View style={[styles.orb, styles.orb2]} />
+          <View style={[styles.orb, styles.orb3]} />
         </View>
 
         <View style={styles.content}>
           {/* Logo */}
           <View style={styles.logoContainer}>
             <LinearGradient
-              colors={[colors.primary[500], colors.primary[600]]}
+              colors={gradientColors.teal}
               style={styles.logoGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-              <Text style={styles.logoEmoji}>💰</Text>
+              <Ionicons name="wallet" size={36} color="#ffffff" />
             </LinearGradient>
-            <Text style={styles.title}>Appz Budget</Text>
+            <Text style={styles.title}>Budget</Text>
             <Text style={styles.subtitle}>Take control of your finances</Text>
           </View>
 
           {/* Login Card */}
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Welcome back</Text>
+            <Text style={styles.cardSubtitle}>Sign in to continue tracking your budget</Text>
 
             <View style={styles.form}>
               {/* Email Input */}
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Email address</Text>
+                <Text style={styles.inputLabel}>Email</Text>
                 <View style={styles.inputWrapper}>
+                  <View style={styles.inputIconWrapper}>
+                    <Ionicons name="mail-outline" size={18} color={theme.textMuted} />
+                  </View>
                   <TextInput
                     style={styles.input}
                     placeholder="you@example.com"
@@ -233,6 +239,9 @@ export const LoginScreen = () => {
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Password</Text>
                 <View style={styles.inputWrapper}>
+                  <View style={styles.inputIconWrapper}>
+                    <Ionicons name="lock-closed-outline" size={18} color={theme.textMuted} />
+                  </View>
                   <TextInput
                     style={[styles.input, styles.passwordInput]}
                     placeholder="Enter your password"
@@ -245,10 +254,11 @@ export const LoginScreen = () => {
                   <TouchableOpacity
                     style={styles.eyeButton}
                     onPress={() => setShowPassword(!showPassword)}
+                    activeOpacity={0.7}
                   >
                     <Ionicons
-                      name={showPassword ? "eye-off-outline" : "eye-outline"}
-                      size={20}
+                      name={showPassword ? "eye-off" : "eye"}
+                      size={18}
                       color={theme.textSecondary}
                     />
                   </TouchableOpacity>
@@ -259,30 +269,37 @@ export const LoginScreen = () => {
               <TouchableOpacity
                 style={styles.forgotButton}
                 onPress={() => router.push("/(auth)/forgot-password")}
+                activeOpacity={0.7}
               >
-                <Text style={styles.forgotText}>Forgot your password?</Text>
+                <Text style={styles.forgotText}>Forgot password?</Text>
               </TouchableOpacity>
 
               {/* Biometric Toggle */}
               {biometricAvailable && (
-                <View style={styles.biometricContainer}>
-                  <View style={styles.biometricInfo}>
+                <TouchableOpacity
+                  style={styles.biometricContainer}
+                  onPress={() => handleBiometricToggle(!biometricEnabled)}
+                  activeOpacity={0.8}
+                >
+                  <View style={[styles.biometricIcon, biometricEnabled && styles.biometricIconActive]}>
                     <Ionicons
-                      name={biometricType === "Face ID" ? "scan-outline" : "finger-print-outline"}
+                      name={biometricType === "Face ID" ? "scan" : "finger-print"}
                       size={20}
-                      color={biometricEnabled ? theme.primary : theme.textSecondary}
+                      color={biometricEnabled ? theme.primary : theme.textMuted}
                     />
+                  </View>
+                  <View style={styles.biometricInfo}>
                     <Text style={styles.biometricLabel}>
-                      Use {biometricType} for quick login
+                      {biometricType}
+                    </Text>
+                    <Text style={styles.biometricHint}>
+                      Quick sign in with {biometricType.toLowerCase()}
                     </Text>
                   </View>
-                  <TouchableOpacity
-                    style={[styles.toggle, biometricEnabled && styles.toggleActive]}
-                    onPress={() => handleBiometricToggle(!biometricEnabled)}
-                  >
+                  <View style={[styles.toggle, biometricEnabled && styles.toggleActive]}>
                     <View style={[styles.toggleThumb, biometricEnabled && styles.toggleThumbActive]} />
-                  </TouchableOpacity>
-                </View>
+                  </View>
+                </TouchableOpacity>
               )}
 
               {/* Submit Button */}
@@ -293,17 +310,17 @@ export const LoginScreen = () => {
                 activeOpacity={0.8}
               >
                 <LinearGradient
-                  colors={[colors.primary[500], colors.primary[600]]}
+                  colors={gradientColors.teal}
                   style={styles.submitGradient}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                 >
                   {isLoading ? (
-                    <ActivityIndicator color="#ffffff" />
+                    <ActivityIndicator color="#ffffff" size="small" />
                   ) : (
                     <>
                       <Text style={styles.submitButtonText}>Sign in</Text>
-                      <Ionicons name="arrow-forward" size={20} color="#ffffff" />
+                      <Ionicons name="arrow-forward" size={18} color="#ffffff" />
                     </>
                   )}
                 </LinearGradient>
@@ -315,15 +332,21 @@ export const LoginScreen = () => {
           <TouchableOpacity
             style={styles.apiConfigButton}
             onPress={() => router.push("/api-config")}
+            activeOpacity={0.7}
           >
-            <Ionicons name="server-outline" size={16} color={theme.textSecondary} />
+            <View style={styles.apiConfigIcon}>
+              <Ionicons name="server-outline" size={16} color={theme.textSecondary} />
+            </View>
             <Text style={styles.apiConfigText}>Configure API Server</Text>
+            <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
           </TouchableOpacity>
 
           {/* Footer */}
-          <Text style={styles.footerText}>
-            Secure, simple, and smart budgeting
-          </Text>
+          <View style={styles.footer}>
+            <View style={styles.footerDivider} />
+            <Text style={styles.footerText}>Secure & Private</Text>
+            <View style={styles.footerDivider} />
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -340,6 +363,7 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       flexGrow: 1,
       justifyContent: "center",
       padding: 20,
+      paddingVertical: 40,
     },
     backgroundOrbs: {
       ...StyleSheet.absoluteFillObject,
@@ -350,22 +374,31 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       borderRadius: 999,
     },
     orb1: {
-      width: 300,
-      height: 300,
-      top: -100,
-      right: -100,
+      width: 280,
+      height: 280,
+      top: -80,
+      right: -80,
       backgroundColor: isDark
-        ? "rgba(90, 111, 242, 0.15)"
-        : "rgba(90, 111, 242, 0.08)",
+        ? "rgba(20, 184, 166, 0.12)"
+        : "rgba(20, 184, 166, 0.08)",
     },
     orb2: {
-      width: 350,
-      height: 350,
-      bottom: -150,
-      left: -150,
+      width: 320,
+      height: 320,
+      bottom: -120,
+      left: -120,
       backgroundColor: isDark
-        ? "rgba(251, 191, 36, 0.1)"
-        : "rgba(251, 191, 36, 0.06)",
+        ? "rgba(139, 92, 246, 0.1)"
+        : "rgba(139, 92, 246, 0.06)",
+    },
+    orb3: {
+      width: 160,
+      height: 160,
+      top: '40%',
+      right: -60,
+      backgroundColor: isDark
+        ? "rgba(251, 191, 36, 0.08)"
+        : "rgba(251, 191, 36, 0.05)",
     },
     content: {
       width: "100%",
@@ -377,63 +410,74 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       marginBottom: 32,
     },
     logoGradient: {
-      width: 80,
-      height: 80,
-      borderRadius: 20,
+      width: 72,
+      height: 72,
+      borderRadius: radius.xl,
       alignItems: "center",
       justifyContent: "center",
       marginBottom: 16,
       ...getShadow(isDark, "lg"),
     },
-    logoEmoji: {
-      fontSize: 40,
-    },
     title: {
-      fontSize: 32,
+      fontSize: 30,
       fontWeight: "700",
       color: theme.text,
       letterSpacing: -0.5,
     },
     subtitle: {
-      fontSize: 16,
+      fontSize: 15,
       color: theme.textSecondary,
-      marginTop: 8,
+      marginTop: 6,
     },
     card: {
-      backgroundColor: isDark ? "rgba(15, 23, 42, 0.8)" : "rgba(255, 255, 255, 0.9)",
-      borderRadius: 24,
+      backgroundColor: theme.card,
+      borderRadius: radius['2xl'],
       padding: 24,
       borderWidth: 1,
-      borderColor: isDark ? colors.slate[800] : colors.slate[200],
+      borderColor: theme.border,
       ...getShadow(isDark, "lg"),
     },
     cardTitle: {
-      fontSize: 24,
+      fontSize: 22,
       fontWeight: "600",
       color: theme.text,
+      marginBottom: 6,
+    },
+    cardSubtitle: {
+      fontSize: 14,
+      color: theme.textSecondary,
       marginBottom: 24,
     },
     form: {
-      gap: 16,
+      gap: 18,
     },
     inputGroup: {
       gap: 8,
     },
     inputLabel: {
-      fontSize: 14,
-      fontWeight: "500",
+      fontSize: 13,
+      fontWeight: "600",
       color: theme.textSecondary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
     },
     inputWrapper: {
       position: "relative",
-    },
-    input: {
+      flexDirection: 'row',
+      alignItems: 'center',
       backgroundColor: theme.inputBg,
       borderWidth: 1,
       borderColor: theme.inputBorder,
-      borderRadius: 12,
+      borderRadius: radius.md,
+    },
+    inputIconWrapper: {
+      paddingLeft: 14,
+    },
+    input: {
+      flex: 1,
       padding: 14,
-      fontSize: 16,
+      paddingLeft: 10,
+      fontSize: 15,
       color: theme.text,
     },
     passwordInput: {
@@ -442,40 +486,54 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
     eyeButton: {
       position: "absolute",
       right: 14,
-      top: 14,
+      padding: 4,
     },
     forgotButton: {
       alignSelf: "flex-end",
+      marginTop: -8,
     },
     forgotText: {
       color: theme.primary,
-      fontSize: 14,
-      fontWeight: "500",
+      fontSize: 13,
+      fontWeight: "600",
     },
     biometricContainer: {
       flexDirection: "row",
       alignItems: "center",
-      justifyContent: "space-between",
-      backgroundColor: theme.backgroundTertiary,
-      borderRadius: 12,
+      backgroundColor: isDark ? 'rgba(51, 65, 85, 0.4)' : colors.slate[50],
+      borderRadius: radius.lg,
       padding: 14,
+      gap: 12,
+    },
+    biometricIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: radius.md,
+      backgroundColor: isDark ? 'rgba(51, 65, 85, 0.6)' : colors.slate[100],
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    biometricIconActive: {
+      backgroundColor: theme.primaryBg,
     },
     biometricInfo: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 10,
       flex: 1,
     },
     biometricLabel: {
       fontSize: 14,
+      fontWeight: "600",
       color: theme.text,
-      flex: 1,
+    },
+    biometricHint: {
+      fontSize: 12,
+      color: theme.textMuted,
+      marginTop: 2,
     },
     toggle: {
-      width: 48,
-      height: 28,
-      borderRadius: 14,
-      backgroundColor: theme.inputBorder,
+      width: 44,
+      height: 26,
+      borderRadius: 13,
+      backgroundColor: isDark ? colors.slate[700] : colors.slate[300],
       justifyContent: "center",
       padding: 2,
     },
@@ -483,9 +541,9 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       backgroundColor: theme.primary,
     },
     toggleThumb: {
-      width: 24,
-      height: 24,
-      borderRadius: 12,
+      width: 22,
+      height: 22,
+      borderRadius: 11,
       backgroundColor: "#ffffff",
       ...getShadow(isDark, "sm"),
     },
@@ -493,13 +551,13 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       alignSelf: "flex-end",
     },
     submitButton: {
-      marginTop: 8,
-      borderRadius: 14,
+      marginTop: 6,
+      borderRadius: radius.lg,
       overflow: "hidden",
       ...getShadow(isDark, "md"),
     },
     submitButtonDisabled: {
-      opacity: 0.6,
+      opacity: 0.7,
     },
     submitGradient: {
       flexDirection: "row",
@@ -519,16 +577,42 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       justifyContent: "center",
       gap: 8,
       marginTop: 24,
-      padding: 12,
+      padding: 14,
+      backgroundColor: isDark ? 'rgba(51, 65, 85, 0.3)' : 'rgba(148, 163, 184, 0.1)',
+      borderRadius: radius.md,
+    },
+    apiConfigIcon: {
+      width: 28,
+      height: 28,
+      borderRadius: radius.sm,
+      backgroundColor: isDark ? 'rgba(51, 65, 85, 0.5)' : colors.slate[100],
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     apiConfigText: {
+      flex: 1,
       color: theme.textSecondary,
       fontSize: 14,
+      fontWeight: '500',
+    },
+    footer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 32,
+      gap: 12,
+    },
+    footerDivider: {
+      flex: 1,
+      height: 1,
+      backgroundColor: theme.border,
+      maxWidth: 60,
     },
     footerText: {
-      textAlign: "center",
       color: theme.textMuted,
-      fontSize: 14,
-      marginTop: 16,
+      fontSize: 12,
+      fontWeight: '500',
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
     },
   });

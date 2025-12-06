@@ -10,6 +10,7 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../contexts/ThemeContext";
 import {
   useIncomeTypes,
@@ -20,30 +21,22 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import type { IncomeType } from "../../types";
 import { getErrorMessage } from "../../utils/errorHandler";
+import { getThemeColors, colors, getShadow, gradientColors, radius } from "../../utils/colors";
 
 export const IncomeTypeManagement = () => {
   const { isDark } = useTheme();
+  const theme = getThemeColors(isDark);
   const { data: incomeTypes, isLoading } = useIncomeTypes();
   const createMutation = useCreateIncomeType();
   const updateMutation = useUpdateIncomeType();
   const deleteMutation = useDeleteIncomeType();
 
   const [showForm, setShowForm] = useState(false);
-  const [editingIncomeType, setEditingIncomeType] = useState<IncomeType | null>(
-    null
-  );
+  const [editingIncomeType, setEditingIncomeType] = useState<IncomeType | null>(null);
   const [name, setName] = useState("");
   const [color, setColor] = useState("#10b981");
 
-  const colors = [
-    "#8b5cf6",
-    "#3b82f6",
-    "#10b981",
-    "#f59e0b",
-    "#ef4444",
-    "#ec4899",
-    "#06b6d4",
-  ];
+  const colorOptions = ["#14b8a6", "#3b82f6", "#8b5cf6", "#10b981", "#f59e0b", "#ef4444", "#ec4899", "#06b6d4"];
 
   const handleSave = async () => {
     if (!name.trim()) {
@@ -65,10 +58,7 @@ export const IncomeTypeManagement = () => {
       setColor("#10b981");
       setEditingIncomeType(null);
     } catch (error: unknown) {
-      Alert.alert(
-        "Error",
-        getErrorMessage(error, "Failed to save income type")
-      );
+      Alert.alert("Error", getErrorMessage(error, "Failed to save income type"));
     }
   };
 
@@ -106,114 +96,131 @@ export const IncomeTypeManagement = () => {
     setShowForm(true);
   };
 
-  const styles = getStyles(isDark);
+  const styles = getStyles(isDark, theme);
 
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#3b82f6" />
+        <ActivityIndicator size="large" color={theme.primary} />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.addButton} onPress={() => openForm()}>
-        <Ionicons name="add-circle" size={24} color="#3b82f6" />
+      <TouchableOpacity style={styles.addButton} onPress={() => openForm()} activeOpacity={0.7}>
+        <View style={styles.addButtonIcon}>
+          <Ionicons name="add" size={18} color={theme.success} />
+        </View>
         <Text style={styles.addButtonText}>Add Income Type</Text>
       </TouchableOpacity>
 
       <FlatList
         data={incomeTypes || []}
-        numColumns={2}
         keyExtractor={(item) => item.id.toString()}
-        columnWrapperStyle={styles.row}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContent}
         renderItem={({ item }) => (
-          <View style={styles.card}>
-            <View style={styles.cardContent}>
-              <View style={[styles.badge, { backgroundColor: item.color }]}>
-                <Text
-                  style={styles.badgeText}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
-                  {item.name}
-                </Text>
-              </View>
-              <View style={styles.cardActions}>
-                <TouchableOpacity
-                  style={styles.editButton}
-                  onPress={() => openForm(item)}
-                >
-                  <Text style={styles.editButtonText}>Edit</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.deleteButton}
-                  onPress={() => handleDelete(item)}
-                >
-                  <Text style={styles.deleteButtonText}>Delete</Text>
-                </TouchableOpacity>
-              </View>
+          <View style={styles.item}>
+            <View style={[styles.colorIndicator, { backgroundColor: item.color }]} />
+            <View style={styles.itemContent}>
+              <Text style={styles.itemName}>{item.name}</Text>
+            </View>
+            <View style={styles.itemActions}>
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={() => openForm(item)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="pencil-outline" size={18} color={theme.primary} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.deleteActionButton]}
+                onPress={() => handleDelete(item)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="trash-outline" size={18} color={theme.danger} />
+              </TouchableOpacity>
             </View>
           </View>
         )}
       />
 
-      <Modal visible={showForm} transparent animationType="slide">
+      <Modal visible={showForm} transparent animationType="slide" onRequestClose={() => setShowForm(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                {editingIncomeType ? "Edit Income Type" : "Add Income Type"}
-              </Text>
-              <TouchableOpacity onPress={() => setShowForm(false)}>
-                <Ionicons
-                  name="close"
-                  size={24}
-                  color={isDark ? "#ffffff" : "#111827"}
-                />
+              <View style={styles.modalTitleRow}>
+                <View style={styles.modalIcon}>
+                  <Ionicons name="cash" size={20} color={theme.success} />
+                </View>
+                <Text style={styles.modalTitle}>
+                  {editingIncomeType ? "Edit Income Type" : "Add Income Type"}
+                </Text>
+              </View>
+              <TouchableOpacity style={styles.closeButton} onPress={() => setShowForm(false)} activeOpacity={0.7}>
+                <Ionicons name="close" size={20} color={theme.textSecondary} />
               </TouchableOpacity>
             </View>
 
-            <TextInput
-              style={styles.input}
-              placeholder="Income Type Name"
-              placeholderTextColor={isDark ? "#9ca3af" : "#6b7280"}
-              value={name}
-              onChangeText={setName}
-            />
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Income Type Name</Text>
+              <View style={styles.inputWrapper}>
+                <View style={styles.inputIconWrapper}>
+                  <Ionicons name="text-outline" size={18} color={theme.textMuted} />
+                </View>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter income type name"
+                  placeholderTextColor={theme.placeholder}
+                  value={name}
+                  onChangeText={setName}
+                />
+              </View>
+            </View>
 
-            <Text style={styles.label}>Color</Text>
-            <View style={styles.colorPicker}>
-              {colors.map((c) => (
-                <TouchableOpacity
-                  key={c}
-                  style={[
-                    styles.colorOption,
-                    { backgroundColor: c },
-                    color === c && styles.colorOptionSelected,
-                  ]}
-                  onPress={() => setColor(c)}
-                >
-                  {color === c && (
-                    <Ionicons name="checkmark" size={16} color="#ffffff" />
-                  )}
-                </TouchableOpacity>
-              ))}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Color</Text>
+              <View style={styles.colorPicker}>
+                {colorOptions.map((c) => (
+                  <TouchableOpacity
+                    key={c}
+                    style={[
+                      styles.colorOption,
+                      { backgroundColor: c },
+                      color === c && styles.colorOptionSelected,
+                    ]}
+                    onPress={() => setColor(c)}
+                    activeOpacity={0.7}
+                  >
+                    {color === c && <Ionicons name="checkmark" size={18} color="#ffffff" />}
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
 
             <View style={styles.modalFooter}>
               <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
+                style={styles.cancelButton}
                 onPress={() => setShowForm(false)}
+                activeOpacity={0.7}
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalButton, styles.saveButton]}
+                style={styles.saveButton}
                 onPress={handleSave}
+                activeOpacity={0.8}
               >
-                <Text style={styles.saveButtonText}>Save</Text>
+                <LinearGradient
+                  colors={gradientColors.emerald}
+                  style={styles.saveGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <Ionicons name="checkmark-circle" size={18} color="#ffffff" />
+                  <Text style={styles.saveButtonText}>Save</Text>
+                </LinearGradient>
               </TouchableOpacity>
             </View>
           </View>
@@ -223,7 +230,7 @@ export const IncomeTypeManagement = () => {
   );
 };
 
-const getStyles = (isDark: boolean) =>
+const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -236,78 +243,68 @@ const getStyles = (isDark: boolean) =>
     addButton: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
-      padding: 12,
-      backgroundColor: isDark ? "#1f2937" : "#ffffff",
-      borderRadius: 8,
+      gap: 10,
+      padding: 14,
+      backgroundColor: theme.successBg,
+      borderRadius: radius.md,
       borderWidth: 1,
-      borderColor: isDark ? "#374151" : "#e5e7eb",
+      borderColor: isDark ? "rgba(16, 185, 129, 0.2)" : "rgba(16, 185, 129, 0.15)",
       marginBottom: 16,
     },
-    addButtonText: {
-      color: "#3b82f6",
-      fontWeight: "600",
-    },
-    row: {
-      justifyContent: "space-between",
-      gap: 12,
-    },
-    card: {
-      flex: 1,
-      minWidth: 0,
-      backgroundColor: isDark ? "#1f2937" : "#ffffff",
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: isDark ? "#374151" : "#e5e7eb",
-      marginBottom: 12,
-      padding: 12,
-    },
-    cardContent: {
+    addButtonIcon: {
+      width: 28,
+      height: 28,
+      borderRadius: radius.sm,
+      backgroundColor: isDark ? "rgba(16, 185, 129, 0.2)" : "rgba(16, 185, 129, 0.15)",
       alignItems: "center",
+      justifyContent: "center",
     },
-    badge: {
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 16,
-      marginBottom: 12,
-      width: "100%",
-    },
-    badgeText: {
-      color: "#ffffff",
-      fontSize: 14,
+    addButtonText: {
+      color: theme.success,
+      fontSize: 15,
       fontWeight: "600",
-      textAlign: "center",
     },
-    cardActions: {
+    listContent: {
+      gap: 10,
+    },
+    item: {
+      flexDirection: "row",
+      alignItems: "center",
+      padding: 14,
+      backgroundColor: theme.cardSolid,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: theme.border,
+      gap: 12,
+      ...getShadow(isDark, "sm"),
+    },
+    colorIndicator: {
+      width: 32,
+      height: 32,
+      borderRadius: radius.sm,
+    },
+    itemContent: {
+      flex: 1,
+    },
+    itemName: {
+      fontSize: 15,
+      fontWeight: "600",
+      color: theme.text,
+    },
+    itemActions: {
       flexDirection: "row",
       gap: 8,
-      width: "100%",
     },
-    editButton: {
-      flex: 1,
-      backgroundColor: "#3b82f6",
-      paddingVertical: 8,
-      paddingHorizontal: 12,
-      borderRadius: 6,
+    actionButton: {
+      width: 36,
+      height: 36,
+      borderRadius: radius.sm,
+      backgroundColor: theme.primaryBg,
       alignItems: "center",
+      justifyContent: "center",
     },
-    editButtonText: {
-      color: "#ffffff",
-      fontSize: 12,
-      fontWeight: "600",
-    },
-    deleteButton: {
-      flex: 1,
-      backgroundColor: "#ef4444",
-      paddingVertical: 8,
-      paddingHorizontal: 12,
-      borderRadius: 6,
-      alignItems: "center",
-    },
-    deleteButtonText: {
-      color: "#ffffff",
-      fontSize: 12,
-      fontWeight: "600",
+    deleteActionButton: {
+      backgroundColor: theme.dangerBg,
     },
     modalOverlay: {
       flex: 1,
@@ -315,79 +312,124 @@ const getStyles = (isDark: boolean) =>
       justifyContent: "flex-end",
     },
     modalContent: {
-      backgroundColor: isDark ? "#1f2937" : "#ffffff",
-      borderTopLeftRadius: 20,
-      borderTopRightRadius: 20,
-      padding: 16,
+      backgroundColor: theme.cardSolid,
+      borderTopLeftRadius: radius["2xl"],
+      borderTopRightRadius: radius["2xl"],
+      padding: 20,
+      ...getShadow(isDark, "xl"),
     },
     modalHeader: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: 16,
+      marginBottom: 20,
+    },
+    modalTitleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    modalIcon: {
+      width: 36,
+      height: 36,
+      borderRadius: radius.sm,
+      backgroundColor: theme.successBg,
+      alignItems: "center",
+      justifyContent: "center",
     },
     modalTitle: {
       fontSize: 18,
       fontWeight: "600",
-      color: isDark ? "#ffffff" : "#111827",
+      color: theme.text,
+      letterSpacing: -0.3,
     },
-    input: {
-      backgroundColor: isDark ? "#111827" : "#f3f4f6",
-      borderWidth: 1,
-      borderColor: isDark ? "#374151" : "#d1d5db",
-      borderRadius: 8,
-      padding: 12,
-      fontSize: 16,
-      color: isDark ? "#ffffff" : "#111827",
+    closeButton: {
+      width: 36,
+      height: 36,
+      borderRadius: radius.sm,
+      backgroundColor: isDark ? "rgba(51, 65, 85, 0.5)" : colors.slate[100],
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    inputGroup: {
       marginBottom: 16,
     },
+    inputWrapper: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: theme.inputBg,
+      borderWidth: 1,
+      borderColor: theme.inputBorder,
+      borderRadius: radius.md,
+    },
+    inputIconWrapper: {
+      paddingLeft: 12,
+    },
+    input: {
+      flex: 1,
+      padding: 12,
+      paddingLeft: 8,
+      fontSize: 15,
+      color: theme.text,
+    },
     label: {
-      fontSize: 14,
+      fontSize: 12,
       fontWeight: "600",
-      color: isDark ? "#ffffff" : "#111827",
+      color: theme.textSecondary,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
       marginBottom: 8,
     },
     colorPicker: {
       flexDirection: "row",
       flexWrap: "wrap",
       gap: 12,
-      marginBottom: 16,
     },
     colorOption: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+      width: 44,
+      height: 44,
+      borderRadius: radius.md,
       justifyContent: "center",
       alignItems: "center",
-      borderWidth: 2,
+      borderWidth: 3,
       borderColor: "transparent",
     },
     colorOptionSelected: {
-      borderColor: "#3b82f6",
+      borderColor: theme.text,
     },
     modalFooter: {
       flexDirection: "row",
       gap: 12,
-      marginTop: 16,
-    },
-    modalButton: {
-      flex: 1,
-      padding: 14,
-      borderRadius: 8,
-      alignItems: "center",
+      marginTop: 8,
     },
     cancelButton: {
-      backgroundColor: isDark ? "#374151" : "#e5e7eb",
+      flex: 1,
+      padding: 14,
+      borderRadius: radius.md,
+      alignItems: "center",
+      backgroundColor: isDark ? "rgba(51, 65, 85, 0.5)" : colors.slate[100],
     },
     cancelButtonText: {
-      color: isDark ? "#ffffff" : "#111827",
+      color: theme.text,
+      fontSize: 15,
       fontWeight: "600",
     },
     saveButton: {
-      backgroundColor: "#3b82f6",
+      flex: 1.5,
+      borderRadius: radius.md,
+      overflow: "hidden",
+      ...getShadow(isDark, "sm"),
+    },
+    saveGradient: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 14,
+      gap: 8,
     },
     saveButtonText: {
       color: "#ffffff",
+      fontSize: 15,
       fontWeight: "600",
     },
   });

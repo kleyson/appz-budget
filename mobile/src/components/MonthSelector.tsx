@@ -1,34 +1,55 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, FlatList } from 'react-native';
-import { useMonths } from '../hooks/useMonths';
-import { useTheme } from '../contexts/ThemeContext';
-import { Ionicons } from '@expo/vector-icons';
-import type { Month } from '../types';
+import React from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Modal,
+  FlatList,
+} from "react-native";
+import { useMonths } from "../hooks/useMonths";
+import { useTheme } from "../contexts/ThemeContext";
+import { Ionicons } from "@expo/vector-icons";
+import { getThemeColors, colors, getShadow, radius } from "../utils/colors";
+import type { Month } from "../types";
 
 interface MonthSelectorProps {
   selectedMonthId: number | null;
   onMonthChange: (monthId: number | null) => void;
 }
 
-export const MonthSelector = ({ selectedMonthId, onMonthChange }: MonthSelectorProps) => {
+export const MonthSelector = ({
+  selectedMonthId,
+  onMonthChange,
+}: MonthSelectorProps) => {
   const { isDark } = useTheme();
+  const theme = getThemeColors(isDark);
   const { data: months, isLoading } = useMonths();
   const [modalVisible, setModalVisible] = React.useState(false);
 
   const selectedMonth = months?.find((m) => m.id === selectedMonthId);
 
-  const styles = getStyles(isDark);
+  const styles = getStyles(isDark, theme);
 
   return (
     <View>
       <TouchableOpacity
         style={styles.selector}
         onPress={() => setModalVisible(true)}
+        activeOpacity={0.7}
       >
-        <Text style={styles.selectorText}>
-          {selectedMonth ? selectedMonth.name : 'Select Month'}
-        </Text>
-        <Ionicons name="chevron-down" size={20} color={isDark ? '#9ca3af' : '#6b7280'} />
+        <View style={styles.selectorContent}>
+          <View style={styles.calendarIcon}>
+            <Ionicons name="calendar" size={16} color={theme.primary} />
+          </View>
+          <View style={styles.selectorTextContainer}>
+            <Text style={styles.selectorLabel}>Month</Text>
+            <Text style={styles.selectorValue}>
+              {selectedMonth ? selectedMonth.name : "Select Month"}
+            </Text>
+          </View>
+        </View>
+        <Ionicons name="chevron-down" size={18} color={theme.textMuted} />
       </TouchableOpacity>
 
       <Modal
@@ -40,38 +61,67 @@ export const MonthSelector = ({ selectedMonthId, onMonthChange }: MonthSelectorP
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Month</Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Ionicons name="close" size={24} color={isDark ? '#ffffff' : '#111827'} />
+              <View style={styles.modalTitleRow}>
+                <View style={styles.modalIconWrapper}>
+                  <Ionicons name="calendar" size={20} color={theme.primary} />
+                </View>
+                <Text style={styles.modalTitle}>Select Month</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setModalVisible(false)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="close" size={20} color={theme.textSecondary} />
               </TouchableOpacity>
             </View>
+
             <FlatList
               data={months || []}
               keyExtractor={(item) => item.id.toString()}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={[
-                    styles.monthItem,
-                    selectedMonthId === item.id && styles.monthItemSelected,
-                  ]}
-                  onPress={() => {
-                    onMonthChange(item.id);
-                    setModalVisible(false);
-                  }}
-                >
-                  <Text
-                    style={[
-                      styles.monthItemText,
-                      selectedMonthId === item.id && styles.monthItemTextSelected,
-                    ]}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.listContent}
+              renderItem={({ item }) => {
+                const isSelected = selectedMonthId === item.id;
+                return (
+                  <TouchableOpacity
+                    style={[styles.monthItem, isSelected && styles.monthItemSelected]}
+                    onPress={() => {
+                      onMonthChange(item.id);
+                      setModalVisible(false);
+                    }}
+                    activeOpacity={0.7}
                   >
-                    {item.name}
-                  </Text>
-                  {selectedMonthId === item.id && (
-                    <Ionicons name="checkmark" size={20} color="#3b82f6" />
-                  )}
-                </TouchableOpacity>
-              )}
+                    <View style={styles.monthItemContent}>
+                      <View
+                        style={[
+                          styles.monthIcon,
+                          isSelected && styles.monthIconSelected,
+                        ]}
+                      >
+                        <Ionicons
+                          name="calendar-outline"
+                          size={16}
+                          color={isSelected ? "#ffffff" : theme.textMuted}
+                        />
+                      </View>
+                      <Text
+                        style={[
+                          styles.monthItemText,
+                          isSelected && styles.monthItemTextSelected,
+                        ]}
+                      >
+                        {item.name}
+                      </Text>
+                    </View>
+                    {isSelected && (
+                      <View style={styles.checkIcon}>
+                        <Ionicons name="checkmark" size={16} color={theme.primary} />
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              }}
             />
           </View>
         </View>
@@ -80,64 +130,141 @@ export const MonthSelector = ({ selectedMonthId, onMonthChange }: MonthSelectorP
   );
 };
 
-const getStyles = (isDark: boolean) =>
+const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
   StyleSheet.create({
     selector: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
       padding: 12,
-      backgroundColor: isDark ? '#111827' : '#f3f4f6',
-      borderRadius: 8,
+      backgroundColor: isDark ? "rgba(51, 65, 85, 0.4)" : colors.slate[50],
+      borderRadius: radius.md,
       borderWidth: 1,
-      borderColor: isDark ? '#374151' : '#d1d5db',
+      borderColor: theme.borderGlass,
     },
-    selectorText: {
-      fontSize: 16,
-      color: isDark ? '#ffffff' : '#111827',
+    selectorContent: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    calendarIcon: {
+      width: 36,
+      height: 36,
+      borderRadius: radius.sm,
+      backgroundColor: theme.primaryBg,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    selectorTextContainer: {
+      gap: 2,
+    },
+    selectorLabel: {
+      fontSize: 11,
+      fontWeight: "600",
+      color: theme.textMuted,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+    selectorValue: {
+      fontSize: 15,
+      fontWeight: "600",
+      color: theme.text,
     },
     modalOverlay: {
       flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      justifyContent: 'flex-end',
+      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      justifyContent: "flex-end",
     },
     modalContent: {
-      backgroundColor: isDark ? '#1f2937' : '#ffffff',
-      borderTopLeftRadius: 20,
-      borderTopRightRadius: 20,
-      maxHeight: '80%',
+      backgroundColor: theme.cardSolid,
+      borderTopLeftRadius: radius["2xl"],
+      borderTopRightRadius: radius["2xl"],
+      maxHeight: "70%",
+      ...getShadow(isDark, "xl"),
     },
     modalHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
       padding: 16,
       borderBottomWidth: 1,
-      borderBottomColor: isDark ? '#374151' : '#e5e7eb',
+      borderBottomColor: theme.border,
+    },
+    modalTitleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    modalIconWrapper: {
+      width: 36,
+      height: 36,
+      borderRadius: radius.sm,
+      backgroundColor: theme.primaryBg,
+      alignItems: "center",
+      justifyContent: "center",
     },
     modalTitle: {
       fontSize: 18,
-      fontWeight: '600',
-      color: isDark ? '#ffffff' : '#111827',
+      fontWeight: "600",
+      color: theme.text,
+      letterSpacing: -0.3,
+    },
+    closeButton: {
+      width: 36,
+      height: 36,
+      borderRadius: radius.sm,
+      backgroundColor: isDark ? "rgba(51, 65, 85, 0.5)" : colors.slate[100],
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    listContent: {
+      padding: 12,
+      gap: 6,
     },
     monthItem: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      padding: 16,
-      borderBottomWidth: 1,
-      borderBottomColor: isDark ? '#374151' : '#e5e7eb',
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: 14,
+      borderRadius: radius.md,
+      backgroundColor: isDark ? "rgba(51, 65, 85, 0.3)" : colors.slate[50],
     },
     monthItemSelected: {
-      backgroundColor: isDark ? '#1e3a8a' : '#dbeafe',
+      backgroundColor: theme.primaryBg,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(20, 184, 166, 0.3)" : "rgba(20, 184, 166, 0.2)",
+    },
+    monthItemContent: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    monthIcon: {
+      width: 32,
+      height: 32,
+      borderRadius: radius.sm,
+      backgroundColor: isDark ? "rgba(51, 65, 85, 0.5)" : colors.slate[200],
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    monthIconSelected: {
+      backgroundColor: theme.primary,
     },
     monthItemText: {
-      fontSize: 16,
-      color: isDark ? '#ffffff' : '#111827',
+      fontSize: 15,
+      fontWeight: "500",
+      color: theme.text,
     },
     monthItemTextSelected: {
-      fontWeight: '600',
-      color: '#3b82f6',
+      fontWeight: "600",
+      color: theme.primary,
+    },
+    checkIcon: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: theme.primaryBg,
+      alignItems: "center",
+      justifyContent: "center",
     },
   });
-

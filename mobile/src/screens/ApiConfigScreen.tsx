@@ -9,12 +9,15 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useTheme } from "../contexts/ThemeContext";
 import { useApiConfig } from "../contexts/ApiConfigContext";
 import { Ionicons } from "@expo/vector-icons";
 import { getErrorMessage } from "../utils/errorHandler";
+import { getThemeColors, colors, getShadow, gradientColors, radius } from "../utils/colors";
 
 interface ApiConfigScreenProps {
   onComplete?: () => void;
@@ -28,16 +31,16 @@ export const ApiConfigScreen = ({
   onBack,
 }: ApiConfigScreenProps) => {
   const { isDark } = useTheme();
+  const theme = getThemeColors(isDark);
   const { apiUrl, apiKey, setApiUrl, setApiKey } = useApiConfig();
-  // Default API key for dev mode
   const defaultApiKey = "your-secret-api-key-change-this";
   const defaultApiUrl = "https://budget.appz.wtf";
   const [url, setUrl] = useState(apiUrl || defaultApiUrl);
   const [key, setKey] = useState(apiKey || defaultApiKey);
   const [isSaving, setIsSaving] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
 
-  // Update local state when apiUrl or apiKey changes
   useEffect(() => {
     if (apiUrl) {
       setUrl(apiUrl);
@@ -45,7 +48,6 @@ export const ApiConfigScreen = ({
     if (apiKey) {
       setKey(apiKey);
     } else if (!apiKey) {
-      // Pre-fill with default key in dev mode if no key is set
       setKey(defaultApiKey);
     }
   }, [apiUrl, apiKey, defaultApiKey]);
@@ -58,7 +60,6 @@ export const ApiConfigScreen = ({
       const url = new URL(urlString);
       return url.protocol === "http:" || url.protocol === "https:";
     } catch {
-      // If URL constructor fails, try adding http://
       return /^[a-zA-Z0-9.-]+(:[0-9]+)?(\/.*)?$/.test(urlString.trim());
     }
   };
@@ -71,7 +72,6 @@ export const ApiConfigScreen = ({
       return;
     }
 
-    // Auto-add http:// if no protocol is specified
     let finalUrl = trimmedUrl;
     if (
       !trimmedUrl.startsWith("http://") &&
@@ -80,7 +80,6 @@ export const ApiConfigScreen = ({
       finalUrl = `http://${trimmedUrl}`;
     }
 
-    // Validate URL
     if (!validateUrl(finalUrl)) {
       Alert.alert(
         "Error",
@@ -92,16 +91,13 @@ export const ApiConfigScreen = ({
     setIsSaving(true);
     try {
       await setApiUrl(finalUrl);
-      // Save API key (use default in dev if empty)
       const keyToSave = key.trim() || defaultApiKey;
       if (keyToSave) {
         await setApiKey(keyToSave);
       }
-      // Navigate back after successful save
       if (onBack) {
         onBack();
       } else {
-        // Navigate to home instead of going back to avoid errors when there's no history
         router.replace("/");
       }
     } catch (error) {
@@ -118,7 +114,6 @@ export const ApiConfigScreen = ({
     if (onBack) {
       onBack();
     } else {
-      // Navigate to home instead of going back to avoid errors when there's no history
       router.replace("/");
     }
   };
@@ -138,6 +133,7 @@ export const ApiConfigScreen = ({
       finalUrl = `http://${trimmedUrl}`;
     }
 
+    setIsTesting(true);
     try {
       const response = await fetch(`${finalUrl}/api/v1/health`, {
         method: "GET",
@@ -149,7 +145,7 @@ export const ApiConfigScreen = ({
       if (response.ok) {
         const data = await response.json();
         Alert.alert(
-          "Success",
+          "Connection Successful",
           `API is reachable!\n\nStatus: ${data.status}\nVersion: ${data.version}`
         );
       } else {
@@ -166,119 +162,176 @@ export const ApiConfigScreen = ({
           "Unknown error"
         )}`
       );
+    } finally {
+      setIsTesting(false);
     }
   };
 
-  const styles = getStyles(isDark);
+  const styles = getStyles(isDark, theme);
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Background orbs */}
+        <View style={styles.backgroundOrbs}>
+          <View style={[styles.orb, styles.orb1]} />
+          <View style={[styles.orb, styles.orb2]} />
+        </View>
+
         <View style={styles.content}>
-          <View style={styles.iconContainer}>
-            <Ionicons name="server" size={64} color="#3b82f6" />
+          {/* Header */}
+          <View style={styles.header}>
+            <View style={styles.iconContainer}>
+              <LinearGradient
+                colors={gradientColors.purple}
+                style={styles.iconGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Ionicons name="server" size={32} color="#ffffff" />
+              </LinearGradient>
+            </View>
+            <Text style={styles.title}>API Configuration</Text>
+            <Text style={styles.description}>
+              Connect to your budget API server to sync your financial data securely.
+            </Text>
           </View>
 
-          <Text style={styles.title}>Configure API Server</Text>
-          <Text style={styles.description}>
-            Enter the URL and API key of your budget API server. This is
-            required to connect to your backend.
-          </Text>
+          {/* Form Card */}
+          <View style={styles.card}>
+            {/* API URL Input */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Server URL</Text>
+              <View style={styles.inputWrapper}>
+                <View style={styles.inputIconWrapper}>
+                  <Ionicons name="globe-outline" size={18} color={theme.textMuted} />
+                </View>
+                <TextInput
+                  style={styles.input}
+                  placeholder="https://api.example.com"
+                  placeholderTextColor={theme.placeholder}
+                  value={url}
+                  onChangeText={setUrl}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="url"
+                  autoComplete="off"
+                />
+              </View>
+              <Text style={styles.hint}>
+                Enter your API server address (e.g., https://budget.appz.wtf)
+              </Text>
+            </View>
 
-          <View style={styles.form}>
-            <Text style={styles.label}>API Server URL</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="http://192.168.1.100:8000"
-              placeholderTextColor={isDark ? "#9ca3af" : "#6b7280"}
-              value={url}
-              onChangeText={setUrl}
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="url"
-              autoComplete="off"
-            />
-            <Text style={styles.hint}>
-              Examples:{"\n"}• http://192.168.1.100:8000{"\n"}•
-              https://api.example.com{"\n"}• http://localhost:8000 (for iOS
-              Simulator)
-            </Text>
-
-            <Text style={styles.label}>API Key</Text>
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your API key"
-                placeholderTextColor={isDark ? "#9ca3af" : "#6b7280"}
-                value={key}
-                onChangeText={setKey}
-                autoCapitalize="none"
-                autoCorrect={false}
-                secureTextEntry={!showApiKey}
-                autoComplete="off"
-              />
-              <View style={styles.eyeButtonContainer}>
+            {/* API Key Input */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>API Key</Text>
+              <View style={styles.inputWrapper}>
+                <View style={styles.inputIconWrapper}>
+                  <Ionicons name="key-outline" size={18} color={theme.textMuted} />
+                </View>
+                <TextInput
+                  style={[styles.input, styles.passwordInput]}
+                  placeholder="Enter your API key"
+                  placeholderTextColor={theme.placeholder}
+                  value={key}
+                  onChangeText={setKey}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  secureTextEntry={!showApiKey}
+                  autoComplete="off"
+                />
                 <TouchableOpacity
                   style={styles.eyeButton}
                   onPress={() => setShowApiKey(!showApiKey)}
+                  activeOpacity={0.7}
                 >
                   <Ionicons
                     name={showApiKey ? "eye-off" : "eye"}
-                    size={20}
-                    color={isDark ? "#9ca3af" : "#6b7280"}
+                    size={18}
+                    color={theme.textSecondary}
                   />
                 </TouchableOpacity>
               </View>
-            </View>
-            <Text style={styles.hint}>
-              The API key is required to authenticate with the backend server.
-            </Text>
-
-            <View style={styles.buttonRow}>
-              <TouchableOpacity
-                style={[styles.button, styles.testButton]}
-                onPress={handleTest}
-                disabled={isSaving}
-              >
-                <Ionicons name="checkmark-circle" size={20} color="#ffffff" />
-                <Text style={styles.testButtonText}>Test Connection</Text>
-              </TouchableOpacity>
+              <Text style={styles.hint}>
+                Required for authentication with the backend server
+              </Text>
             </View>
 
+            {/* Test Connection Button */}
+            <TouchableOpacity
+              style={styles.testButton}
+              onPress={handleTest}
+              disabled={isTesting}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.testButtonInner, isTesting && styles.buttonDisabled]}>
+                {isTesting ? (
+                  <ActivityIndicator size="small" color={theme.success} />
+                ) : (
+                  <>
+                    <View style={styles.testIconWrapper}>
+                      <Ionicons name="wifi" size={18} color={theme.success} />
+                    </View>
+                    <Text style={[styles.testButtonText, { color: theme.success }]}>
+                      Test Connection
+                    </Text>
+                  </>
+                )}
+              </View>
+            </TouchableOpacity>
+
+            {/* Action Buttons */}
             <View style={styles.buttonRow}>
               <TouchableOpacity
-                style={[
-                  styles.button,
-                  styles.cancelButton,
-                  isSaving && styles.buttonDisabled,
-                ]}
+                style={[styles.cancelButton, isSaving && styles.buttonDisabled]}
                 onPress={handleCancel}
                 disabled={isSaving}
+                activeOpacity={0.7}
               >
-                <Ionicons
-                  name="close"
-                  size={20}
-                  color={isDark ? "#111827" : "#6b7280"}
-                />
+                <Ionicons name="close" size={18} color={theme.textSecondary} />
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
+
               <TouchableOpacity
-                style={[
-                  styles.button,
-                  styles.saveButton,
-                  isSaving && styles.buttonDisabled,
-                ]}
+                style={[styles.saveButton, isSaving && styles.buttonDisabled]}
                 onPress={handleSave}
                 disabled={isSaving}
+                activeOpacity={0.8}
               >
-                <Ionicons name="save" size={20} color="#ffffff" />
-                <Text style={styles.saveButtonText}>
-                  {isSaving ? "Saving..." : "Save & Continue"}
-                </Text>
+                <LinearGradient
+                  colors={gradientColors.teal}
+                  style={styles.saveButtonGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  {isSaving ? (
+                    <ActivityIndicator size="small" color="#ffffff" />
+                  ) : (
+                    <>
+                      <Ionicons name="checkmark" size={18} color="#ffffff" />
+                      <Text style={styles.saveButtonText}>Save</Text>
+                    </>
+                  )}
+                </LinearGradient>
               </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Help Section */}
+          <View style={styles.helpSection}>
+            <View style={styles.helpItem}>
+              <Ionicons name="information-circle-outline" size={16} color={theme.textMuted} />
+              <Text style={styles.helpText}>
+                Make sure your server is running and accessible from this device
+              </Text>
             </View>
           </View>
         </View>
@@ -287,121 +340,209 @@ export const ApiConfigScreen = ({
   );
 };
 
-const getStyles = (isDark: boolean) =>
+const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: isDark ? "#111827" : "#f9fafb",
+      backgroundColor: theme.background,
     },
     scrollContent: {
       flexGrow: 1,
       justifyContent: "center",
       padding: 20,
+      paddingVertical: 40,
+    },
+    backgroundOrbs: {
+      ...StyleSheet.absoluteFillObject,
+      overflow: "hidden",
+    },
+    orb: {
+      position: "absolute",
+      borderRadius: 999,
+    },
+    orb1: {
+      width: 260,
+      height: 260,
+      top: -60,
+      right: -60,
+      backgroundColor: isDark
+        ? "rgba(139, 92, 246, 0.1)"
+        : "rgba(139, 92, 246, 0.06)",
+    },
+    orb2: {
+      width: 300,
+      height: 300,
+      bottom: -100,
+      left: -100,
+      backgroundColor: isDark
+        ? "rgba(20, 184, 166, 0.1)"
+        : "rgba(20, 184, 166, 0.06)",
     },
     content: {
       width: "100%",
-      maxWidth: 500,
+      maxWidth: 440,
       alignSelf: "center",
     },
-    iconContainer: {
+    header: {
       alignItems: "center",
-      marginBottom: 24,
+      marginBottom: 28,
+    },
+    iconContainer: {
+      marginBottom: 16,
+    },
+    iconGradient: {
+      width: 64,
+      height: 64,
+      borderRadius: radius.xl,
+      alignItems: "center",
+      justifyContent: "center",
+      ...getShadow(isDark, "lg"),
     },
     title: {
-      fontSize: 28,
-      fontWeight: "bold",
-      textAlign: "center",
-      color: isDark ? "#ffffff" : "#111827",
-      marginBottom: 12,
+      fontSize: 26,
+      fontWeight: "700",
+      color: theme.text,
+      marginBottom: 8,
+      letterSpacing: -0.5,
     },
     description: {
-      fontSize: 16,
-      textAlign: "center",
-      color: isDark ? "#9ca3af" : "#6b7280",
-      marginBottom: 32,
-      lineHeight: 22,
-    },
-    form: {
-      width: "100%",
-    },
-    label: {
       fontSize: 14,
-      fontWeight: "600",
-      color: isDark ? "#ffffff" : "#111827",
-      marginBottom: 8,
+      color: theme.textSecondary,
+      textAlign: "center",
+      lineHeight: 20,
+      paddingHorizontal: 16,
     },
-    inputContainer: {
-      position: "relative",
-      marginBottom: 8,
+    card: {
+      backgroundColor: theme.card,
+      borderRadius: radius["2xl"],
+      padding: 24,
+      borderWidth: 1,
+      borderColor: theme.border,
+      gap: 20,
+      ...getShadow(isDark, "lg"),
+    },
+    inputGroup: {
+      gap: 8,
+    },
+    inputLabel: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: theme.textSecondary,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+    inputWrapper: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: theme.inputBg,
+      borderWidth: 1,
+      borderColor: theme.inputBorder,
+      borderRadius: radius.md,
+    },
+    inputIconWrapper: {
+      paddingLeft: 14,
     },
     input: {
-      backgroundColor: isDark ? "#1f2937" : "#ffffff",
-      borderWidth: 1,
-      borderColor: isDark ? "#374151" : "#d1d5db",
-      borderRadius: 8,
-      padding: 12,
-      paddingRight: 45,
-      fontSize: 16,
-      lineHeight: 20,
-      color: isDark ? "#ffffff" : "#111827",
+      flex: 1,
+      padding: 14,
+      paddingLeft: 10,
+      fontSize: 15,
+      color: theme.text,
     },
-    eyeButtonContainer: {
-      position: "absolute",
-      right: 12,
-      top: 12,
-      height: 20,
-      justifyContent: "center",
-      alignItems: "center",
+    passwordInput: {
+      paddingRight: 48,
     },
     eyeButton: {
-      padding: 0,
+      position: "absolute",
+      right: 14,
+      padding: 4,
     },
     hint: {
       fontSize: 12,
-      color: isDark ? "#6b7280" : "#9ca3af",
-      marginBottom: 24,
-      lineHeight: 18,
+      color: theme.textMuted,
+      lineHeight: 16,
     },
-    buttonRow: {
-      marginBottom: 12,
-      flexDirection: "row",
-      gap: 12,
+    testButton: {
+      marginTop: 4,
     },
-    button: {
+    testButtonInner: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
       gap: 8,
       padding: 14,
-      borderRadius: 8,
-      marginBottom: 12,
-      flex: 1,
+      backgroundColor: theme.successBg,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(52, 211, 153, 0.3)" : "rgba(16, 185, 129, 0.2)",
     },
-    testButton: {
-      backgroundColor: "#10b981",
+    testIconWrapper: {
+      width: 28,
+      height: 28,
+      borderRadius: radius.sm,
+      backgroundColor: isDark ? "rgba(52, 211, 153, 0.2)" : "rgba(16, 185, 129, 0.15)",
+      alignItems: "center",
+      justifyContent: "center",
     },
     testButtonText: {
-      color: "#ffffff",
-      fontSize: 16,
+      fontSize: 15,
       fontWeight: "600",
+    },
+    buttonRow: {
+      flexDirection: "row",
+      gap: 12,
+      marginTop: 4,
     },
     cancelButton: {
-      backgroundColor: isDark ? "#374151" : "#e5e7eb",
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      padding: 14,
+      backgroundColor: isDark ? "rgba(51, 65, 85, 0.5)" : colors.slate[100],
+      borderRadius: radius.md,
     },
     cancelButtonText: {
-      color: isDark ? "#ffffff" : "#111827",
-      fontSize: 16,
+      fontSize: 15,
       fontWeight: "600",
+      color: theme.textSecondary,
     },
     saveButton: {
-      backgroundColor: "#3b82f6",
+      flex: 1.5,
+      borderRadius: radius.md,
+      overflow: "hidden",
+      ...getShadow(isDark, "sm"),
+    },
+    saveButtonGradient: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      padding: 14,
     },
     saveButtonText: {
-      color: "#ffffff",
-      fontSize: 16,
+      fontSize: 15,
       fontWeight: "600",
+      color: "#ffffff",
     },
     buttonDisabled: {
-      opacity: 0.5,
+      opacity: 0.6,
+    },
+    helpSection: {
+      marginTop: 20,
+      gap: 8,
+    },
+    helpItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      paddingHorizontal: 4,
+    },
+    helpText: {
+      flex: 1,
+      fontSize: 13,
+      color: theme.textMuted,
+      lineHeight: 18,
     },
   });

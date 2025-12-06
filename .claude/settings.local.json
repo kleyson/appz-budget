@@ -22,7 +22,17 @@
       "Bash(source .venv/bin/activate)",
       "Bash(alembic upgrade:*)",
       "Bash(.venv/bin/python -m alembic upgrade head:*)",
-      "Bash(.venv/bin/python -m pytest:*)"
+      "Bash(.venv/bin/python -m pytest:*)",
+      "Bash(mkdir:*)",
+      "Skill(example-skills:webapp-testing)",
+      "Bash(python:*)",
+      "Bash(python3:*)",
+      "Bash(pip3 install:*)",
+      "Bash(pip install:*)",
+      "Bash(.venv/bin/python -m pip install:*)",
+      "Bash(.venv/bin/pip install:*)",
+      "Bash(.venv/bin/python:*)",
+      "Skill(ui-ux-pro-max)"
     ],
     "deny": [],
     "ask": []

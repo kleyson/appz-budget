@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../contexts/ThemeContext';
-import type { Period, Category } from '../types';
+import React from "react";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "../contexts/ThemeContext";
+import { getThemeColors, colors, radius, isDarkColor } from "../utils/colors";
+import type { Period, Category } from "../types";
 
 interface FilterBarProps {
   periods: Period[];
@@ -28,88 +29,126 @@ export const FilterBar = ({
   onToggleFilters,
 }: FilterBarProps) => {
   const { isDark } = useTheme();
-  const styles = getStyles(isDark);
+  const theme = getThemeColors(isDark);
+  const styles = getStyles(isDark, theme);
 
   return (
     <View style={styles.container}>
       {showFilters && (
         <View style={styles.filtersContent}>
+          {/* Period Filter */}
           <View style={styles.filterGroup}>
-            <Text style={styles.label}>Period:</Text>
-            <View style={styles.chips}>
+            <View style={styles.filterHeader}>
+              <View style={[styles.filterIcon, { backgroundColor: theme.primaryBg }]}>
+                <Ionicons name="calendar-outline" size={14} color={theme.primary} />
+              </View>
+              <Text style={styles.label}>Period</Text>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.chips}
+            >
               <TouchableOpacity
-                style={[styles.chip, selectedPeriod === '' && styles.chipActive]}
-                onPress={() => onPeriodChange('')}
+                style={[styles.chip, selectedPeriod === "" && styles.chipActive]}
+                onPress={() => onPeriodChange("")}
+                activeOpacity={0.7}
               >
                 <Text
-                  style={[styles.chipText, selectedPeriod === '' && styles.chipTextActive]}
+                  style={[styles.chipText, selectedPeriod === "" && styles.chipTextActive]}
                 >
                   All
                 </Text>
               </TouchableOpacity>
-              {periods.map((period) => (
-                <TouchableOpacity
-                  key={period.id}
-                  style={[
-                    styles.chip,
-                    selectedPeriod === period.name && styles.chipActive,
-                    { backgroundColor: selectedPeriod === period.name ? period.color : undefined },
-                  ]}
-                  onPress={() => onPeriodChange(period.name)}
-                >
-                  <Text
+              {periods.map((period) => {
+                const isSelected = selectedPeriod === period.name;
+                return (
+                  <TouchableOpacity
+                    key={period.id}
                     style={[
-                      styles.chipText,
-                      selectedPeriod === period.name && styles.chipTextActive,
+                      styles.chip,
+                      isSelected && styles.chipActive,
+                      isSelected && { backgroundColor: period.color, borderColor: period.color },
                     ]}
+                    onPress={() => onPeriodChange(period.name)}
+                    activeOpacity={0.7}
                   >
-                    {period.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+                    <Text
+                      style={[
+                        styles.chipText,
+                        isSelected && styles.chipTextActive,
+                        isSelected && {
+                          color: isDarkColor(period.color) ? "#ffffff" : "#0f172a",
+                        },
+                      ]}
+                    >
+                      {period.name}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
           </View>
+
+          {/* Category Filter */}
           {showCategoryFilter && (
             <View style={styles.filterGroup}>
-              <Text style={styles.label}>Category:</Text>
-              <View style={styles.chips}>
+              <View style={styles.filterHeader}>
+                <View style={[styles.filterIcon, { backgroundColor: theme.dangerBg }]}>
+                  <Ionicons name="pricetag-outline" size={14} color={theme.danger} />
+                </View>
+                <Text style={styles.label}>Category</Text>
+              </View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.chips}
+              >
                 <TouchableOpacity
-                  style={[styles.chip, selectedCategory === '' && styles.chipActive]}
-                  onPress={() => onCategoryChange('')}
+                  style={[styles.chip, selectedCategory === "" && styles.chipActive]}
+                  onPress={() => onCategoryChange("")}
+                  activeOpacity={0.7}
                 >
                   <Text
                     style={[
                       styles.chipText,
-                      selectedCategory === '' && styles.chipTextActive,
+                      selectedCategory === "" && styles.chipTextActive,
                     ]}
                   >
                     All
                   </Text>
                 </TouchableOpacity>
-                {categories.map((category) => (
-                  <TouchableOpacity
-                    key={category.id}
-                    style={[
-                      styles.chip,
-                      selectedCategory === category.name && styles.chipActive,
-                      {
-                        backgroundColor:
-                          selectedCategory === category.name ? category.color : undefined,
-                      },
-                    ]}
-                    onPress={() => onCategoryChange(category.name)}
-                  >
-                    <Text
+                {categories.map((category) => {
+                  const isSelected = selectedCategory === category.name;
+                  return (
+                    <TouchableOpacity
+                      key={category.id}
                       style={[
-                        styles.chipText,
-                        selectedCategory === category.name && styles.chipTextActive,
+                        styles.chip,
+                        isSelected && styles.chipActive,
+                        isSelected && {
+                          backgroundColor: category.color,
+                          borderColor: category.color,
+                        },
                       ]}
+                      onPress={() => onCategoryChange(category.name)}
+                      activeOpacity={0.7}
                     >
-                      {category.name}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+                      <Text
+                        style={[
+                          styles.chipText,
+                          isSelected && styles.chipTextActive,
+                          isSelected && {
+                            color: isDarkColor(category.color) ? "#ffffff" : "#0f172a",
+                          },
+                        ]}
+                      >
+                        {category.name}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
             </View>
           )}
         </View>
@@ -126,73 +165,96 @@ export const FilterToggleButton = ({
   onToggle: () => void;
 }) => {
   const { isDark } = useTheme();
-  const styles = getToggleStyles(isDark);
+  const theme = getThemeColors(isDark);
+  const styles = getToggleStyles(isDark, theme);
 
   return (
-    <TouchableOpacity style={styles.toggleButton} onPress={onToggle}>
+    <TouchableOpacity
+      style={[styles.toggleButton, showFilters && styles.toggleButtonActive]}
+      onPress={onToggle}
+      activeOpacity={0.7}
+    >
       <Ionicons
         name={showFilters ? "filter" : "filter-outline"}
-        size={20}
-        color={isDark ? "#ffffff" : "#111827"}
+        size={18}
+        color={showFilters ? theme.primary : theme.textSecondary}
       />
     </TouchableOpacity>
   );
 };
 
-const getStyles = (isDark: boolean) =>
+const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
   StyleSheet.create({
     container: {
       gap: 12,
     },
     filtersContent: {
-      gap: 12,
+      gap: 14,
     },
     filterGroup: {
       gap: 8,
     },
-    label: {
-      fontSize: 14,
-      fontWeight: '600',
-      color: isDark ? '#ffffff' : '#111827',
-    },
-    chips: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
+    filterHeader: {
+      flexDirection: "row",
+      alignItems: "center",
       gap: 8,
     },
+    filterIcon: {
+      width: 24,
+      height: 24,
+      borderRadius: radius.sm,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    label: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: theme.textSecondary,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+    chips: {
+      flexDirection: "row",
+      gap: 8,
+      paddingRight: 16,
+    },
     chip: {
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 16,
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: radius.md,
       borderWidth: 1,
-      borderColor: isDark ? '#374151' : '#d1d5db',
-      backgroundColor: isDark ? '#111827' : '#f3f4f6',
+      borderColor: theme.border,
+      backgroundColor: isDark ? "rgba(51, 65, 85, 0.3)" : colors.slate[50],
     },
     chipActive: {
-      borderColor: '#3b82f6',
+      borderColor: theme.primary,
+      backgroundColor: theme.primaryBg,
     },
     chipText: {
-      fontSize: 14,
-      color: isDark ? '#ffffff' : '#111827',
+      fontSize: 13,
+      fontWeight: "500",
+      color: theme.textSecondary,
     },
     chipTextActive: {
-      fontWeight: '600',
-      color: '#3b82f6',
+      fontWeight: "600",
+      color: theme.primary,
     },
   });
 
-const getToggleStyles = (isDark: boolean) =>
+const getToggleStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
   StyleSheet.create({
     toggleButton: {
       alignItems: "center",
       justifyContent: "center",
-      padding: 8,
-      backgroundColor: isDark ? "#1f2937" : "#f3f4f6",
-      borderRadius: 8,
+      width: 42,
+      height: 42,
+      backgroundColor: isDark ? "rgba(51, 65, 85, 0.4)" : colors.slate[100],
+      borderRadius: radius.md,
       borderWidth: 1,
-      borderColor: isDark ? "#374151" : "#d1d5db",
-      width: 40,
-      height: 40,
+      borderColor: theme.borderGlass,
+    },
+    toggleButtonActive: {
+      backgroundColor: theme.primaryBg,
+      borderColor: isDark ? "rgba(20, 184, 166, 0.3)" : "rgba(20, 184, 166, 0.2)",
     },
   });
-
