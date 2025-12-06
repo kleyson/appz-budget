@@ -2,8 +2,17 @@ import { useState, FormEvent, ChangeEvent, useEffect } from 'react';
 import { usePeriods, useCreatePeriod, useUpdatePeriod, useDeletePeriod } from '../hooks/usePeriods';
 import type { Period, PeriodCreate } from '../types';
 import { AxiosError } from 'axios';
-import { generateRandomColor, isDarkColor } from '../utils/colors';
+import { generateRandomColor } from '../utils/colors';
 import { useDialog } from '../contexts/DialogContext';
+import {
+  Button,
+  IconButton,
+  LoadingState,
+  EmptyState,
+  ColorChip,
+  FormInput,
+  SectionTitle,
+} from './shared';
 
 export const PeriodManagement = () => {
   const [editingPeriod, setEditingPeriod] = useState<Period | null>(null);
@@ -14,7 +23,6 @@ export const PeriodManagement = () => {
   });
   const [error, setError] = useState('');
 
-  // Generate new random color when form opens for new period
   useEffect(() => {
     if (showForm && !editingPeriod) {
       setFormData((prev) => ({ ...prev, color: generateRandomColor() }));
@@ -84,98 +92,65 @@ export const PeriodManagement = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-16">
-        <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
-          <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            />
-          </svg>
-          <span>Loading periods...</span>
-        </div>
-      </div>
-    );
+    return <LoadingState text="Loading periods..." />;
   }
 
   return (
     <div className="p-5 lg:p-6">
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h3 className="font-display text-lg font-semibold text-slate-900 dark:text-white">
-            Periods
-          </h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+          <SectionTitle>Periods</SectionTitle>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             {periods?.length || 0} {periods?.length === 1 ? 'period' : 'periods'}
           </p>
         </div>
-        <button
+        <Button
+          variant="primary"
           onClick={() => {
             setShowForm(true);
             setEditingPeriod(null);
             setFormData({ name: '', color: generateRandomColor() });
           }}
-          className="btn-primary text-sm"
+          icon={<PlusIcon />}
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
           <span className="hidden sm:inline">Add Period</span>
           <span className="sm:hidden">Add</span>
-        </button>
+        </Button>
       </div>
 
       {showForm && (
-        <div className="mb-6 p-5 border border-slate-200/80 dark:border-slate-700/50 rounded-xl bg-slate-50 dark:bg-slate-800/30">
+        <div className="mb-6 p-5 surface-subtle border border-slate-200/80 dark:border-slate-700/50 rounded-xl">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                Period Name
-              </label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                placeholder="e.g., Fixed/1st Period"
-                required
-                autoFocus
-                className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                Color
-              </label>
+            <FormInput
+              label="Period Name"
+              value={formData.name}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
+              placeholder="e.g., Fixed/1st Period"
+              required
+              autoFocus
+            />
+            <div className="form-group">
+              <label className="input-label">Color</label>
               <div className="flex items-center gap-3">
                 <input
                   type="color"
-                  value={formData.color || '#8b5cf6'}
+                  value={formData.color || '#14b8a6'}
                   onChange={(e: ChangeEvent<HTMLInputElement>) =>
                     setFormData({ ...formData, color: e.target.value })
                   }
                   className="h-10 w-20 border border-slate-200 dark:border-slate-600 rounded-lg cursor-pointer"
                 />
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
                   onClick={() => setFormData({ ...formData, color: generateRandomColor() })}
-                  className="px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                 >
                   Random
-                </button>
+                </Button>
                 <span className="text-sm text-slate-500 dark:text-slate-400 font-mono">
-                  {formData.color || '#8b5cf6'}
+                  {formData.color || '#14b8a6'}
                 </span>
               </div>
             </div>
@@ -185,24 +160,20 @@ export const PeriodManagement = () => {
               </div>
             )}
             <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={handleCancel}
-                className="px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-medium"
-              >
+              <Button type="button" variant="secondary" onClick={handleCancel}>
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="submit"
+                variant="primary"
                 disabled={createMutation.isPending || updateMutation.isPending}
-                className="btn-primary"
               >
                 {createMutation.isPending || updateMutation.isPending
                   ? 'Saving...'
                   : editingPeriod
                     ? 'Update'
                     : 'Create'}
-              </button>
+              </Button>
             </div>
           </form>
         </div>
@@ -210,29 +181,11 @@ export const PeriodManagement = () => {
 
       <div className="mt-4">
         {!periods || periods.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-              <svg
-                className="w-8 h-8 text-slate-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
-            </div>
-            <h4 className="text-lg font-medium text-slate-900 dark:text-white mb-1">
-              No periods yet
-            </h4>
-            <p className="text-slate-500 dark:text-slate-400">
-              Add your first period to organize expenses by time.
-            </p>
-          </div>
+          <EmptyState
+            icon={<CalendarIcon />}
+            title="No periods yet"
+            description="Add your first period to organize expenses by time."
+          />
         ) : (
           <>
             {/* Mobile/Tablet: Cards */}
@@ -244,29 +197,23 @@ export const PeriodManagement = () => {
                   style={{ animationDelay: `${index * 0.03}s`, animationFillMode: 'forwards' }}
                 >
                   <div className="flex items-center justify-center mb-3">
-                    <span
-                      className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium"
-                      style={{
-                        backgroundColor: period.color,
-                        color: isDarkColor(period.color) ? '#ffffff' : '#111827',
-                      }}
-                    >
-                      {period.name}
-                    </span>
+                    <ColorChip color={period.color}>{period.name}</ColorChip>
                   </div>
                   <div className="flex gap-2 pt-3 border-t border-slate-200 dark:border-slate-700">
-                    <button
+                    <Button
+                      variant="ghost"
                       onClick={() => handleEdit(period)}
-                      className="flex-1 text-sm px-3 py-2 rounded-lg border border-primary-200 dark:border-primary-800 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 font-medium transition-colors"
+                      className="flex-1 text-sm border border-primary-200 dark:border-primary-800 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20"
                     >
                       Edit
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="ghost"
                       onClick={() => handleDelete(period.id, period.name)}
-                      className="flex-1 text-sm px-3 py-2 rounded-lg border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors"
+                      className="flex-1 text-sm border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                     >
                       Delete
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -275,37 +222,20 @@ export const PeriodManagement = () => {
             {/* Desktop: Table */}
             <div className="hidden lg:block rounded-xl border border-slate-200/80 dark:border-slate-700/50 overflow-hidden">
               <table className="w-full">
-                <thead>
-                  <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200/80 dark:border-slate-700/50">
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      Period
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      Color
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      Actions
-                    </th>
+                <thead className="table-header">
+                  <tr>
+                    <th className="table-header-cell">Period</th>
+                    <th className="table-header-cell">Color</th>
+                    <th className="table-header-cell text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200/80 dark:divide-slate-700/50">
                   {periods.map((period) => (
-                    <tr
-                      key={period.id}
-                      className="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                    >
-                      <td className="px-4 py-4 text-sm">
-                        <span
-                          className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium"
-                          style={{
-                            backgroundColor: period.color,
-                            color: isDarkColor(period.color) ? '#ffffff' : '#111827',
-                          }}
-                        >
-                          {period.name}
-                        </span>
+                    <tr key={period.id} className="table-row group">
+                      <td className="table-cell">
+                        <ColorChip color={period.color}>{period.name}</ColorChip>
                       </td>
-                      <td className="px-4 py-4 text-sm font-mono text-slate-500 dark:text-slate-400">
+                      <td className="table-cell font-mono text-slate-500 dark:text-slate-400">
                         <div className="flex items-center gap-2">
                           <div
                             className="w-4 h-4 rounded border border-slate-200 dark:border-slate-600"
@@ -314,46 +244,20 @@ export const PeriodManagement = () => {
                           {period.color}
                         </div>
                       </td>
-                      <td className="px-4 py-4 text-sm text-right">
+                      <td className="table-cell text-right">
                         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
+                          <IconButton
+                            variant="primary"
+                            icon={<EditIcon />}
                             onClick={() => handleEdit(period)}
-                            className="p-2 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20 text-primary-600 dark:text-primary-400 transition-colors"
                             title="Edit"
-                          >
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                              />
-                            </svg>
-                          </button>
-                          <button
+                          />
+                          <IconButton
+                            variant="danger"
+                            icon={<TrashIcon />}
                             onClick={() => handleDelete(period.id, period.name)}
-                            className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 transition-colors"
                             title="Delete"
-                          >
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
-                            </svg>
-                          </button>
+                          />
                         </div>
                       </td>
                     </tr>
@@ -367,3 +271,42 @@ export const PeriodManagement = () => {
     </div>
   );
 };
+
+const PlusIcon = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+  </svg>
+);
+
+const CalendarIcon = () => (
+  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={1.5}
+      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+    />
+  </svg>
+);
+
+const EditIcon = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+    />
+  </svg>
+);
+
+const TrashIcon = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+    />
+  </svg>
+);

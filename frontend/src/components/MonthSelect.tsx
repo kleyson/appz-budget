@@ -103,7 +103,14 @@ export const MonthSelect = ({
           transition-colors
         `}
       >
-        <span className="truncate">{selectedMonth ? selectedMonth.name : placeholder}</span>
+        <span className="flex items-center gap-2 truncate">
+          <span className="truncate">{selectedMonth ? selectedMonth.name : placeholder}</span>
+          {selectedMonth?.is_closed && (
+            <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 flex-shrink-0">
+              Closed
+            </span>
+          )}
+        </span>
         <svg
           className={`w-5 h-5 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
@@ -157,10 +164,17 @@ export const MonthSelect = ({
                     `}
                     >
                       <div className="flex items-center justify-between">
-                        <span>{month.name}</span>
+                        <span className="flex items-center gap-2">
+                          <span>{month.name}</span>
+                          {month.is_closed && (
+                            <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                              Closed
+                            </span>
+                          )}
+                        </span>
                         {isSelected && (
                           <svg
-                            className="w-5 h-5 text-primary-600 dark:text-primary-400"
+                            className="w-5 h-5 text-primary-600 dark:text-primary-400 flex-shrink-0"
                             fill="currentColor"
                             viewBox="0 0 20 20"
                           >

@@ -27,9 +27,9 @@ import { usePeriods } from '../hooks/usePeriods';
 import { useMonth } from '../hooks/useMonths';
 import { ExpenseForm } from './ExpenseForm';
 import type { Expense } from '../types';
-import { isDarkColor } from '../utils/colors';
 import { formatCurrency } from '../utils/format';
 import { useDialog } from '../contexts/DialogContext';
+import { LoadingState, EmptyState, SectionTitle, Button, Badge, ColorChip } from './shared';
 
 interface ExpenseListProps {
   periodFilter?: string | null;
@@ -41,9 +41,7 @@ interface SortableExpenseRowProps {
   expense: Expense;
   getCategoryColor: (categoryName: string) => string;
   getPeriodColor: (periodName: string) => string;
-  getStatusBadge: (budget: number, cost: number) => React.ReactNode;
   formatCurrency: (amount: number) => string;
-  isDarkColor: (color: string) => boolean;
   expandedPurchases: Set<number>;
   togglePurchases: (expenseId: number) => void;
   setEditingExpense: (expense: Expense) => void;
@@ -56,9 +54,7 @@ function SortableExpenseRow({
   expense,
   getCategoryColor,
   getPeriodColor,
-  getStatusBadge,
   formatCurrency,
-  isDarkColor,
   expandedPurchases,
   togglePurchases,
   setEditingExpense,
@@ -66,6 +62,7 @@ function SortableExpenseRow({
   handlePay,
   isMonthClosed,
 }: SortableExpenseRowProps) {
+  const isWithinBudget = expense.budget >= expense.cost;
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: expense.id,
   });
@@ -103,26 +100,10 @@ function SortableExpenseRow({
           </div>
         </td>
         <td className="px-4 py-4 text-sm">
-          <span
-            className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium"
-            style={{
-              backgroundColor: getPeriodColor(expense.period),
-              color: isDarkColor(getPeriodColor(expense.period)) ? '#ffffff' : '#111827',
-            }}
-          >
-            {expense.period}
-          </span>
+          <ColorChip color={getPeriodColor(expense.period)}>{expense.period}</ColorChip>
         </td>
         <td className="px-4 py-4 text-sm">
-          <span
-            className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium"
-            style={{
-              backgroundColor: getCategoryColor(expense.category),
-              color: isDarkColor(getCategoryColor(expense.category)) ? '#ffffff' : '#111827',
-            }}
-          >
-            {expense.category}
-          </span>
+          <ColorChip color={getCategoryColor(expense.category)}>{expense.category}</ColorChip>
         </td>
         <td
           className={`px-4 py-4 text-sm text-right font-medium tabular-nums ${
@@ -142,7 +123,11 @@ function SortableExpenseRow({
         >
           {formatCurrency(expense.cost)}
         </td>
-        <td className="px-4 py-4 text-sm">{getStatusBadge(expense.budget, expense.cost)}</td>
+        <td className="px-4 py-4 text-sm">
+          <Badge variant={isWithinBudget ? 'success' : 'danger'}>
+            {isWithinBudget ? 'On Budget' : 'Over Budget'}
+          </Badge>
+        </td>
         <td className="px-4 py-4 text-sm">
           {(expense.purchases && expense.purchases.length > 0) || expense.notes ? (
             <button
@@ -378,39 +363,6 @@ export const ExpenseList = ({
     });
   };
 
-  const getStatusBadge = (budget: number, cost: number) => {
-    const isWithinBudget = budget >= cost;
-    return (
-      <span className={`badge ${isWithinBudget ? 'badge-success' : 'badge-danger'}`}>
-        {isWithinBudget ? (
-          <span className="flex items-center gap-1">
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-            On Budget
-          </span>
-        ) : (
-          <span className="flex items-center gap-1">
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-              />
-            </svg>
-            Over Budget
-          </span>
-        )}
-      </span>
-    );
-  };
-
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
 
@@ -448,53 +400,28 @@ export const ExpenseList = ({
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-16">
-        <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
-          <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            />
-          </svg>
-          <span>Loading expenses...</span>
-        </div>
-      </div>
-    );
+    return <LoadingState text="Loading expenses..." />;
   }
 
   return (
     <div className="p-5 lg:p-6">
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h3 className="font-display text-lg font-semibold text-slate-900 dark:text-white">
-            Expenses
-          </h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+          <SectionTitle>Expenses</SectionTitle>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             {expenses?.length || 0} {expenses?.length === 1 ? 'expense' : 'expenses'}
           </p>
         </div>
-        <button
+        <Button
+          variant="primary"
           onClick={() => setShowForm(true)}
           disabled={isMonthClosed}
-          className="btn-primary text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          icon={<PlusIcon />}
           title={isMonthClosed ? 'Month is closed' : undefined}
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
           <span className="hidden sm:inline">Add Expense</span>
           <span className="sm:hidden">Add</span>
-        </button>
+        </Button>
       </div>
 
       {showForm && <ExpenseForm onClose={() => setShowForm(false)} defaultMonthId={monthId} />}
@@ -509,29 +436,11 @@ export const ExpenseList = ({
 
       <div className="mt-4">
         {!expenses || expenses.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-              <svg
-                className="w-8 h-8 text-slate-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z"
-                />
-              </svg>
-            </div>
-            <h4 className="text-lg font-medium text-slate-900 dark:text-white mb-1">
-              No expenses yet
-            </h4>
-            <p className="text-slate-500 dark:text-slate-400">
-              Add your first expense to start tracking your budget.
-            </p>
-          </div>
+          <EmptyState
+            icon={<ExpenseIcon />}
+            title="No expenses yet"
+            description="Add your first expense to start tracking your budget."
+          />
         ) : (
           <>
             {/* Mobile/Tablet: Cards */}
@@ -546,29 +455,15 @@ export const ExpenseList = ({
                     <h4 className="font-medium text-slate-900 dark:text-white truncate pr-2">
                       {expense.expense_name}
                     </h4>
-                    {getStatusBadge(expense.budget, expense.cost)}
+                    <Badge variant={expense.budget >= expense.cost ? 'success' : 'danger'}>
+                      {expense.budget >= expense.cost ? 'On Budget' : 'Over Budget'}
+                    </Badge>
                   </div>
                   <div className="flex flex-wrap gap-1.5 mb-3">
-                    <span
-                      className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium"
-                      style={{
-                        backgroundColor: getPeriodColor(expense.period),
-                        color: isDarkColor(getPeriodColor(expense.period)) ? '#ffffff' : '#111827',
-                      }}
-                    >
-                      {expense.period}
-                    </span>
-                    <span
-                      className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium"
-                      style={{
-                        backgroundColor: getCategoryColor(expense.category),
-                        color: isDarkColor(getCategoryColor(expense.category))
-                          ? '#ffffff'
-                          : '#111827',
-                      }}
-                    >
+                    <ColorChip color={getPeriodColor(expense.period)}>{expense.period}</ColorChip>
+                    <ColorChip color={getCategoryColor(expense.category)}>
                       {expense.category}
-                    </span>
+                    </ColorChip>
                   </div>
                   <div className="grid grid-cols-2 gap-3 mb-3">
                     <div>
@@ -717,9 +612,7 @@ export const ExpenseList = ({
                           expense={expense}
                           getCategoryColor={getCategoryColor}
                           getPeriodColor={getPeriodColor}
-                          getStatusBadge={getStatusBadge}
                           formatCurrency={formatCurrency}
-                          isDarkColor={isDarkColor}
                           expandedPurchases={expandedPurchases}
                           togglePurchases={togglePurchases}
                           setEditingExpense={setEditingExpense}
@@ -739,3 +632,20 @@ export const ExpenseList = ({
     </div>
   );
 };
+
+const PlusIcon = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+  </svg>
+);
+
+const ExpenseIcon = () => (
+  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={1.5}
+      d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+    />
+  </svg>
+);

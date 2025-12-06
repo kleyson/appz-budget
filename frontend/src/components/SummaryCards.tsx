@@ -1,5 +1,6 @@
 import { useSummaryTotals } from '../hooks/useSummary';
 import { formatCurrency } from '../utils/format';
+import { LoadingState, SectionTitle, ProgressBar } from './shared';
 
 interface SummaryCardsProps {
   periodFilter?: string | null;
@@ -10,28 +11,7 @@ export const SummaryCards = ({ periodFilter = null, monthId = null }: SummaryCar
   const { data: totals, isLoading } = useSummaryTotals({ period: periodFilter, month_id: monthId });
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
-          <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            />
-          </svg>
-          <span>Loading summary...</span>
-        </div>
-      </div>
-    );
+    return <LoadingState text="Loading summary..." />;
   }
 
   if (!totals) {
@@ -43,7 +23,7 @@ export const SummaryCards = ({ periodFilter = null, monthId = null }: SummaryCar
       title: 'Income',
       budgetValue: totals.total_budgeted_income,
       actualValue: totals.total_current_income,
-      accentColor: 'emerald',
+      accentColor: 'success' as const,
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
@@ -59,7 +39,7 @@ export const SummaryCards = ({ periodFilter = null, monthId = null }: SummaryCar
       title: 'Expenses',
       budgetValue: totals.total_budgeted_expenses,
       actualValue: totals.total_current_expenses,
-      accentColor: 'rose',
+      accentColor: 'danger' as const,
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
@@ -75,7 +55,7 @@ export const SummaryCards = ({ periodFilter = null, monthId = null }: SummaryCar
       title: 'Balance',
       budgetValue: totals.total_budgeted,
       actualValue: totals.total_current,
-      accentColor: totals.total_current >= 0 ? 'emerald' : 'rose',
+      accentColor: (totals.total_current >= 0 ? 'success' : 'danger') as 'success' | 'danger',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
@@ -89,28 +69,21 @@ export const SummaryCards = ({ periodFilter = null, monthId = null }: SummaryCar
     },
   ];
 
-  const getColorClasses = (color: string) => ({
-    gradient: color === 'emerald' ? 'from-emerald-400 to-teal-500' : 'from-rose-400 to-pink-500',
+  const getColorClasses = (color: 'success' | 'danger') => ({
+    gradient: color === 'success' ? 'from-emerald-400 to-teal-500' : 'from-red-400 to-rose-500',
     bg:
-      color === 'emerald'
+      color === 'success'
         ? 'bg-emerald-500/10 dark:bg-emerald-500/15'
-        : 'bg-rose-500/10 dark:bg-rose-500/15',
+        : 'bg-red-500/10 dark:bg-red-500/15',
     text:
-      color === 'emerald'
+      color === 'success'
         ? 'text-emerald-600 dark:text-emerald-400'
-        : 'text-rose-600 dark:text-rose-400',
-    progressBg:
-      color === 'emerald'
-        ? 'bg-emerald-100 dark:bg-emerald-900/30'
-        : 'bg-rose-100 dark:bg-rose-900/30',
-    progressFill: color === 'emerald' ? 'bg-emerald-500' : 'bg-rose-500',
+        : 'text-red-600 dark:text-red-400',
   });
 
   return (
     <div className="p-5 lg:p-6">
-      <h3 className="font-display text-lg font-semibold text-slate-900 dark:text-white mb-4">
-        Overview
-      </h3>
+      <SectionTitle className="mb-4">Overview</SectionTitle>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {cards.map((card, index) => {
           const colors = getColorClasses(card.accentColor);
@@ -171,12 +144,10 @@ export const SummaryCards = ({ periodFilter = null, monthId = null }: SummaryCar
                 </div>
 
                 {/* Progress bar */}
-                <div className={`h-1.5 rounded-full ${colors.progressBg} overflow-hidden`}>
-                  <div
-                    className={`h-full rounded-full ${colors.progressFill} transition-all duration-700 ease-out`}
-                    style={{ width: `${Math.min(Math.abs(percentage), 100)}%` }}
-                  />
-                </div>
+                <ProgressBar
+                  progress={Math.min(Math.abs(percentage), 100)}
+                  color={card.accentColor}
+                />
               </div>
             </div>
           );

@@ -141,20 +141,13 @@ export const MonthSelector = ({ selectedMonthId, onMonthChange }: MonthSelectorP
           </svg>
         </button>
 
-        <div className="flex items-center gap-1 sm:gap-2">
-          <MonthSelect
-            months={months}
-            value={activeMonth.id}
-            onChange={onMonthChange}
-            className="min-w-[140px] sm:min-w-[180px]"
-            label=""
-          />
-          {activeMonth.is_closed && (
-            <span className="px-1.5 sm:px-2 py-0.5 text-xs font-medium rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
-              Closed
-            </span>
-          )}
-        </div>
+        <MonthSelect
+          months={months}
+          value={activeMonth.id}
+          onChange={onMonthChange}
+          className="min-w-[160px] sm:min-w-[200px]"
+          label=""
+        />
 
         <button
           onClick={handleNext}

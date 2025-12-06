@@ -12,18 +12,20 @@ export default {
         display: ['Outfit', 'system-ui', 'sans-serif'],
       },
       colors: {
+        // Primary - Deep teal (matching mobile)
         primary: {
-          50: '#f0f4ff',
-          100: '#e0e9ff',
-          200: '#c7d6fe',
-          300: '#a4bbfc',
-          400: '#7a95f8',
-          500: '#5a6ff2',
-          600: '#4650e6',
-          700: '#3b40cb',
-          800: '#3236a4',
-          900: '#2e3382',
+          50: '#f0fdfa',
+          100: '#ccfbf1',
+          200: '#99f6e4',
+          300: '#5eead4',
+          400: '#2dd4bf',
+          500: '#14b8a6',
+          600: '#0d9488',
+          700: '#0f766e',
+          800: '#115e59',
+          900: '#134e4a',
         },
+        // Accent - Vibrant amber/gold (matching mobile)
         accent: {
           50: '#fffbeb',
           100: '#fef3c7',
@@ -36,9 +38,10 @@ export default {
           800: '#92400e',
           900: '#78350f',
         },
+        // Extended slate for OLED dark mode
         slate: {
-          850: '#172033',
-          950: '#0c1222',
+          850: '#151d2e',
+          950: '#080d19',
         },
       },
       boxShadow: {
@@ -47,11 +50,15 @@ export default {
         'card': '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06)',
         'card-hover': '0 4px 12px rgba(0,0,0,0.06), 0 12px 32px rgba(0,0,0,0.1)',
         'inner-glow': 'inset 0 1px 0 0 rgba(255,255,255,0.05)',
+        // Colored glow shadows
+        'glow-primary': '0 4px 14px 0 rgba(20, 184, 166, 0.25)',
+        'glow-success': '0 4px 14px 0 rgba(16, 185, 129, 0.25)',
+        'glow-danger': '0 4px 14px 0 rgba(239, 68, 68, 0.25)',
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'mesh-light': 'radial-gradient(at 40% 20%, rgba(90, 111, 242, 0.08) 0px, transparent 50%), radial-gradient(at 80% 0%, rgba(251, 191, 36, 0.06) 0px, transparent 50%), radial-gradient(at 0% 50%, rgba(90, 111, 242, 0.05) 0px, transparent 50%)',
-        'mesh-dark': 'radial-gradient(at 40% 20%, rgba(90, 111, 242, 0.15) 0px, transparent 50%), radial-gradient(at 80% 0%, rgba(251, 191, 36, 0.1) 0px, transparent 50%), radial-gradient(at 0% 50%, rgba(90, 111, 242, 0.08) 0px, transparent 50%)',
+        'mesh-light': 'radial-gradient(at 40% 20%, rgba(20, 184, 166, 0.06) 0px, transparent 50%), radial-gradient(at 80% 0%, rgba(251, 191, 36, 0.04) 0px, transparent 50%), radial-gradient(at 0% 50%, rgba(20, 184, 166, 0.04) 0px, transparent 50%)',
+        'mesh-dark': 'radial-gradient(at 40% 20%, rgba(20, 184, 166, 0.12) 0px, transparent 50%), radial-gradient(at 80% 0%, rgba(251, 191, 36, 0.08) 0px, transparent 50%), radial-gradient(at 0% 50%, rgba(20, 184, 166, 0.06) 0px, transparent 50%)',
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-out forwards',
@@ -86,4 +93,3 @@ export default {
   },
   plugins: [],
 }
-

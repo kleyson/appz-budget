@@ -1,8 +1,8 @@
 import { useCategorySummary, useCategories } from '../hooks/useCategories';
 import { useIncomeTypeSummary, usePeriodSummary } from '../hooks/useSummary';
 import { useIncomeTypes } from '../hooks/useIncomeTypes';
-import { isDarkColor } from '../utils/colors';
 import { formatCurrency } from '../utils/format';
+import { LoadingState, SectionTitle, ColorChip, Badge } from './shared';
 
 interface SummaryProps {
   periodFilter?: string | null;
@@ -34,295 +34,226 @@ export const Summary = ({ periodFilter = null, monthId = null }: SummaryProps) =
   };
 
   if (isLoading || isLoadingIncomeSummary || isLoadingPeriodSummary) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-gray-500 dark:text-gray-400">Loading summary...</div>
-      </div>
-    );
+    return <LoadingState text="Loading summary..." />;
   }
 
   return (
-    <div className="mx-4 my-4">
-      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-        Summary by Period
-      </h3>
+    <div className="p-5 lg:p-6">
+      <SectionTitle className="mb-4">Summary by Period</SectionTitle>
 
       <div className="overflow-x-auto mb-8">
         {!periodSummary || periodSummary.periods.length === 0 ? (
-          <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+          <div className="text-center py-12 text-slate-500 dark:text-slate-400">
             <p className="text-lg">No period summary data available.</p>
           </div>
         ) : (
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-900">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Period
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Income
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Expenses
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Difference
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {periodSummary.periods.map((item) => (
-                <tr
-                  key={item.period}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <span
-                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                      style={{
-                        backgroundColor: item.color,
-                        color: isDarkColor(item.color) ? '#ffffff' : '#111827',
-                      }}
+          <div className="rounded-xl border border-slate-200/80 dark:border-slate-700/50 overflow-hidden">
+            <table className="w-full">
+              <thead className="table-header">
+                <tr>
+                  <th className="table-header-cell">Period</th>
+                  <th className="table-header-cell text-right">Income</th>
+                  <th className="table-header-cell text-right">Expenses</th>
+                  <th className="table-header-cell text-right">Difference</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200/80 dark:divide-slate-700/50">
+                {periodSummary.periods.map((item) => (
+                  <tr key={item.period} className="table-row">
+                    <td className="table-cell">
+                      <ColorChip color={item.color}>{item.period}</ColorChip>
+                    </td>
+                    <td
+                      className={`table-cell text-right ${
+                        item.total_income === 0
+                          ? 'text-slate-400 dark:text-slate-500'
+                          : 'text-emerald-600 dark:text-emerald-400'
+                      }`}
                     >
-                      {item.period}
-                    </span>
+                      {formatCurrency(item.total_income)}
+                    </td>
+                    <td
+                      className={`table-cell text-right ${
+                        item.total_expenses === 0
+                          ? 'text-slate-400 dark:text-slate-500'
+                          : 'text-red-600 dark:text-red-400'
+                      }`}
+                    >
+                      {formatCurrency(item.total_expenses)}
+                    </td>
+                    <td
+                      className={`table-cell text-right font-semibold ${
+                        item.difference === 0
+                          ? 'text-slate-400 dark:text-slate-500'
+                          : item.difference >= 0
+                            ? 'text-emerald-600 dark:text-emerald-400'
+                            : 'text-red-600 dark:text-red-400'
+                      }`}
+                    >
+                      {formatCurrency(item.difference)}
+                    </td>
+                  </tr>
+                ))}
+                <tr className="bg-slate-100 dark:bg-slate-800/50 font-semibold">
+                  <td className="table-cell text-slate-900 dark:text-white">Total</td>
+                  <td className="table-cell text-right text-emerald-600 dark:text-emerald-400">
+                    {formatCurrency(periodSummary.grand_total_income)}
+                  </td>
+                  <td className="table-cell text-right text-red-600 dark:text-red-400">
+                    {formatCurrency(periodSummary.grand_total_expenses)}
                   </td>
                   <td
-                    className={`px-6 py-4 whitespace-nowrap text-sm text-right ${
-                      item.total_income === 0
-                        ? 'text-gray-400 dark:text-gray-500'
-                        : 'text-green-600 dark:text-green-400'
-                    }`}
-                  >
-                    {formatCurrency(item.total_income)}
-                  </td>
-                  <td
-                    className={`px-6 py-4 whitespace-nowrap text-sm text-right ${
-                      item.total_expenses === 0
-                        ? 'text-gray-400 dark:text-gray-500'
+                    className={`table-cell text-right ${
+                      periodSummary.grand_total_difference >= 0
+                        ? 'text-emerald-600 dark:text-emerald-400'
                         : 'text-red-600 dark:text-red-400'
                     }`}
                   >
-                    {formatCurrency(item.total_expenses)}
-                  </td>
-                  <td
-                    className={`px-6 py-4 whitespace-nowrap text-sm text-right font-semibold ${
-                      item.difference === 0
-                        ? 'text-gray-400 dark:text-gray-500'
-                        : item.difference >= 0
-                          ? 'text-green-600 dark:text-green-400'
-                          : 'text-red-600 dark:text-red-400'
-                    }`}
-                  >
-                    {formatCurrency(item.difference)}
+                    {formatCurrency(periodSummary.grand_total_difference)}
                   </td>
                 </tr>
-              ))}
-              <tr className="bg-gray-100 dark:bg-gray-900 font-semibold">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                  Total
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-green-600 dark:text-green-400">
-                  {formatCurrency(periodSummary.grand_total_income)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-red-600 dark:text-red-400">
-                  {formatCurrency(periodSummary.grand_total_expenses)}
-                </td>
-                <td
-                  className={`px-6 py-4 whitespace-nowrap text-sm text-right ${
-                    periodSummary.grand_total_difference >= 0
-                      ? 'text-green-600 dark:text-green-400'
-                      : 'text-red-600 dark:text-red-400'
-                  }`}
-                >
-                  {formatCurrency(periodSummary.grand_total_difference)}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
-      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-        Expenses by Category
-      </h3>
+      <SectionTitle className="mb-4">Expenses by Category</SectionTitle>
 
       <div className="overflow-x-auto mb-8">
         {!summary || summary.length === 0 ? (
-          <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+          <div className="text-center py-12 text-slate-500 dark:text-slate-400">
             <p className="text-lg">No category summary data available.</p>
           </div>
         ) : (
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-900">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Category
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Budget
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Total
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Difference
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {summary?.map((item) => {
-                const difference = item.budget - item.total;
-                const isWithinBudget = !item.over_budget;
-                return (
-                  <tr
-                    key={item.category}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <span
-                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                        style={{
-                          backgroundColor: getCategoryColor(item.category),
-                          color: isDarkColor(getCategoryColor(item.category))
-                            ? '#ffffff'
-                            : '#111827',
-                        }}
-                      >
-                        {item.category}
-                      </span>
-                    </td>
-                    <td
-                      className={`px-6 py-4 whitespace-nowrap text-sm text-right ${
-                        item.budget === 0
-                          ? 'text-gray-400 dark:text-gray-500'
-                          : 'text-gray-900 dark:text-white'
-                      }`}
-                    >
-                      {formatCurrency(item.budget)}
-                    </td>
-                    <td
-                      className={`px-6 py-4 whitespace-nowrap text-sm text-right ${
-                        item.total === 0
-                          ? 'text-gray-400 dark:text-gray-500'
-                          : 'text-gray-900 dark:text-white'
-                      }`}
-                    >
-                      {formatCurrency(item.total)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          isWithinBudget
-                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                            : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+          <div className="rounded-xl border border-slate-200/80 dark:border-slate-700/50 overflow-hidden">
+            <table className="w-full">
+              <thead className="table-header">
+                <tr>
+                  <th className="table-header-cell">Category</th>
+                  <th className="table-header-cell text-right">Budget</th>
+                  <th className="table-header-cell text-right">Total</th>
+                  <th className="table-header-cell">Status</th>
+                  <th className="table-header-cell text-right">Difference</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200/80 dark:divide-slate-700/50">
+                {summary?.map((item) => {
+                  const difference = item.budget - item.total;
+                  const isWithinBudget = !item.over_budget;
+                  return (
+                    <tr key={item.category} className="table-row">
+                      <td className="table-cell">
+                        <ColorChip color={getCategoryColor(item.category)}>
+                          {item.category}
+                        </ColorChip>
+                      </td>
+                      <td
+                        className={`table-cell text-right ${
+                          item.budget === 0
+                            ? 'text-slate-400 dark:text-slate-500'
+                            : 'text-slate-900 dark:text-white'
                         }`}
                       >
-                        {isWithinBudget ? '✅ On Budget' : '🔴 Over Budget'}
-                      </span>
-                    </td>
-                    <td
-                      className={`px-6 py-4 whitespace-nowrap text-sm text-right font-semibold ${
-                        difference === 0
-                          ? 'text-gray-400 dark:text-gray-500'
-                          : difference >= 0
-                            ? 'text-green-600 dark:text-green-400'
-                            : 'text-red-600 dark:text-red-400'
-                      }`}
-                    >
-                      {formatCurrency(difference)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                        {formatCurrency(item.budget)}
+                      </td>
+                      <td
+                        className={`table-cell text-right ${
+                          item.total === 0
+                            ? 'text-slate-400 dark:text-slate-500'
+                            : 'text-slate-900 dark:text-white'
+                        }`}
+                      >
+                        {formatCurrency(item.total)}
+                      </td>
+                      <td className="table-cell">
+                        <Badge variant={isWithinBudget ? 'success' : 'danger'}>
+                          {isWithinBudget ? 'On Budget' : 'Over Budget'}
+                        </Badge>
+                      </td>
+                      <td
+                        className={`table-cell text-right font-semibold ${
+                          difference === 0
+                            ? 'text-slate-400 dark:text-slate-500'
+                            : difference >= 0
+                              ? 'text-emerald-600 dark:text-emerald-400'
+                              : 'text-red-600 dark:text-red-400'
+                        }`}
+                      >
+                        {formatCurrency(difference)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
-      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Income Summary</h3>
+      <SectionTitle className="mb-4">Income Summary</SectionTitle>
 
       <div className="overflow-x-auto">
         {!incomeTypeSummary || incomeTypeSummary.length === 0 ? (
-          <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+          <div className="text-center py-12 text-slate-500 dark:text-slate-400">
             <p className="text-lg">No income type summary data available.</p>
           </div>
         ) : (
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-900">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Income Type
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Budget
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Total
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Difference
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {incomeTypeSummary?.map((item) => {
-                const difference = item.total - item.budget;
-                return (
-                  <tr
-                    key={item.income_type}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <span
-                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                        style={{
-                          backgroundColor: getIncomeTypeColor(item.income_type),
-                          color: isDarkColor(getIncomeTypeColor(item.income_type))
-                            ? '#ffffff'
-                            : '#111827',
-                        }}
+          <div className="rounded-xl border border-slate-200/80 dark:border-slate-700/50 overflow-hidden">
+            <table className="w-full">
+              <thead className="table-header">
+                <tr>
+                  <th className="table-header-cell">Income Type</th>
+                  <th className="table-header-cell text-right">Budget</th>
+                  <th className="table-header-cell text-right">Total</th>
+                  <th className="table-header-cell text-right">Difference</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200/80 dark:divide-slate-700/50">
+                {incomeTypeSummary?.map((item) => {
+                  const difference = item.total - item.budget;
+                  return (
+                    <tr key={item.income_type} className="table-row">
+                      <td className="table-cell">
+                        <ColorChip color={getIncomeTypeColor(item.income_type)}>
+                          {item.income_type}
+                        </ColorChip>
+                      </td>
+                      <td
+                        className={`table-cell text-right ${
+                          item.budget === 0
+                            ? 'text-slate-400 dark:text-slate-500'
+                            : 'text-slate-900 dark:text-white'
+                        }`}
                       >
-                        {item.income_type}
-                      </span>
-                    </td>
-                    <td
-                      className={`px-6 py-4 whitespace-nowrap text-sm text-right ${
-                        item.budget === 0
-                          ? 'text-gray-400 dark:text-gray-500'
-                          : 'text-gray-900 dark:text-white'
-                      }`}
-                    >
-                      {formatCurrency(item.budget)}
-                    </td>
-                    <td
-                      className={`px-6 py-4 whitespace-nowrap text-sm text-right ${
-                        item.total === 0
-                          ? 'text-gray-400 dark:text-gray-500'
-                          : 'text-gray-900 dark:text-white'
-                      }`}
-                    >
-                      {formatCurrency(item.total)}
-                    </td>
-                    <td
-                      className={`px-6 py-4 whitespace-nowrap text-sm text-right font-semibold ${
-                        difference === 0
-                          ? 'text-gray-400 dark:text-gray-500'
-                          : difference >= 0
-                            ? 'text-green-600 dark:text-green-400'
-                            : 'text-red-600 dark:text-red-400'
-                      }`}
-                    >
-                      {formatCurrency(difference)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                        {formatCurrency(item.budget)}
+                      </td>
+                      <td
+                        className={`table-cell text-right ${
+                          item.total === 0
+                            ? 'text-slate-400 dark:text-slate-500'
+                            : 'text-slate-900 dark:text-white'
+                        }`}
+                      >
+                        {formatCurrency(item.total)}
+                      </td>
+                      <td
+                        className={`table-cell text-right font-semibold ${
+                          difference === 0
+                            ? 'text-slate-400 dark:text-slate-500'
+                            : difference >= 0
+                              ? 'text-emerald-600 dark:text-emerald-400'
+                              : 'text-red-600 dark:text-red-400'
+                        }`}
+                      >
+                        {formatCurrency(difference)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

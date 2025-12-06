@@ -12,6 +12,8 @@ import { useCategories } from '../hooks/useCategories';
 import { useCurrentMonth, useDeleteMonth, useMonths } from '../hooks/useMonths';
 import { useCloneExpensesToNextMonth } from '../hooks/useExpenses';
 import { useDialog } from '../contexts/DialogContext';
+import { Card, CardHeader, Tabs, PageTitle, Button } from './shared';
+import type { Tab } from './shared';
 
 type ExpensesTabId = 'list' | 'income' | 'summary' | 'charts';
 
@@ -32,33 +34,22 @@ export const MonthlyBudget = () => {
 
   useEffect(() => {
     if (selectedMonthId === null && months && months.length > 0) {
-      // Find the best default month:
-      // 1. Start with current month
-      // 2. If current month is closed, find the closest non-closed month looking to the future first
-      // 3. If no future non-closed month exists, fall back to current month
-
       let defaultMonth = currentMonth;
 
       if (currentMonth?.is_closed && months.length > 0) {
-        // Months are sorted newest first (year desc, month desc)
-        // Find current month index
         const currentIdx = months.findIndex((m) => m.id === currentMonth.id);
 
-        // Look for non-closed months in the future (lower indices = newer months)
         for (let i = currentIdx - 1; i >= 0; i--) {
           if (!months[i].is_closed) {
             defaultMonth = months[i];
             break;
           }
         }
-
-        // If no future non-closed month found, keep current month as default
       }
 
       if (defaultMonth) {
         setSelectedMonthId(defaultMonth.id);
       } else if (months.length > 0) {
-        // Fallback to first available month
         setSelectedMonthId(months[0].id);
       }
     }
@@ -156,134 +147,66 @@ export const MonthlyBudget = () => {
     }
   };
 
-  const tabs: { id: ExpensesTabId; label: string; icon: React.ReactNode }[] = [
+  const tabs: Tab[] = [
     {
       id: 'summary',
       label: 'Summary',
-      icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.5}
-            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-          />
-        </svg>
-      ),
+      icon: <SummaryIcon />,
     },
     {
       id: 'list',
       label: 'Expenses',
-      icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.5}
-            d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
-          />
-        </svg>
-      ),
+      icon: <ExpenseIcon />,
     },
     {
       id: 'income',
       label: 'Income',
-      icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.5}
-            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-      ),
+      icon: <IncomeIcon />,
     },
     {
       id: 'charts',
       label: 'Charts',
-      icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.5}
-            d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"
-          />
-        </svg>
-      ),
+      icon: <ChartIcon />,
     },
   ];
 
   return (
-    <div className="glass-card-solid rounded-2xl overflow-hidden animate-fade-in">
-      {/* Header */}
-      <div className="p-5 lg:p-6 border-b border-slate-200/80 dark:border-slate-800/80">
+    <Card className="animate-fade-in">
+      <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
-          <div>
-            <h2 className="font-display text-2xl font-bold text-slate-900 dark:text-white">
-              Monthly Budget
-            </h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-              Track your expenses and income
-            </p>
-          </div>
+          <PageTitle subtitle="Track your expenses and income">Monthly Budget</PageTitle>
           <div className="flex flex-wrap items-center gap-2">
-            <button
+            <Button
+              variant="success"
               onClick={() => setIsCreateMonthModalOpen(true)}
-              className="btn-success text-sm px-3 py-2"
-              title="Create a new empty month"
+              icon={<PlusIcon />}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
               <span className="hidden sm:inline">Create Month</span>
               <span className="sm:hidden">Create</span>
-            </button>
+            </Button>
             {selectedMonthId && (
               <>
-                <button
+                <Button
+                  variant="danger"
                   onClick={handleDeleteMonth}
                   disabled={deleteMonthMutation.isPending}
-                  className="btn-danger text-sm px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Delete this month and all associated expenses and incomes"
+                  icon={<TrashIcon />}
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                  </svg>
                   <span className="hidden sm:inline">
                     {deleteMonthMutation.isPending ? 'Deleting...' : 'Delete'}
                   </span>
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="primary"
                   onClick={handleCloneToNextMonth}
                   disabled={cloneMutation.isPending}
-                  className="btn-primary text-sm px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Clone all expenses and incomes from this month to the next month"
+                  icon={<CloneIcon />}
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                    />
-                  </svg>
                   <span className="hidden sm:inline">
                     {cloneMutation.isPending ? 'Cloning...' : 'Clone to Next'}
                   </span>
                   <span className="sm:hidden">{cloneMutation.isPending ? '...' : 'Clone'}</span>
-                </button>
+                </Button>
               </>
             )}
           </div>
@@ -306,27 +229,12 @@ export const MonthlyBudget = () => {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800/50 rounded-xl overflow-x-auto">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`
-                flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium
-                transition-all duration-200 whitespace-nowrap min-w-fit
-                ${
-                  activeTab === tab.id
-                    ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }
-              `}
-            >
-              <span className={activeTab === tab.id ? 'text-primary-500' : ''}>{tab.icon}</span>
-              <span>{tab.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
+        <Tabs
+          tabs={tabs}
+          activeTab={activeTab}
+          onChange={(id) => setActiveTab(id as ExpensesTabId)}
+        />
+      </CardHeader>
 
       {/* Tab Content */}
       <div className="overflow-x-hidden">
@@ -357,6 +265,79 @@ export const MonthlyBudget = () => {
           setIsCreateMonthModalOpen(false);
         }}
       />
-    </div>
+    </Card>
   );
 };
+
+// Icons
+const SummaryIcon = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={1.5}
+      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+    />
+  </svg>
+);
+
+const ExpenseIcon = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={1.5}
+      d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+    />
+  </svg>
+);
+
+const IncomeIcon = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={1.5}
+      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+    />
+  </svg>
+);
+
+const ChartIcon = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={1.5}
+      d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"
+    />
+  </svg>
+);
+
+const PlusIcon = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+  </svg>
+);
+
+const TrashIcon = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+    />
+  </svg>
+);
+
+const CloneIcon = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+    />
+  </svg>
+);
