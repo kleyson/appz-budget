@@ -73,6 +73,12 @@ lint-frontend-fix: ## Lint and fix frontend code
 type-check-frontend: ## Type check frontend code
 	cd frontend && npm run type-check
 
+type-check-mobile: ## Type check mobile code
+	cd mobile && npx tsc --noEmit
+
+lint-mobile: ## Lint mobile code
+	cd mobile && npm run lint
+
 format-frontend: ## Format frontend code
 	cd frontend && npm run format
 
@@ -190,15 +196,23 @@ verify: ## Run all linting, type checking, formatting checks, and tests
 	@$(MAKE) test-frontend || (echo "❌ Frontend tests failed" && exit 1)
 	@echo "✅ Frontend tests passed"
 	@echo ""
-	@echo "8. TUI: Checking formatting..."
+	@echo "8. Mobile: Type checking..."
+	@$(MAKE) type-check-mobile || (echo "❌ Mobile type checking failed" && exit 1)
+	@echo "✅ Mobile type checking OK"
+	@echo ""
+	@echo "9. Mobile: Linting..."
+	@$(MAKE) lint-mobile || (echo "❌ Mobile linting failed" && exit 1)
+	@echo "✅ Mobile linting OK"
+	@echo ""
+	@echo "10. TUI: Checking formatting..."
 	@$(MAKE) tui-format-check || (echo "❌ TUI formatting check failed" && exit 1)
 	@echo "✅ TUI formatting OK"
 	@echo ""
-	@echo "9. TUI: Linting..."
+	@echo "11. TUI: Linting..."
 	@$(MAKE) tui-lint || (echo "❌ TUI linting failed" && exit 1)
 	@echo "✅ TUI linting OK"
 	@echo ""
-	@echo "10. TUI: Running tests..."
+	@echo "12. TUI: Running tests..."
 	@$(MAKE) tui-test || (echo "❌ TUI tests failed" && exit 1)
 	@echo "✅ TUI tests passed"
 	@echo ""
