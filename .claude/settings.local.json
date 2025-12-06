@@ -32,7 +32,8 @@
       "Bash(.venv/bin/python -m pip install:*)",
       "Bash(.venv/bin/pip install:*)",
       "Bash(.venv/bin/python:*)",
-      "Skill(ui-ux-pro-max)"
+      "Skill(ui-ux-pro-max)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []

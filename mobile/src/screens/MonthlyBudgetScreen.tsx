@@ -18,7 +18,7 @@ import {
   usePayExpense,
 } from "../hooks/useExpenses";
 import { useIncomes, useDeleteIncome } from "../hooks/useIncomes";
-import { useMonths, useCurrentMonth, useDeleteMonth } from "../hooks/useMonths";
+import { useMonths, useCurrentMonth, useDeleteMonth, useCloseMonth, useOpenMonth } from "../hooks/useMonths";
 import { usePeriods } from "../hooks/usePeriods";
 import { useCategories } from "../hooks/useCategories";
 import { useIncomeTypes } from "../hooks/useIncomeTypes";
@@ -64,6 +64,8 @@ export const MonthlyBudgetScreen = () => {
   const payExpenseMutation = usePayExpense();
   const deleteIncomeMutation = useDeleteIncome();
   const deleteMonthMutation = useDeleteMonth();
+  const closeMonthMutation = useCloseMonth();
+  const openMonthMutation = useOpenMonth();
 
   const { data: expenses, isLoading: expensesLoading } = useExpenses({
     period: selectedPeriod || null,
@@ -103,6 +105,56 @@ export const MonthlyBudgetScreen = () => {
       }
     }
   }, [currentMonth, months, selectedMonthId]);
+
+  // Get the selected month object
+  const selectedMonth = months?.find((m: Month) => m.id === selectedMonthId);
+
+  const handleToggleMonthStatus = () => {
+    if (!selectedMonthId || !selectedMonth) return;
+
+    if (selectedMonth.is_closed) {
+      // Open the month
+      Alert.alert(
+        "Reopen Month",
+        `Are you sure you want to reopen "${selectedMonth.name}"? This will allow adding new expenses and incomes.`,
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Reopen",
+            onPress: async () => {
+              try {
+                const result = await openMonthMutation.mutateAsync(selectedMonthId);
+                Alert.alert("Success", result.message);
+              } catch (error) {
+                Alert.alert("Error", "Failed to reopen month. Please try again.");
+              }
+            },
+          },
+        ]
+      );
+    } else {
+      // Close the month
+      Alert.alert(
+        "Close Month",
+        `Are you sure you want to close "${selectedMonth.name}"? This will prevent adding new expenses and incomes.`,
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Close",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                const result = await closeMonthMutation.mutateAsync(selectedMonthId);
+                Alert.alert("Success", result.message);
+              } catch (error) {
+                Alert.alert("Error", "Failed to close month. Please try again.");
+              }
+            },
+          },
+        ]
+      );
+    }
+  };
 
   const handleCloneToNextMonth = async () => {
     if (!selectedMonthId) {
@@ -313,6 +365,32 @@ export const MonthlyBudgetScreen = () => {
                 <View style={[styles.actionButtonFullInner, { backgroundColor: theme.primaryBg, borderColor: isDark ? "rgba(20, 184, 166, 0.3)" : "rgba(20, 184, 166, 0.2)" }]}>
                   <Ionicons name="copy-outline" size={18} color={theme.primary} />
                   <Text style={[styles.actionButtonFullText, { color: theme.primary }]}>Clone</Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.actionButtonFull}
+                onPress={handleToggleMonthStatus}
+                disabled={closeMonthMutation.isPending || openMonthMutation.isPending}
+                activeOpacity={0.7}
+              >
+                <View style={[
+                  styles.actionButtonFullInner,
+                  {
+                    backgroundColor: selectedMonth?.is_closed ? theme.warningBg : theme.successBg,
+                    borderColor: selectedMonth?.is_closed
+                      ? (isDark ? "rgba(245, 158, 11, 0.3)" : "rgba(245, 158, 11, 0.2)")
+                      : (isDark ? "rgba(16, 185, 129, 0.3)" : "rgba(16, 185, 129, 0.2)")
+                  }
+                ]}>
+                  <Ionicons
+                    name={selectedMonth?.is_closed ? "lock-open-outline" : "lock-closed-outline"}
+                    size={18}
+                    color={selectedMonth?.is_closed ? theme.warning : theme.success}
+                  />
+                  <Text style={[styles.actionButtonFullText, { color: selectedMonth?.is_closed ? theme.warning : theme.success }]}>
+                    {selectedMonth?.is_closed ? "Open" : "Close"}
+                  </Text>
                 </View>
               </TouchableOpacity>
 

@@ -39,14 +39,25 @@ export const MonthSelector = ({
         activeOpacity={0.7}
       >
         <View style={styles.selectorContent}>
-          <View style={styles.calendarIcon}>
-            <Ionicons name="calendar" size={16} color={theme.primary} />
+          <View style={[styles.calendarIcon, selectedMonth?.is_closed && styles.calendarIconClosed]}>
+            <Ionicons
+              name={selectedMonth?.is_closed ? "lock-closed" : "calendar"}
+              size={16}
+              color={selectedMonth?.is_closed ? theme.warning : theme.primary}
+            />
           </View>
           <View style={styles.selectorTextContainer}>
             <Text style={styles.selectorLabel}>Month</Text>
-            <Text style={styles.selectorValue}>
-              {selectedMonth ? selectedMonth.name : "Select Month"}
-            </Text>
+            <View style={styles.selectorValueRow}>
+              <Text style={styles.selectorValue}>
+                {selectedMonth ? selectedMonth.name : "Select Month"}
+              </Text>
+              {selectedMonth?.is_closed && (
+                <View style={styles.closedBadge}>
+                  <Text style={styles.closedBadgeText}>Closed</Text>
+                </View>
+              )}
+            </View>
           </View>
         </View>
         <Ionicons name="chevron-down" size={18} color={theme.textMuted} />
@@ -97,12 +108,13 @@ export const MonthSelector = ({
                         style={[
                           styles.monthIcon,
                           isSelected && styles.monthIconSelected,
+                          item.is_closed && !isSelected && styles.monthIconClosed,
                         ]}
                       >
                         <Ionicons
-                          name="calendar-outline"
+                          name={item.is_closed ? "lock-closed-outline" : "calendar-outline"}
                           size={16}
-                          color={isSelected ? "#ffffff" : theme.textMuted}
+                          color={isSelected ? "#ffffff" : item.is_closed ? theme.warning : theme.textMuted}
                         />
                       </View>
                       <Text
@@ -113,6 +125,11 @@ export const MonthSelector = ({
                       >
                         {item.name}
                       </Text>
+                      {item.is_closed && (
+                        <View style={styles.monthClosedBadge}>
+                          <Text style={styles.monthClosedBadgeText}>Closed</Text>
+                        </View>
+                      )}
                     </View>
                     {isSelected && (
                       <View style={styles.checkIcon}>
@@ -155,8 +172,28 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       alignItems: "center",
       justifyContent: "center",
     },
+    calendarIconClosed: {
+      backgroundColor: theme.warningBg,
+    },
     selectorTextContainer: {
       gap: 2,
+    },
+    selectorValueRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    closedBadge: {
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: radius.sm,
+      backgroundColor: theme.warningBg,
+    },
+    closedBadgeText: {
+      fontSize: 10,
+      fontWeight: "600",
+      color: theme.warning,
+      textTransform: "uppercase",
     },
     selectorLabel: {
       fontSize: 11,
@@ -250,10 +287,25 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
     monthIconSelected: {
       backgroundColor: theme.primary,
     },
+    monthIconClosed: {
+      backgroundColor: theme.warningBg,
+    },
     monthItemText: {
       fontSize: 15,
       fontWeight: "500",
       color: theme.text,
+    },
+    monthClosedBadge: {
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: radius.sm,
+      backgroundColor: theme.warningBg,
+    },
+    monthClosedBadgeText: {
+      fontSize: 9,
+      fontWeight: "600",
+      color: theme.warning,
+      textTransform: "uppercase",
     },
     monthItemTextSelected: {
       fontWeight: "600",
