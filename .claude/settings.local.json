@@ -33,7 +33,8 @@
       "Bash(.venv/bin/pip install:*)",
       "Bash(.venv/bin/python:*)",
       "Skill(ui-ux-pro-max)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []

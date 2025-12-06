@@ -237,7 +237,7 @@ export const MonthlyBudget = () => {
       </CardHeader>
 
       {/* Tab Content */}
-      <div className="overflow-x-hidden">
+      <div className="overflow-x-auto">
         {activeTab === 'list' && (
           <ExpenseList
             periodFilter={selectedPeriod || null}

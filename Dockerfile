@@ -58,6 +58,9 @@ RUN apt-get update && \
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 RUN chmod +x /usr/local/bin/uv
 
+# Copy VERSION file for API version endpoint
+COPY VERSION ./VERSION
+
 # Copy backend from builder
 COPY --from=backend-builder /app/backend ./backend
 
