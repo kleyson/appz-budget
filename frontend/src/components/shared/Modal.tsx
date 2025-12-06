@@ -40,10 +40,7 @@ export const Modal = ({
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div
-        className="modal-content animate-slide-up"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="modal-content animate-slide-up" onClick={(e) => e.stopPropagation()}>
         {title && (
           <div className="modal-header">
             <div className="flex items-center gap-3">

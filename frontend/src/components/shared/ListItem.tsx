@@ -35,20 +35,10 @@ export const ListItem = ({
       <div className="flex items-center gap-2">
         {actions}
         {onEdit && (
-          <IconButton
-            variant="primary"
-            icon={<EditIcon />}
-            onClick={onEdit}
-            title="Edit"
-          />
+          <IconButton variant="primary" icon={<EditIcon />} onClick={onEdit} title="Edit" />
         )}
         {onDelete && (
-          <IconButton
-            variant="danger"
-            icon={<TrashIcon />}
-            onClick={onDelete}
-            title="Delete"
-          />
+          <IconButton variant="danger" icon={<TrashIcon />} onClick={onDelete} title="Delete" />
         )}
       </div>
     </div>

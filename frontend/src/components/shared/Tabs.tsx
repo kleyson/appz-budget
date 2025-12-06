@@ -39,7 +39,12 @@ interface UnderlineTabsProps {
   className?: string;
 }
 
-export const UnderlineTabs = ({ tabs, activeTab, onChange, className = '' }: UnderlineTabsProps) => {
+export const UnderlineTabs = ({
+  tabs,
+  activeTab,
+  onChange,
+  className = '',
+}: UnderlineTabsProps) => {
   return (
     <div className={`border-b border-slate-200 dark:border-slate-700 ${className}`}>
       <div className="overflow-x-auto scrollbar-hide">

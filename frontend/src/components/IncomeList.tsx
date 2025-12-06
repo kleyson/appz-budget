@@ -7,7 +7,15 @@ import { IncomeForm } from './IncomeForm';
 import type { Income } from '../types';
 import { formatCurrency } from '../utils/format';
 import { useDialog } from '../contexts/DialogContext';
-import { LoadingState, EmptyState, SectionTitle, Button, Badge, ColorChip, IconButton } from './shared';
+import {
+  LoadingState,
+  EmptyState,
+  SectionTitle,
+  Button,
+  Badge,
+  ColorChip,
+  IconButton,
+} from './shared';
 
 interface IncomeListProps {
   periodFilter?: string | null;

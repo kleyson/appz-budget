@@ -7,7 +7,12 @@ interface CardProps {
   className?: string;
 }
 
-export const Card = ({ children, variant = 'default', hover = false, className = '' }: CardProps) => {
+export const Card = ({
+  children,
+  variant = 'default',
+  hover = false,
+  className = '',
+}: CardProps) => {
   const baseClass = variant === 'glass' ? 'card-glass' : 'card';
   const hoverClass = hover ? 'card-hover' : '';
 
