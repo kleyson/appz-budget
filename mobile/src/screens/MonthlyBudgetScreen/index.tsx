@@ -9,27 +9,29 @@ import {
   ScrollView,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { useTheme } from "../contexts/ThemeContext";
-import { getThemeColors, colors, getShadow, isDarkColor, radius, gradientColors } from "../utils/colors";
+import { useTheme } from "../../contexts/ThemeContext";
+import { getThemeColors, colors, getShadow, isDarkColor, radius, gradientColors } from "../../utils/colors";
+import { formatCurrency } from "../../utils/styles";
 import {
   useExpenses,
   useDeleteExpense,
   useCloneExpensesToNextMonth,
   usePayExpense,
-} from "../hooks/useExpenses";
-import { useIncomes, useDeleteIncome } from "../hooks/useIncomes";
-import { useMonths, useCurrentMonth, useDeleteMonth, useCloseMonth, useOpenMonth } from "../hooks/useMonths";
-import { usePeriods } from "../hooks/usePeriods";
-import { useCategories } from "../hooks/useCategories";
-import { useIncomeTypes } from "../hooks/useIncomeTypes";
-import { useSummaryTotals } from "../hooks/useSummary";
+} from "../../hooks/useExpenses";
+import { useIncomes, useDeleteIncome } from "../../hooks/useIncomes";
+import { useMonths, useCurrentMonth, useDeleteMonth, useCloseMonth, useOpenMonth } from "../../hooks/useMonths";
+import { usePeriods } from "../../hooks/usePeriods";
+import { useCategories } from "../../hooks/useCategories";
+import { useIncomeTypes } from "../../hooks/useIncomeTypes";
+import { useSummaryTotals } from "../../hooks/useSummary";
 import { Ionicons } from "@expo/vector-icons";
-import { ExpenseFormModal } from "../components/ExpenseFormModal";
-import { IncomeFormModal } from "../components/IncomeFormModal";
-import { MonthSelector } from "../components/MonthSelector";
-import { FilterBar, FilterToggleButton } from "../components/FilterBar";
-import { SummaryCards } from "../components/SummaryCards";
-import { Summary } from "../components/Summary";
+import { ExpenseFormModal } from "./ExpenseFormModal";
+import { IncomeFormModal } from "./IncomeFormModal";
+import { MonthSelector } from "./MonthSelector";
+import { FilterBar } from "./FilterBar";
+import { SummaryCards } from "./SummaryCards";
+import { Summary } from "./Summary";
+import { Tabs, Tab } from "../../components/shared";
 import type {
   Expense,
   Income,
@@ -37,7 +39,7 @@ import type {
   Period,
   IncomeType,
   Month,
-} from "../types";
+} from "../../types";
 
 type TabId = "expenses" | "income" | "summary";
 
@@ -297,7 +299,7 @@ export const MonthlyBudgetScreen = () => {
     );
   };
 
-  const tabs: { id: TabId; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  const tabs: Tab<TabId>[] = [
     { id: "summary", label: "Summary", icon: "stats-chart" },
     { id: "expenses", label: "Expenses", icon: "wallet" },
     { id: "income", label: "Income", icon: "cash" },
@@ -362,7 +364,7 @@ export const MonthlyBudgetScreen = () => {
                 disabled={cloneMutation.isPending}
                 activeOpacity={0.7}
               >
-                <View style={[styles.actionButtonFullInner, { backgroundColor: theme.primaryBg, borderColor: isDark ? "rgba(20, 184, 166, 0.3)" : "rgba(20, 184, 166, 0.2)" }]}>
+                <View style={[styles.actionButtonFullInner, { backgroundColor: theme.primaryBg, borderColor: theme.primaryBorder }]}>
                   <Ionicons name="copy-outline" size={18} color={theme.primary} />
                   <Text style={[styles.actionButtonFullText, { color: theme.primary }]}>Clone</Text>
                 </View>
@@ -378,9 +380,7 @@ export const MonthlyBudgetScreen = () => {
                   styles.actionButtonFullInner,
                   {
                     backgroundColor: selectedMonth?.is_closed ? theme.warningBg : theme.successBg,
-                    borderColor: selectedMonth?.is_closed
-                      ? (isDark ? "rgba(245, 158, 11, 0.3)" : "rgba(245, 158, 11, 0.2)")
-                      : (isDark ? "rgba(16, 185, 129, 0.3)" : "rgba(16, 185, 129, 0.2)")
+                    borderColor: selectedMonth?.is_closed ? theme.warningBorder : theme.successBorder
                   }
                 ]}>
                   <Ionicons
@@ -400,7 +400,7 @@ export const MonthlyBudgetScreen = () => {
                 disabled={deleteMonthMutation.isPending}
                 activeOpacity={0.7}
               >
-                <View style={[styles.actionButtonFullInner, { backgroundColor: theme.dangerBg, borderColor: isDark ? "rgba(239, 68, 68, 0.3)" : "rgba(239, 68, 68, 0.2)" }]}>
+                <View style={[styles.actionButtonFullInner, { backgroundColor: theme.dangerBg, borderColor: theme.dangerBorder }]}>
                   <Ionicons name="trash-outline" size={18} color={theme.danger} />
                   <Text style={[styles.actionButtonFullText, { color: theme.danger }]}>Delete</Text>
                 </View>
@@ -424,39 +424,13 @@ export const MonthlyBudgetScreen = () => {
           )}
         </View>
 
-        {/* Tabs - Consistent with Settings */}
-        <View style={styles.tabsWrapper}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.tabsContainer}
-          >
-            {tabs.map((tab) => {
-              const isActive = activeTab === tab.id;
-              return (
-                <TouchableOpacity
-                  key={tab.id}
-                  style={[styles.tab, isActive && styles.activeTab]}
-                  onPress={() => setActiveTab(tab.id)}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.tabIconWrapper, isActive && styles.activeTabIconWrapper]}>
-                    <Ionicons
-                      name={tab.icon}
-                      size={16}
-                      color={isActive ? "#ffffff" : theme.textMuted}
-                    />
-                  </View>
-                  <Text
-                    style={[styles.tabText, isActive && styles.activeTabText]}
-                  >
-                    {tab.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </View>
+        {/* Tabs */}
+        <Tabs
+          tabs={tabs}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          showScrollIndicators={false}
+        />
 
         {/* Content */}
         <View style={styles.content}>
@@ -570,13 +544,6 @@ const ExpenseList = ({
   const getPeriodColor = (periodName: string) => {
     const period = periods?.find((p: Period) => p.name === periodName);
     return period?.color || colors.primary[500];
-  };
-
-  const formatCurrency = (value: number) => {
-    return `$${value.toLocaleString('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
   };
 
   if (isLoading) {
@@ -778,13 +745,6 @@ const IncomeList = ({
     return period?.color || colors.primary[500];
   };
 
-  const formatCurrency = (value: number) => {
-    return `$${value.toLocaleString('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
-  };
-
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -949,7 +909,7 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       width: 48,
       height: 48,
       borderRadius: radius.md,
-      backgroundColor: isDark ? "rgba(51, 65, 85, 0.4)" : colors.slate[100],
+      backgroundColor: theme.surfaceMuted,
       alignItems: "center",
       justifyContent: "center",
       borderWidth: 1,
@@ -957,7 +917,7 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
     },
     filterButtonActive: {
       backgroundColor: theme.primaryBg,
-      borderColor: isDark ? "rgba(20, 184, 166, 0.3)" : "rgba(20, 184, 166, 0.2)",
+      borderColor: theme.primaryBorder,
     },
     actionsRow: {
       flexDirection: "row",
@@ -991,50 +951,6 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
     },
     actionButtonFullText: {
       fontSize: 14,
-      fontWeight: "600",
-    },
-    tabsWrapper: {
-      backgroundColor: theme.cardSolid,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.border,
-    },
-    tabsContainer: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      gap: 8,
-    },
-    tab: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingVertical: 8,
-      paddingHorizontal: 12,
-      gap: 8,
-      borderRadius: radius.md,
-      backgroundColor: isDark ? "rgba(51, 65, 85, 0.3)" : colors.slate[100],
-    },
-    activeTab: {
-      backgroundColor: theme.primaryBg,
-    },
-    tabIconWrapper: {
-      width: 28,
-      height: 28,
-      borderRadius: radius.sm,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: isDark ? "rgba(51, 65, 85, 0.5)" : colors.slate[200],
-    },
-    activeTabIconWrapper: {
-      backgroundColor: theme.primary,
-    },
-    tabText: {
-      fontSize: 13,
-      fontWeight: "500",
-      color: theme.textSecondary,
-    },
-    activeTabText: {
-      color: theme.primary,
       fontWeight: "600",
     },
     content: {
@@ -1173,7 +1089,7 @@ const getListStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>
     progressBar: {
       flex: 1,
       height: 5,
-      backgroundColor: isDark ? colors.slate[800] : colors.slate[200],
+      backgroundColor: theme.divider,
       borderRadius: 3,
       overflow: 'hidden',
     },

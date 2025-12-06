@@ -7,11 +7,11 @@ import {
   Modal,
   FlatList,
 } from "react-native";
-import { useMonths } from "../hooks/useMonths";
-import { useTheme } from "../contexts/ThemeContext";
+import { useMonths } from "../../hooks/useMonths";
+import { useTheme } from "../../contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
-import { getThemeColors, colors, getShadow, radius } from "../utils/colors";
-import type { Month } from "../types";
+import { getThemeColors, getShadow, radius, rgba } from "../../utils/colors";
+import type { Month } from "../../types";
 
 interface MonthSelectorProps {
   selectedMonthId: number | null;
@@ -154,7 +154,7 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       alignItems: "center",
       justifyContent: "space-between",
       padding: 12,
-      backgroundColor: isDark ? "rgba(51, 65, 85, 0.4)" : colors.slate[50],
+      backgroundColor: theme.surfaceMuted,
       borderRadius: radius.md,
       borderWidth: 1,
       borderColor: theme.borderGlass,
@@ -209,7 +209,7 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
     },
     modalOverlay: {
       flex: 1,
-      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      backgroundColor: rgba.overlay,
       justifyContent: "flex-end",
     },
     modalContent: {
@@ -250,7 +250,7 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       width: 36,
       height: 36,
       borderRadius: radius.sm,
-      backgroundColor: isDark ? "rgba(51, 65, 85, 0.5)" : colors.slate[100],
+      backgroundColor: theme.surfaceDefault,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -264,12 +264,12 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       alignItems: "center",
       padding: 14,
       borderRadius: radius.md,
-      backgroundColor: isDark ? "rgba(51, 65, 85, 0.3)" : colors.slate[50],
+      backgroundColor: theme.surfaceSubtle,
     },
     monthItemSelected: {
       backgroundColor: theme.primaryBg,
       borderWidth: 1,
-      borderColor: isDark ? "rgba(20, 184, 166, 0.3)" : "rgba(20, 184, 166, 0.2)",
+      borderColor: theme.primaryBorder,
     },
     monthItemContent: {
       flexDirection: "row",
@@ -280,7 +280,7 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       width: 32,
       height: 32,
       borderRadius: radius.sm,
-      backgroundColor: isDark ? "rgba(51, 65, 85, 0.5)" : colors.slate[200],
+      backgroundColor: theme.surfaceElevated,
       alignItems: "center",
       justifyContent: "center",
     },

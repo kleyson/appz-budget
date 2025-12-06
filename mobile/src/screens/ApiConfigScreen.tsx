@@ -17,7 +17,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useApiConfig } from "../contexts/ApiConfigContext";
 import { Ionicons } from "@expo/vector-icons";
 import { getErrorMessage } from "../utils/errorHandler";
-import { getThemeColors, colors, getShadow, gradientColors, radius } from "../utils/colors";
+import { getThemeColors, getShadow, gradientColors, radius } from "../utils/colors";
 
 interface ApiConfigScreenProps {
   onComplete?: () => void;
@@ -474,13 +474,13 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       backgroundColor: theme.successBg,
       borderRadius: radius.md,
       borderWidth: 1,
-      borderColor: isDark ? "rgba(52, 211, 153, 0.3)" : "rgba(16, 185, 129, 0.2)",
+      borderColor: theme.connectedBorder,
     },
     testIconWrapper: {
       width: 28,
       height: 28,
       borderRadius: radius.sm,
-      backgroundColor: isDark ? "rgba(52, 211, 153, 0.2)" : "rgba(16, 185, 129, 0.15)",
+      backgroundColor: theme.connectedSurface,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -500,7 +500,7 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       justifyContent: "center",
       gap: 8,
       padding: 14,
-      backgroundColor: isDark ? "rgba(51, 65, 85, 0.5)" : colors.slate[100],
+      backgroundColor: theme.surfaceDefault,
       borderRadius: radius.md,
     },
     cancelButtonText: {

@@ -16,7 +16,7 @@ import { router } from "expo-router";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import { getErrorMessage } from "../../utils/errorHandler";
-import { getThemeColors, colors, getShadow, gradientColors, radius } from "../../utils/colors";
+import { getThemeColors, getShadow, gradientColors, radius } from "../../utils/colors";
 import { Ionicons } from "@expo/vector-icons";
 import {
   isBiometricAvailable,
@@ -500,7 +500,7 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
     biometricContainer: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: isDark ? 'rgba(51, 65, 85, 0.4)' : colors.slate[50],
+      backgroundColor: theme.surfaceMuted,
       borderRadius: radius.lg,
       padding: 14,
       gap: 12,
@@ -509,7 +509,7 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       width: 40,
       height: 40,
       borderRadius: radius.md,
-      backgroundColor: isDark ? 'rgba(51, 65, 85, 0.6)' : colors.slate[100],
+      backgroundColor: theme.surfacePressed,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -533,7 +533,7 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       width: 44,
       height: 26,
       borderRadius: 13,
-      backgroundColor: isDark ? colors.slate[700] : colors.slate[300],
+      backgroundColor: theme.progressTrack,
       justifyContent: "center",
       padding: 2,
     },
@@ -578,14 +578,14 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       gap: 8,
       marginTop: 24,
       padding: 14,
-      backgroundColor: isDark ? 'rgba(51, 65, 85, 0.3)' : 'rgba(148, 163, 184, 0.1)',
+      backgroundColor: theme.surfaceSubtle,
       borderRadius: radius.md,
     },
     apiConfigIcon: {
       width: 28,
       height: 28,
       borderRadius: radius.sm,
-      backgroundColor: isDark ? 'rgba(51, 65, 85, 0.5)' : colors.slate[100],
+      backgroundColor: theme.surfaceDefault,
       alignItems: 'center',
       justifyContent: 'center',
     },

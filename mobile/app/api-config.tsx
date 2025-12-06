@@ -2,11 +2,12 @@ import { ApiConfigScreen } from "../src/screens/ApiConfigScreen";
 import { AppHeader } from "../src/components/AppHeader";
 import { View, StyleSheet } from "react-native";
 import { useTheme } from "../src/contexts/ThemeContext";
+import { getThemeColors } from "../src/utils/colors";
 import { router } from "expo-router";
 
 export default function ApiConfigPage() {
   const { isDark } = useTheme();
-  const styles = getStyles(isDark);
+  const theme = getThemeColors(isDark);
 
   const handleBack = () => {
     // Navigate to home instead of going back to avoid errors when there's no history
@@ -14,17 +15,15 @@ export default function ApiConfigPage() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <AppHeader />
       <ApiConfigScreen showBackButton onBack={handleBack} />
     </View>
   );
 }
 
-const getStyles = (isDark: boolean) =>
-  StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: isDark ? "#111827" : "#f9fafb",
-    },
-  });
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+});

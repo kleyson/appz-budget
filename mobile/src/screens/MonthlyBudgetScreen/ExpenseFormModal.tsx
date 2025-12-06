@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,16 +9,17 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useTheme } from '../contexts/ThemeContext';
-import { useCreateExpense, useUpdateExpense } from '../hooks/useExpenses';
-import { useCategories } from '../hooks/useCategories';
-import { usePeriods } from '../hooks/usePeriods';
-import { Ionicons } from '@expo/vector-icons';
-import type { Expense, ExpenseCreate, Purchase } from '../types';
-import { getErrorMessage } from '../utils/errorHandler';
-import { getThemeColors, colors, getShadow, gradientColors, radius, isDarkColor } from '../utils/colors';
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { useTheme } from "../../contexts/ThemeContext";
+import { useCreateExpense, useUpdateExpense } from "../../hooks/useExpenses";
+import { useCategories } from "../../hooks/useCategories";
+import { usePeriods } from "../../hooks/usePeriods";
+import { Ionicons } from "@expo/vector-icons";
+import type { Expense, ExpenseCreate, Purchase } from "../../types";
+import { getErrorMessage } from "../../utils/errorHandler";
+import { getThemeColors, getShadow, gradientColors, radius, spacing, rgba } from "../../utils/colors";
+import { FormInput, ChipGroup, IconButton } from "../../components/shared";
 
 interface ExpenseFormModalProps {
   visible: boolean;
@@ -40,12 +41,12 @@ export const ExpenseFormModal = ({
   const createMutation = useCreateExpense();
   const updateMutation = useUpdateExpense();
 
-  const [expenseName, setExpenseName] = useState('');
-  const [selectedPeriod, setSelectedPeriod] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [budget, setBudget] = useState('');
-  const [cost, setCost] = useState('');
-  const [notes, setNotes] = useState('');
+  const [expenseName, setExpenseName] = useState("");
+  const [selectedPeriod, setSelectedPeriod] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [budget, setBudget] = useState("");
+  const [cost, setCost] = useState("");
+  const [notes, setNotes] = useState("");
   const [purchases, setPurchases] = useState<Purchase[]>([]);
 
   useEffect(() => {
@@ -55,31 +56,29 @@ export const ExpenseFormModal = ({
       setSelectedCategory(expense.category);
       setBudget(expense.budget.toString());
       setCost(expense.cost.toString());
-      setNotes(expense.notes || '');
+      setNotes(expense.notes || "");
       setPurchases(expense.purchases || []);
     } else {
-      setExpenseName('');
-      setSelectedPeriod('');
-      setSelectedCategory('');
-      setBudget('');
-      setCost('');
-      setNotes('');
+      setExpenseName("");
+      setSelectedPeriod("");
+      setSelectedCategory("");
+      setBudget("");
+      setCost("");
+      setNotes("");
       setPurchases([]);
     }
   }, [expense, visible]);
 
-  // Calculate cost from purchases (always calculated, never manually editable)
   const hasPurchases = purchases.length > 0;
   const calculatedCost = purchases.reduce((sum, item) => sum + (item.amount || 0), 0);
 
-  // Update cost when purchases change
   useEffect(() => {
     const total = purchases.reduce((sum, item) => sum + (item.amount || 0), 0);
     setCost(total.toString());
   }, [purchases]);
 
   const handleAddPurchase = () => {
-    setPurchases([...purchases, { name: '', amount: 0 }]);
+    setPurchases([...purchases, { name: "", amount: 0 }]);
   };
 
   const handleRemovePurchase = (index: number) => {
@@ -88,7 +87,7 @@ export const ExpenseFormModal = ({
 
   const handlePurchaseChange = (
     index: number,
-    field: 'name' | 'amount',
+    field: "name" | "amount",
     value: string | number
   ) => {
     setPurchases(
@@ -96,7 +95,12 @@ export const ExpenseFormModal = ({
         i === index
           ? {
               ...item,
-              [field]: field === 'amount' ? (typeof value === 'string' ? parseFloat(value) || 0 : value) : value,
+              [field]:
+                field === "amount"
+                  ? typeof value === "string"
+                    ? parseFloat(value) || 0
+                    : value
+                  : value,
             }
           : item
       )
@@ -105,12 +109,12 @@ export const ExpenseFormModal = ({
 
   const handleSubmit = async () => {
     if (!expenseName || !selectedPeriod || !selectedCategory || !budget || !monthId) {
-      Alert.alert('Error', 'Please fill in all required fields');
+      Alert.alert("Error", "Please fill in all required fields");
       return;
     }
 
     if (!calculatedCost) {
-      Alert.alert('Error', 'Please add purchases with amounts');
+      Alert.alert("Error", "Please add purchases with amounts");
       return;
     }
 
@@ -122,7 +126,7 @@ export const ExpenseFormModal = ({
       cost: calculatedCost,
       notes: notes || null,
       month_id: monthId,
-      purchases: purchases.filter((item) => item.name.trim() !== '' || item.amount > 0),
+      purchases: purchases.filter((item) => item.name.trim() !== "" || item.amount > 0),
     };
 
     try {
@@ -133,7 +137,7 @@ export const ExpenseFormModal = ({
       }
       onClose();
     } catch (error: unknown) {
-      Alert.alert('Error', getErrorMessage(error, 'Failed to save expense'));
+      Alert.alert("Error", getErrorMessage(error, "Failed to save expense"));
     }
   };
 
@@ -144,12 +148,13 @@ export const ExpenseFormModal = ({
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.overlay}>
         <View style={styles.modal}>
+          {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerTitleRow}>
-              <View style={styles.headerIcon}>
+              <View style={[styles.headerIcon, { backgroundColor: theme.dangerBg }]}>
                 <Ionicons name="wallet" size={20} color={theme.danger} />
               </View>
-              <Text style={styles.title}>{expense ? 'Edit Expense' : 'Add Expense'}</Text>
+              <Text style={styles.title}>{expense ? "Edit Expense" : "Add Expense"}</Text>
             </View>
             <TouchableOpacity style={styles.closeButton} onPress={onClose} activeOpacity={0.7}>
               <Ionicons name="close" size={20} color={theme.textSecondary} />
@@ -158,113 +163,49 @@ export const ExpenseFormModal = ({
 
           <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
             {/* Expense Name */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Expense Name</Text>
-              <View style={styles.inputWrapper}>
-                <View style={styles.inputIconWrapper}>
-                  <Ionicons name="receipt-outline" size={18} color={theme.textMuted} />
-                </View>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter expense name"
-                  placeholderTextColor={theme.placeholder}
-                  value={expenseName}
-                  onChangeText={setExpenseName}
-                />
-              </View>
-            </View>
+            <FormInput
+              label="Expense Name"
+              placeholder="Enter expense name"
+              value={expenseName}
+              onChangeText={setExpenseName}
+              icon="receipt-outline"
+            />
 
             {/* Period Selection */}
-            <View style={styles.filterGroup}>
-              <View style={styles.filterHeader}>
-                <View style={[styles.filterIcon, { backgroundColor: theme.primaryBg }]}>
-                  <Ionicons name="calendar-outline" size={14} color={theme.primary} />
-                </View>
-                <Text style={styles.label}>Period</Text>
-              </View>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-                {periods?.map((period) => {
-                  const isSelected = selectedPeriod === period.name;
-                  return (
-                    <TouchableOpacity
-                      key={period.id}
-                      style={[
-                        styles.chip,
-                        isSelected && styles.chipActive,
-                        isSelected && { backgroundColor: period.color, borderColor: period.color },
-                      ]}
-                      onPress={() => setSelectedPeriod(period.name)}
-                      activeOpacity={0.7}
-                    >
-                      <Text
-                        style={[
-                          styles.chipText,
-                          isSelected && styles.chipTextActive,
-                          isSelected && { color: isDarkColor(period.color) ? '#ffffff' : '#0f172a' },
-                        ]}
-                      >
-                        {period.name}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
-            </View>
+            <ChipGroup
+              label="Period"
+              icon="calendar-outline"
+              iconBgColor={theme.primaryBg}
+              iconColor={theme.primary}
+              options={periods || []}
+              selectedValue={selectedPeriod}
+              onSelect={setSelectedPeriod}
+              showAllOption={false}
+            />
 
             {/* Category Selection */}
-            <View style={styles.filterGroup}>
-              <View style={styles.filterHeader}>
-                <View style={[styles.filterIcon, { backgroundColor: theme.dangerBg }]}>
-                  <Ionicons name="pricetag-outline" size={14} color={theme.danger} />
-                </View>
-                <Text style={styles.label}>Category</Text>
-              </View>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-                {categories?.map((category) => {
-                  const isSelected = selectedCategory === category.name;
-                  return (
-                    <TouchableOpacity
-                      key={category.id}
-                      style={[
-                        styles.chip,
-                        isSelected && styles.chipActive,
-                        isSelected && { backgroundColor: category.color, borderColor: category.color },
-                      ]}
-                      onPress={() => setSelectedCategory(category.name)}
-                      activeOpacity={0.7}
-                    >
-                      <Text
-                        style={[
-                          styles.chipText,
-                          isSelected && styles.chipTextActive,
-                          isSelected && { color: isDarkColor(category.color) ? '#ffffff' : '#0f172a' },
-                        ]}
-                      >
-                        {category.name}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
+            <View style={styles.chipGroupSpacing}>
+              <ChipGroup
+                label="Category"
+                icon="pricetag-outline"
+                iconBgColor={theme.dangerBg}
+                iconColor={theme.danger}
+                options={categories || []}
+                selectedValue={selectedCategory}
+                onSelect={setSelectedCategory}
+                showAllOption={false}
+              />
             </View>
 
             {/* Budget Input */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Budget</Text>
-              <View style={styles.inputWrapper}>
-                <View style={styles.inputIconWrapper}>
-                  <Ionicons name="wallet-outline" size={18} color={theme.textMuted} />
-                </View>
-                <TextInput
-                  style={styles.input}
-                  placeholder="0.00"
-                  placeholderTextColor={theme.placeholder}
-                  value={budget}
-                  onChangeText={setBudget}
-                  keyboardType="decimal-pad"
-                />
-              </View>
-            </View>
+            <FormInput
+              label="Budget"
+              placeholder="0.00"
+              value={budget}
+              onChangeText={setBudget}
+              keyboardType="decimal-pad"
+              icon="wallet-outline"
+            />
 
             {/* Calculated Cost (Read-only) */}
             <View style={styles.inputGroup}>
@@ -313,7 +254,7 @@ export const ExpenseFormModal = ({
                           placeholder="Name"
                           placeholderTextColor={theme.placeholder}
                           value={purchase.name}
-                          onChangeText={(value) => handlePurchaseChange(index, 'name', value)}
+                          onChangeText={(value) => handlePurchaseChange(index, "name", value)}
                         />
                       </View>
                       <View style={[styles.inputWrapper, styles.purchaseAmountInput]}>
@@ -322,27 +263,20 @@ export const ExpenseFormModal = ({
                           placeholder="0.00"
                           placeholderTextColor={theme.placeholder}
                           value={purchase.amount.toString()}
-                          onChangeText={(value) => handlePurchaseChange(index, 'amount', value)}
+                          onChangeText={(value) => handlePurchaseChange(index, "amount", value)}
                           keyboardType="decimal-pad"
                         />
                       </View>
-                      <TouchableOpacity
-                        style={styles.removePurchaseButton}
+                      <IconButton
+                        icon="trash-outline"
                         onPress={() => handleRemovePurchase(index)}
-                        activeOpacity={0.7}
-                      >
-                        <Ionicons name="trash-outline" size={18} color={theme.danger} />
-                      </TouchableOpacity>
+                        variant="danger"
+                      />
                     </View>
                   ))}
                   <View style={styles.totalContainer}>
                     <Text style={styles.totalLabel}>Total</Text>
-                    <Text
-                      style={[
-                        styles.totalText,
-                        calculatedCost === 0 && styles.totalTextZero,
-                      ]}
-                    >
+                    <Text style={[styles.totalText, calculatedCost === 0 && styles.totalTextZero]}>
                       ${calculatedCost.toFixed(2)}
                     </Text>
                   </View>
@@ -350,9 +284,7 @@ export const ExpenseFormModal = ({
               ) : (
                 <View style={styles.emptyPurchases}>
                   <Ionicons name="cart-outline" size={24} color={theme.textMuted} />
-                  <Text style={styles.purchasesHint}>
-                    Add purchases to calculate cost
-                  </Text>
+                  <Text style={styles.purchasesHint}>Add purchases to calculate cost</Text>
                 </View>
               )}
             </View>
@@ -374,6 +306,7 @@ export const ExpenseFormModal = ({
             </View>
           </ScrollView>
 
+          {/* Footer */}
           <View style={styles.footer}>
             <TouchableOpacity
               style={styles.cancelButton}
@@ -416,40 +349,39 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
   StyleSheet.create({
     overlay: {
       flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      justifyContent: 'flex-end',
+      backgroundColor: rgba.overlay,
+      justifyContent: "flex-end",
     },
     modal: {
       backgroundColor: theme.cardSolid,
-      borderTopLeftRadius: radius['2xl'],
-      borderTopRightRadius: radius['2xl'],
-      maxHeight: '90%',
-      ...getShadow(isDark, 'xl'),
+      borderTopLeftRadius: radius["2xl"],
+      borderTopRightRadius: radius["2xl"],
+      maxHeight: "90%",
+      ...getShadow(isDark, "xl"),
     },
     header: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      padding: 16,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: spacing.lg,
       borderBottomWidth: 1,
       borderBottomColor: theme.border,
     },
     headerTitleRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.md,
     },
     headerIcon: {
       width: 36,
       height: 36,
       borderRadius: radius.sm,
-      backgroundColor: theme.dangerBg,
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignItems: "center",
+      justifyContent: "center",
     },
     title: {
       fontSize: 18,
-      fontWeight: '600',
+      fontWeight: "600",
       color: theme.text,
       letterSpacing: -0.3,
     },
@@ -457,108 +389,81 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       width: 36,
       height: 36,
       borderRadius: radius.sm,
-      backgroundColor: isDark ? 'rgba(51, 65, 85, 0.5)' : colors.slate[100],
-      alignItems: 'center',
-      justifyContent: 'center',
+      backgroundColor: theme.surfaceDefault,
+      alignItems: "center",
+      justifyContent: "center",
     },
     content: {
-      padding: 16,
+      padding: spacing.lg,
+    },
+    chipGroupSpacing: {
+      marginBottom: spacing.lg,
     },
     inputGroup: {
-      marginBottom: 16,
+      marginBottom: spacing.lg,
     },
     inputWrapper: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       backgroundColor: theme.inputBg,
       borderWidth: 1,
       borderColor: theme.inputBorder,
       borderRadius: radius.md,
     },
     inputIconWrapper: {
-      paddingLeft: 12,
+      paddingLeft: spacing.md,
     },
     input: {
       flex: 1,
-      padding: 12,
-      paddingLeft: 8,
+      padding: spacing.md,
+      paddingLeft: spacing.sm,
       fontSize: 15,
       color: theme.text,
     },
     textAreaWrapper: {
-      alignItems: 'flex-start',
+      alignItems: "flex-start",
     },
     textArea: {
       height: 80,
-      textAlignVertical: 'top',
-      paddingTop: 12,
-      paddingLeft: 12,
+      textAlignVertical: "top",
+      paddingTop: spacing.md,
+      paddingLeft: spacing.md,
     },
     inputDisabled: {
       opacity: 0.6,
     },
     label: {
       fontSize: 12,
-      fontWeight: '600',
+      fontWeight: "600",
       color: theme.textSecondary,
-      textTransform: 'uppercase',
+      textTransform: "uppercase",
       letterSpacing: 0.5,
-      marginBottom: 8,
-    },
-    filterGroup: {
-      marginBottom: 16,
+      marginBottom: spacing.sm,
     },
     filterHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-      marginBottom: 8,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
     },
     filterIcon: {
       width: 24,
       height: 24,
       borderRadius: radius.sm,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    chips: {
-      flexDirection: 'row',
-      gap: 8,
-      paddingRight: 16,
-    },
-    chip: {
-      paddingHorizontal: 14,
-      paddingVertical: 8,
-      borderRadius: radius.md,
-      borderWidth: 1,
-      borderColor: theme.border,
-      backgroundColor: isDark ? 'rgba(51, 65, 85, 0.3)' : colors.slate[50],
-    },
-    chipActive: {
-      borderColor: theme.primary,
-      backgroundColor: theme.primaryBg,
-    },
-    chipText: {
-      fontSize: 13,
-      fontWeight: '500',
-      color: theme.textSecondary,
-    },
-    chipTextActive: {
-      fontWeight: '600',
-      color: theme.primary,
+      alignItems: "center",
+      justifyContent: "center",
     },
     purchasesSection: {
-      marginBottom: 16,
+      marginBottom: spacing.lg,
     },
     purchasesLabelRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 8,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: spacing.sm,
     },
     addPurchaseButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       gap: 4,
       paddingVertical: 6,
       paddingHorizontal: 10,
@@ -568,20 +473,20 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
     addPurchaseText: {
       color: theme.primary,
       fontSize: 13,
-      fontWeight: '600',
+      fontWeight: "600",
     },
     purchasesContainer: {
       borderWidth: 1,
       borderColor: theme.border,
       borderRadius: radius.md,
-      padding: 12,
-      backgroundColor: isDark ? 'rgba(51, 65, 85, 0.2)' : colors.slate[50],
-      gap: 8,
+      padding: spacing.md,
+      backgroundColor: theme.surfaceSubtle,
+      gap: spacing.sm,
     },
     purchaseRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
     },
     purchaseNameInput: {
       flex: 1,
@@ -595,44 +500,36 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       fontSize: 14,
       color: theme.text,
     },
-    removePurchaseButton: {
-      width: 36,
-      height: 36,
-      borderRadius: radius.sm,
-      backgroundColor: theme.dangerBg,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
     emptyPurchases: {
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignItems: "center",
+      justifyContent: "center",
       padding: 24,
-      backgroundColor: isDark ? 'rgba(51, 65, 85, 0.2)' : colors.slate[50],
+      backgroundColor: theme.surfaceSubtle,
       borderRadius: radius.md,
       borderWidth: 1,
       borderColor: theme.border,
-      borderStyle: 'dashed',
-      gap: 8,
+      borderStyle: "dashed",
+      gap: spacing.sm,
     },
     totalContainer: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
       borderTopWidth: 1,
       borderTopColor: theme.border,
-      paddingTop: 12,
+      paddingTop: spacing.md,
       marginTop: 4,
     },
     totalLabel: {
       fontSize: 13,
-      fontWeight: '600',
+      fontWeight: "600",
       color: theme.textSecondary,
-      textTransform: 'uppercase',
+      textTransform: "uppercase",
       letterSpacing: 0.5,
     },
     totalText: {
       fontSize: 16,
-      fontWeight: '700',
+      fontWeight: "700",
       color: theme.text,
     },
     totalTextZero: {
@@ -641,12 +538,12 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
     purchasesHint: {
       fontSize: 13,
       color: theme.textMuted,
-      textAlign: 'center',
+      textAlign: "center",
     },
     footer: {
-      flexDirection: 'row',
-      gap: 12,
-      padding: 16,
+      flexDirection: "row",
+      gap: spacing.md,
+      padding: spacing.lg,
       borderTopWidth: 1,
       borderTopColor: theme.border,
     },
@@ -654,34 +551,33 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       flex: 1,
       padding: 14,
       borderRadius: radius.md,
-      alignItems: 'center',
-      backgroundColor: isDark ? 'rgba(51, 65, 85, 0.5)' : colors.slate[100],
+      alignItems: "center",
+      backgroundColor: theme.surfaceDefault,
     },
     cancelButtonText: {
       color: theme.text,
       fontSize: 15,
-      fontWeight: '600',
+      fontWeight: "600",
     },
     submitButton: {
       flex: 1.5,
       borderRadius: radius.md,
-      overflow: 'hidden',
-      ...getShadow(isDark, 'sm'),
+      overflow: "hidden",
+      ...getShadow(isDark, "sm"),
     },
     submitGradient: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
       paddingVertical: 14,
-      gap: 8,
+      gap: spacing.sm,
     },
     submitButtonText: {
-      color: '#ffffff',
+      color: "#ffffff",
       fontSize: 15,
-      fontWeight: '600',
+      fontWeight: "600",
     },
     buttonDisabled: {
       opacity: 0.7,
     },
   });
-

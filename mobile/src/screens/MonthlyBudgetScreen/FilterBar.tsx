@@ -1,9 +1,9 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "../contexts/ThemeContext";
-import { getThemeColors, colors, radius, isDarkColor } from "../utils/colors";
-import type { Period, Category } from "../types";
+import { useTheme } from "../../contexts/ThemeContext";
+import { getThemeColors, radius, isDarkColor } from "../../utils/colors";
+import type { Period, Category } from "../../types";
 
 interface FilterBarProps {
   periods: Period[];
@@ -224,7 +224,7 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       borderRadius: radius.md,
       borderWidth: 1,
       borderColor: theme.border,
-      backgroundColor: isDark ? "rgba(51, 65, 85, 0.3)" : colors.slate[50],
+      backgroundColor: theme.surfaceSubtle,
     },
     chipActive: {
       borderColor: theme.primary,
@@ -248,13 +248,13 @@ const getToggleStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColor
       justifyContent: "center",
       width: 42,
       height: 42,
-      backgroundColor: isDark ? "rgba(51, 65, 85, 0.4)" : colors.slate[100],
+      backgroundColor: theme.surfaceMuted,
       borderRadius: radius.md,
       borderWidth: 1,
       borderColor: theme.borderGlass,
     },
     toggleButtonActive: {
       backgroundColor: theme.primaryBg,
-      borderColor: isDark ? "rgba(20, 184, 166, 0.3)" : "rgba(20, 184, 166, 0.2)",
+      borderColor: theme.primaryBorder,
     },
   });

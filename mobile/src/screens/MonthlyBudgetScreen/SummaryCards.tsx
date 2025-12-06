@@ -2,9 +2,11 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "../contexts/ThemeContext";
-import { getThemeColors, colors, getShadow, gradientColors, radius } from "../utils/colors";
-import type { SummaryTotals } from "../types";
+import { useTheme } from "../../contexts/ThemeContext";
+import { getThemeColors, colors, getShadow, gradientColors, radius } from "../../utils/colors";
+import { formatCurrency } from "../../utils/styles";
+import { SectionTitle } from "../../components/shared";
+import type { SummaryTotals } from "../../types";
 
 interface SummaryCardsProps {
   totals?: SummaryTotals;
@@ -83,13 +85,6 @@ export const SummaryCards = ({ totals }: SummaryCardsProps) => {
     },
   ];
 
-  const formatCurrency = (value: number) => {
-    return `$${Math.abs(value).toLocaleString("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
-  };
-
   const getPercentage = (value: number) => {
     if (totals.total_budgeted_income === 0) return null;
     return ((value / totals.total_budgeted_income) * 100).toFixed(0);
@@ -146,7 +141,7 @@ export const SummaryCards = ({ totals }: SummaryCardsProps) => {
           <View style={[styles.sectionIcon, { backgroundColor: theme.dangerBg }]}>
             <Ionicons name="trending-down" size={16} color={theme.danger} />
           </View>
-          <Text style={styles.sectionTitle}>Expenses</Text>
+          <SectionTitle>Expenses</SectionTitle>
         </View>
         <View style={styles.grid}>
           {expenseCards.map(renderCard)}
@@ -159,7 +154,7 @@ export const SummaryCards = ({ totals }: SummaryCardsProps) => {
           <View style={[styles.sectionIcon, { backgroundColor: theme.successBg }]}>
             <Ionicons name="trending-up" size={16} color={theme.success} />
           </View>
-          <Text style={styles.sectionTitle}>Income</Text>
+          <SectionTitle>Income</SectionTitle>
         </View>
         <View style={styles.grid}>
           {incomeCards.map(renderCard)}
@@ -172,7 +167,7 @@ export const SummaryCards = ({ totals }: SummaryCardsProps) => {
           <View style={[styles.sectionIcon, { backgroundColor: theme.primaryBg }]}>
             <Ionicons name="wallet" size={16} color={theme.primary} />
           </View>
-          <Text style={styles.sectionTitle}>Balance</Text>
+          <SectionTitle>Balance</SectionTitle>
         </View>
         <View style={styles.grid}>
           {balanceCards.map(renderCard)}
@@ -201,12 +196,6 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       borderRadius: radius.sm,
       alignItems: 'center',
       justifyContent: 'center',
-    },
-    sectionTitle: {
-      fontSize: 16,
-      fontWeight: "600",
-      color: theme.text,
-      letterSpacing: -0.3,
     },
     loadingContainer: {
       padding: 48,

@@ -7,7 +7,7 @@ import { router, useSegments } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
-import { getThemeColors, colors, getShadow, gradientColors, radius } from "../utils/colors";
+import { getThemeColors, getShadow, gradientColors, radius } from "../utils/colors";
 
 export const AppHeader = () => {
   const { isDark, toggleTheme } = useTheme();
@@ -38,7 +38,7 @@ export const AppHeader = () => {
   const HeaderBackground = ({ children }: { children: React.ReactNode }) => {
     if (Platform.OS === 'ios') {
       return (
-        <BlurView intensity={isDark ? 40 : 60} tint={isDark ? "dark" : "light"} style={styles.blurView}>
+        <BlurView intensity={theme.blurIntensity} tint={theme.blurTint} style={styles.blurView}>
           {children}
         </BlurView>
       );
@@ -141,7 +141,7 @@ export const AppHeader = () => {
                     <Ionicons
                       name={isDark ? "sunny" : "moon"}
                       size={18}
-                      color={isDark ? colors.accent[400] : colors.primary[500]}
+                      color={theme.themeToggleIcon}
                     />
                   </View>
                 </TouchableOpacity>
@@ -206,7 +206,7 @@ const getStyles = (
       width: 38,
       height: 38,
       borderRadius: radius.md,
-      backgroundColor: isDark ? 'rgba(51, 65, 85, 0.5)' : colors.slate[100],
+      backgroundColor: theme.surfaceDefault,
       alignItems: "center",
       justifyContent: "center",
       borderWidth: 1,
@@ -255,20 +255,16 @@ const getStyles = (
       width: 38,
       height: 38,
       borderRadius: radius.md,
-      backgroundColor: isDark ? 'rgba(51, 65, 85, 0.5)' : colors.slate[100],
+      backgroundColor: theme.surfaceDefault,
       alignItems: "center",
       justifyContent: "center",
       borderWidth: 1,
       borderColor: theme.borderGlass,
     },
     themeButton: {
-      backgroundColor: isDark
-        ? "rgba(251, 191, 36, 0.12)"
-        : "rgba(20, 184, 166, 0.1)",
+      backgroundColor: theme.themeButtonBg,
     },
     logoutButton: {
-      backgroundColor: isDark
-        ? "rgba(248, 113, 113, 0.12)"
-        : "rgba(239, 68, 68, 0.08)",
+      backgroundColor: theme.logoutButtonBg,
     },
   });

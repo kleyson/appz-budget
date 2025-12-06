@@ -11,7 +11,6 @@ import {
   Alert,
   Switch,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../contexts/ThemeContext";
 import {
   useUsers,
@@ -22,7 +21,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import type { User } from "../../types";
 import { getErrorMessage } from "../../utils/errorHandler";
-import { getThemeColors, colors, getShadow, gradientColors, radius } from "../../utils/colors";
+import { getThemeColors, getShadow, gradientColors, radius } from "../../utils/colors";
+import { Button } from "../../components/shared";
 
 export const UserManagement = () => {
   const { isDark } = useTheme();
@@ -282,7 +282,7 @@ export const UserManagement = () => {
                 value={isAdmin}
                 onValueChange={setIsAdmin}
                 trackColor={{
-                  false: isDark ? "rgba(51, 65, 85, 0.5)" : colors.slate[200],
+                  false: theme.switchTrackOff,
                   true: theme.primary,
                 }}
                 thumbColor="#ffffff"
@@ -300,7 +300,7 @@ export const UserManagement = () => {
                 value={isActive}
                 onValueChange={setIsActive}
                 trackColor={{
-                  false: isDark ? "rgba(51, 65, 85, 0.5)" : colors.slate[200],
+                  false: theme.switchTrackOff,
                   true: theme.success,
                 }}
                 thumbColor="#ffffff"
@@ -308,28 +308,19 @@ export const UserManagement = () => {
             </View>
 
             <View style={styles.modalFooter}>
-              <TouchableOpacity
-                style={styles.cancelButton}
+              <Button
+                label="Cancel"
+                variant="secondary"
                 onPress={() => setShowForm(false)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.saveButton}
+                fullWidth
+              />
+              <Button
+                label="Save"
+                icon="checkmark-circle"
                 onPress={handleSave}
-                activeOpacity={0.8}
-              >
-                <LinearGradient
-                  colors={gradientColors.teal}
-                  style={styles.saveGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                >
-                  <Ionicons name="checkmark-circle" size={18} color="#ffffff" />
-                  <Text style={styles.saveButtonText}>Save</Text>
-                </LinearGradient>
-              </TouchableOpacity>
+                fullWidth
+                style={{ flex: 1.5 }}
+              />
             </View>
           </View>
         </View>
@@ -356,14 +347,14 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       backgroundColor: theme.primaryBg,
       borderRadius: radius.md,
       borderWidth: 1,
-      borderColor: isDark ? "rgba(20, 184, 166, 0.2)" : "rgba(20, 184, 166, 0.15)",
+      borderColor: theme.primaryBorderSubtle,
       marginBottom: 16,
     },
     addButtonIcon: {
       width: 28,
       height: 28,
       borderRadius: radius.sm,
-      backgroundColor: isDark ? "rgba(20, 184, 166, 0.2)" : "rgba(20, 184, 166, 0.15)",
+      backgroundColor: theme.primarySurface,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -403,7 +394,7 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       width: 28,
       height: 28,
       borderRadius: radius.sm,
-      backgroundColor: isDark ? "rgba(51, 65, 85, 0.5)" : colors.slate[100],
+      backgroundColor: theme.surfaceDefault,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -414,7 +405,7 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       backgroundColor: theme.successBg,
     },
     statusBadgeInactive: {
-      backgroundColor: isDark ? "rgba(51, 65, 85, 0.5)" : colors.slate[100],
+      backgroundColor: theme.surfaceDefault,
     },
     statusText: {
       fontSize: 10,
@@ -500,7 +491,7 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       width: 36,
       height: 36,
       borderRadius: radius.sm,
-      backgroundColor: isDark ? "rgba(51, 65, 85, 0.5)" : colors.slate[100],
+      backgroundColor: theme.surfaceDefault,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -563,35 +554,5 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       flexDirection: "row",
       gap: 12,
       marginTop: 16,
-    },
-    cancelButton: {
-      flex: 1,
-      padding: 14,
-      borderRadius: radius.md,
-      alignItems: "center",
-      backgroundColor: isDark ? "rgba(51, 65, 85, 0.5)" : colors.slate[100],
-    },
-    cancelButtonText: {
-      color: theme.text,
-      fontSize: 15,
-      fontWeight: "600",
-    },
-    saveButton: {
-      flex: 1.5,
-      borderRadius: radius.md,
-      overflow: "hidden",
-      ...getShadow(isDark, "sm"),
-    },
-    saveGradient: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      paddingVertical: 14,
-      gap: 8,
-    },
-    saveButtonText: {
-      color: "#ffffff",
-      fontSize: 15,
-      fontWeight: "600",
     },
   });

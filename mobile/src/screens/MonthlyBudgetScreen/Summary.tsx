@@ -2,13 +2,15 @@ import React from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../contexts/ThemeContext';
-import { useCategorySummary } from '../hooks/useCategories';
-import { useIncomeTypeSummary, usePeriodSummary } from '../hooks/useSummary';
-import { useCategories } from '../hooks/useCategories';
-import { useIncomeTypes } from '../hooks/useIncomeTypes';
-import { getThemeColors, colors, getShadow, isDarkColor, radius, gradientColors } from '../utils/colors';
-import type { CategorySummary, IncomeTypeSummary, PeriodSummary, Category, IncomeType } from '../types';
+import { useTheme } from '../../contexts/ThemeContext';
+import { useCategorySummary } from '../../hooks/useCategories';
+import { useIncomeTypeSummary, usePeriodSummary } from '../../hooks/useSummary';
+import { useCategories } from '../../hooks/useCategories';
+import { useIncomeTypes } from '../../hooks/useIncomeTypes';
+import { getThemeColors, getShadow, isDarkColor, radius, gradientColors, colors } from '../../utils/colors';
+import { formatCurrency } from '../../utils/styles';
+import { Card, ProgressBar, SectionTitle, Badge, EmptyState } from '../../components/shared';
+import type { CategorySummary, IncomeTypeSummary, PeriodSummary, Category, IncomeType } from '../../types';
 
 interface SummaryProps {
   periodFilter?: string | null;
@@ -40,13 +42,6 @@ export const Summary = ({ periodFilter = null, monthId = null }: SummaryProps) =
     return incomeType?.color || colors.success.light;
   };
 
-  const formatCurrency = (value: number) => {
-    return `$${Math.abs(value).toLocaleString('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
-  };
-
   if (isLoading || isLoadingIncomeSummary || isLoadingPeriodSummary) {
     return (
       <View style={styles.loadingContainer}>
@@ -64,7 +59,7 @@ export const Summary = ({ periodFilter = null, monthId = null }: SummaryProps) =
           <View style={[styles.sectionIcon, { backgroundColor: theme.primaryBg }]}>
             <Ionicons name="calendar" size={16} color={theme.primary} />
           </View>
-          <Text style={styles.sectionTitle}>By Period</Text>
+          <SectionTitle>By Period</SectionTitle>
         </View>
 
         {!periodSummary || periodSummary.periods.length === 0 ? (
@@ -176,7 +171,7 @@ export const Summary = ({ periodFilter = null, monthId = null }: SummaryProps) =
           <View style={[styles.sectionIcon, { backgroundColor: theme.dangerBg }]}>
             <Ionicons name="pie-chart" size={16} color={theme.danger} />
           </View>
-          <Text style={styles.sectionTitle}>Expenses by Category</Text>
+          <SectionTitle>Expenses by Category</SectionTitle>
         </View>
 
         {!summary || summary.length === 0 ? (
@@ -232,21 +227,10 @@ export const Summary = ({ periodFilter = null, monthId = null }: SummaryProps) =
                     </View>
                   </View>
 
-                  {/* Progress Bar */}
-                  <View style={styles.progressContainer}>
-                    <View style={styles.progressBar}>
-                      <View
-                        style={[
-                          styles.progressFill,
-                          {
-                            width: `${progress}%`,
-                            backgroundColor: isWithinBudget ? theme.success : theme.danger,
-                          },
-                        ]}
-                      />
-                    </View>
-                    <Text style={styles.progressText}>{progress.toFixed(0)}%</Text>
-                  </View>
+                  <ProgressBar
+                    progress={progress}
+                    color={isWithinBudget ? theme.success : theme.danger}
+                  />
 
                   <View style={styles.cardBottomRow}>
                     <View style={styles.valueContainer}>
@@ -283,7 +267,7 @@ export const Summary = ({ periodFilter = null, monthId = null }: SummaryProps) =
           <View style={[styles.sectionIcon, { backgroundColor: theme.successBg }]}>
             <Ionicons name="cash" size={16} color={theme.success} />
           </View>
-          <Text style={styles.sectionTitle}>Income by Type</Text>
+          <SectionTitle>Income by Type</SectionTitle>
         </View>
 
         {!incomeTypeSummary || incomeTypeSummary.length === 0 ? (
@@ -318,21 +302,7 @@ export const Summary = ({ periodFilter = null, monthId = null }: SummaryProps) =
                     </View>
                   </View>
 
-                  {/* Progress Bar */}
-                  <View style={styles.progressContainer}>
-                    <View style={styles.progressBar}>
-                      <View
-                        style={[
-                          styles.progressFill,
-                          {
-                            width: `${progress}%`,
-                            backgroundColor: theme.success,
-                          },
-                        ]}
-                      />
-                    </View>
-                    <Text style={styles.progressText}>{progress.toFixed(0)}%</Text>
-                  </View>
+                  <ProgressBar progress={progress} color={theme.success} />
 
                   <View style={styles.cardBottomRow}>
                     <View style={styles.valueContainer}>
@@ -397,12 +367,6 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       borderRadius: radius.sm,
       alignItems: 'center',
       justifyContent: 'center',
-    },
-    sectionTitle: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: theme.text,
-      letterSpacing: -0.3,
     },
     emptyCard: {
       backgroundColor: theme.cardSolid,
@@ -484,29 +448,6 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
     statusText: {
       fontSize: 11,
       fontWeight: '600',
-    },
-    progressContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-    },
-    progressBar: {
-      flex: 1,
-      height: 6,
-      backgroundColor: isDark ? colors.slate[800] : colors.slate[200],
-      borderRadius: 3,
-      overflow: 'hidden',
-    },
-    progressFill: {
-      height: '100%',
-      borderRadius: 3,
-    },
-    progressText: {
-      fontSize: 11,
-      fontWeight: '600',
-      color: theme.textSecondary,
-      width: 36,
-      textAlign: 'right',
     },
     totalCard: {
       borderRadius: radius.lg,
