@@ -63,7 +63,7 @@ export const AddButton = ({
   );
 };
 
-const getStyles = (theme: ReturnType<typeof getThemeColors>) =>
+const getStyles = (_theme: ReturnType<typeof getThemeColors>) =>
   StyleSheet.create({
     container: {
       flexDirection: "row",

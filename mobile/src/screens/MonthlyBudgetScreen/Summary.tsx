@@ -9,7 +9,7 @@ import { useCategories } from '../../hooks/useCategories';
 import { useIncomeTypes } from '../../hooks/useIncomeTypes';
 import { getThemeColors, getShadow, isDarkColor, radius, gradientColors, colors } from '../../utils/colors';
 import { formatCurrency } from '../../utils/styles';
-import { Card, ProgressBar, SectionTitle, Badge, EmptyState } from '../../components/shared';
+import { ProgressBar, SectionTitle } from '../../components/shared';
 import type { CategorySummary, IncomeTypeSummary, PeriodSummary, Category, IncomeType } from '../../types';
 
 interface SummaryProps {

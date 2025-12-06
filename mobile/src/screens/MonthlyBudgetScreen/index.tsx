@@ -127,7 +127,7 @@ export const MonthlyBudgetScreen = () => {
               try {
                 const result = await openMonthMutation.mutateAsync(selectedMonthId);
                 Alert.alert("Success", result.message);
-              } catch (error) {
+              } catch (_error) {
                 Alert.alert("Error", "Failed to reopen month. Please try again.");
               }
             },
@@ -148,7 +148,7 @@ export const MonthlyBudgetScreen = () => {
               try {
                 const result = await closeMonthMutation.mutateAsync(selectedMonthId);
                 Alert.alert("Success", result.message);
-              } catch (error) {
+              } catch (_error) {
                 Alert.alert("Error", "Failed to close month. Please try again.");
               }
             },
@@ -178,7 +178,7 @@ export const MonthlyBudgetScreen = () => {
               if (result.next_month_id) {
                 setSelectedMonthId(result.next_month_id);
               }
-            } catch (error) {
+            } catch (_error) {
               Alert.alert(
                 "Error",
                 "Failed to clone expenses. Please try again."
@@ -215,7 +215,7 @@ export const MonthlyBudgetScreen = () => {
                 setSelectedMonthId(null);
               }
               Alert.alert("Success", "Month deleted successfully");
-            } catch (error) {
+            } catch (_error) {
               Alert.alert("Error", "Failed to delete month. Please try again.");
             }
           },
@@ -236,7 +236,7 @@ export const MonthlyBudgetScreen = () => {
           onPress: async () => {
             try {
               await deleteExpenseMutation.mutateAsync(id);
-            } catch (error) {
+            } catch (_error) {
               Alert.alert(
                 "Error",
                 "Failed to delete expense. Please try again."
@@ -263,7 +263,7 @@ export const MonthlyBudgetScreen = () => {
                 "Success",
                 `Payment of $${expense.budget.toFixed(2)} has been added.`
               );
-            } catch (error) {
+            } catch (_error) {
               Alert.alert(
                 "Error",
                 "Failed to pay expense. Please try again."
@@ -287,7 +287,7 @@ export const MonthlyBudgetScreen = () => {
           onPress: async () => {
             try {
               await deleteIncomeMutation.mutateAsync(id);
-            } catch (error) {
+            } catch (_error) {
               Alert.alert(
                 "Error",
                 "Failed to delete income. Please try again."

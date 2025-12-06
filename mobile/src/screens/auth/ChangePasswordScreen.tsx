@@ -16,7 +16,7 @@ import { useTheme } from "../../contexts/ThemeContext";
 import { authApi } from "../../api/client";
 import { Ionicons } from "@expo/vector-icons";
 import { getErrorMessage } from "../../utils/errorHandler";
-import { getThemeColors, colors, getShadow, gradientColors, radius } from "../../utils/colors";
+import { getThemeColors, getShadow, gradientColors, radius } from "../../utils/colors";
 
 export const ChangePasswordScreen = () => {
   const { isDark } = useTheme();

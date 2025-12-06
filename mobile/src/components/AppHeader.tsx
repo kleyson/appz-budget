@@ -35,136 +35,135 @@ export const AppHeader = () => {
 
   const styles = getStyles(isDark, theme, insets.top);
 
-  const HeaderBackground = ({ children }: { children: React.ReactNode }) => {
-    if (Platform.OS === 'ios') {
-      return (
-        <BlurView intensity={theme.blurIntensity} tint={theme.blurTint} style={styles.blurView}>
-          {children}
-        </BlurView>
-      );
-    }
-    return <View style={styles.headerFallback}>{children}</View>;
-  };
+  const headerContent = (
+    <View style={styles.headerContent}>
+      <View style={styles.leftSection}>
+        {isSettingsScreen ? (
+          <View style={styles.leftContent}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={handleBack}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="chevron-back"
+                size={22}
+                color={theme.text}
+              />
+            </TouchableOpacity>
+            <Text style={styles.title}>Settings</Text>
+          </View>
+        ) : isApiConfigScreen ? (
+          <View style={styles.leftContent}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={handleBack}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="chevron-back"
+                size={22}
+                color={theme.text}
+              />
+            </TouchableOpacity>
+            <Text style={styles.title}>API Configuration</Text>
+          </View>
+        ) : (
+          <View style={styles.brandContainer}>
+            <LinearGradient
+              colors={gradientColors.teal}
+              style={styles.logoGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Ionicons name="wallet" size={22} color="#ffffff" />
+            </LinearGradient>
+            <View>
+              <Text style={styles.brandTitle}>Budget</Text>
+              <Text style={styles.brandSubtitle}>Financial Tracker</Text>
+            </View>
+          </View>
+        )}
+      </View>
+
+      <View style={styles.rightSection}>
+        {!isSettingsScreen && !isApiConfigScreen && (
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={() => router.push("/settings")}
+            activeOpacity={0.7}
+          >
+            <View style={styles.iconButtonInner}>
+              <Ionicons
+                name="cog-outline"
+                size={20}
+                color={theme.textSecondary}
+              />
+            </View>
+          </TouchableOpacity>
+        )}
+        {isSettingsScreen && (
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={() => router.push("/api-config")}
+            activeOpacity={0.7}
+          >
+            <View style={styles.iconButtonInner}>
+              <Ionicons
+                name="server-outline"
+                size={20}
+                color={theme.textSecondary}
+              />
+            </View>
+          </TouchableOpacity>
+        )}
+        {!isApiConfigScreen && (
+          <>
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={toggleTheme}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.iconButtonInner, styles.themeButton]}>
+                <Ionicons
+                  name={isDark ? "sunny" : "moon"}
+                  size={18}
+                  color={theme.themeToggleIcon}
+                />
+              </View>
+            </TouchableOpacity>
+            {isAuthenticated && (
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={handleLogout}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.iconButtonInner, styles.logoutButton]}>
+                  <Ionicons
+                    name="log-out-outline"
+                    size={18}
+                    color={theme.danger}
+                  />
+                </View>
+              </TouchableOpacity>
+            )}
+          </>
+        )}
+      </View>
+    </View>
+  );
 
   return (
     <View style={styles.header}>
-      <HeaderBackground>
-        <View style={styles.headerContent}>
-          <View style={styles.leftSection}>
-            {isSettingsScreen ? (
-              <View style={styles.leftContent}>
-                <TouchableOpacity
-                  style={styles.backButton}
-                  onPress={handleBack}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons
-                    name="chevron-back"
-                    size={22}
-                    color={theme.text}
-                  />
-                </TouchableOpacity>
-                <Text style={styles.title}>Settings</Text>
-              </View>
-            ) : isApiConfigScreen ? (
-              <View style={styles.leftContent}>
-                <TouchableOpacity
-                  style={styles.backButton}
-                  onPress={handleBack}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons
-                    name="chevron-back"
-                    size={22}
-                    color={theme.text}
-                  />
-                </TouchableOpacity>
-                <Text style={styles.title}>API Configuration</Text>
-              </View>
-            ) : (
-              <View style={styles.brandContainer}>
-                <LinearGradient
-                  colors={gradientColors.teal}
-                  style={styles.logoGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                >
-                  <Ionicons name="wallet" size={22} color="#ffffff" />
-                </LinearGradient>
-                <View>
-                  <Text style={styles.brandTitle}>Budget</Text>
-                  <Text style={styles.brandSubtitle}>Financial Tracker</Text>
-                </View>
-              </View>
-            )}
-          </View>
-
-          <View style={styles.rightSection}>
-            {!isSettingsScreen && !isApiConfigScreen && (
-              <TouchableOpacity
-                style={styles.iconButton}
-                onPress={() => router.push("/settings")}
-                activeOpacity={0.7}
-              >
-                <View style={styles.iconButtonInner}>
-                  <Ionicons
-                    name="cog-outline"
-                    size={20}
-                    color={theme.textSecondary}
-                  />
-                </View>
-              </TouchableOpacity>
-            )}
-            {isSettingsScreen && (
-              <TouchableOpacity
-                style={styles.iconButton}
-                onPress={() => router.push("/api-config")}
-                activeOpacity={0.7}
-              >
-                <View style={styles.iconButtonInner}>
-                  <Ionicons
-                    name="server-outline"
-                    size={20}
-                    color={theme.textSecondary}
-                  />
-                </View>
-              </TouchableOpacity>
-            )}
-            {!isApiConfigScreen && (
-              <>
-                <TouchableOpacity
-                  style={styles.iconButton}
-                  onPress={toggleTheme}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.iconButtonInner, styles.themeButton]}>
-                    <Ionicons
-                      name={isDark ? "sunny" : "moon"}
-                      size={18}
-                      color={theme.themeToggleIcon}
-                    />
-                  </View>
-                </TouchableOpacity>
-                {isAuthenticated && (
-                  <TouchableOpacity
-                    style={styles.iconButton}
-                    onPress={handleLogout}
-                    activeOpacity={0.7}
-                  >
-                    <View style={[styles.iconButtonInner, styles.logoutButton]}>
-                      <Ionicons
-                        name="log-out-outline"
-                        size={18}
-                        color={theme.danger}
-                      />
-                    </View>
-                  </TouchableOpacity>
-                )}
-              </>
-            )}
-          </View>
+      {Platform.OS === 'ios' ? (
+        <BlurView intensity={theme.blurIntensity} tint={theme.blurTint} style={styles.blurView}>
+          {headerContent}
+        </BlurView>
+      ) : (
+        <View style={styles.headerFallback}>
+          {headerContent}
         </View>
-      </HeaderBackground>
+      )}
     </View>
   );
 };

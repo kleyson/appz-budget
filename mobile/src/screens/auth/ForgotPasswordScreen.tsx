@@ -16,7 +16,7 @@ import { router } from "expo-router";
 import { authApi } from "../../api/client";
 import { useTheme } from "../../contexts/ThemeContext";
 import { getErrorMessage } from "../../utils/errorHandler";
-import { getThemeColors, colors, getShadow, gradientColors, radius } from "../../utils/colors";
+import { getThemeColors, getShadow, gradientColors, radius } from "../../utils/colors";
 import { Ionicons } from "@expo/vector-icons";
 
 export const ForgotPasswordScreen = () => {

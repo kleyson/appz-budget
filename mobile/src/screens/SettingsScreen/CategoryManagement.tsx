@@ -65,7 +65,7 @@ export const CategoryManagement = () => {
           onPress: async () => {
             try {
               await deleteMutation.mutateAsync(category.id);
-            } catch (error) {
+            } catch (_error) {
               Alert.alert("Error", "Failed to delete category");
             }
           },

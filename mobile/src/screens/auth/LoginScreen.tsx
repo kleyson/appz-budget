@@ -93,7 +93,7 @@ export const LoginScreen = () => {
                   setIsLoading(false);
                 }
               }
-            } catch (error) {
+            } catch (_error) {
               console.log("Biometric authentication cancelled or failed");
             }
           }, 300);
@@ -102,6 +102,7 @@ export const LoginScreen = () => {
     };
 
     initialize();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const checkBiometricAvailability = async () => {

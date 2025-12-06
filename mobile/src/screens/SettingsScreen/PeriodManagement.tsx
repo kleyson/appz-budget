@@ -65,7 +65,7 @@ export const PeriodManagement = () => {
           onPress: async () => {
             try {
               await deleteMutation.mutateAsync(period.id);
-            } catch (error) {
+            } catch (_error) {
               Alert.alert("Error", "Failed to delete period");
             }
           },

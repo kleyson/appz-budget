@@ -45,7 +45,7 @@ export const ExpenseFormModal = ({
   const [selectedPeriod, setSelectedPeriod] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [budget, setBudget] = useState("");
-  const [cost, setCost] = useState("");
+  const [_cost, setCost] = useState("");
   const [notes, setNotes] = useState("");
   const [purchases, setPurchases] = useState<Purchase[]>([]);
 

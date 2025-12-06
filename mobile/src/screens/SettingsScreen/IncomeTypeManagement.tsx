@@ -65,7 +65,7 @@ export const IncomeTypeManagement = () => {
           onPress: async () => {
             try {
               await deleteMutation.mutateAsync(incomeType.id);
-            } catch (error) {
+            } catch (_error) {
               Alert.alert("Error", "Failed to delete income type");
             }
           },

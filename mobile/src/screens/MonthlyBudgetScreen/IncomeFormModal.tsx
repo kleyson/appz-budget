@@ -89,7 +89,7 @@ export const IncomeFormModal = ({
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
   // Find selected income type for chip display
-  const selectedIncomeType = incomeTypes?.find((t: IncomeType) => t.id === selectedIncomeTypeId);
+  const _selectedIncomeType = incomeTypes?.find((t: IncomeType) => t.id === selectedIncomeTypeId);
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>

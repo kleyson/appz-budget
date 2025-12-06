@@ -26,8 +26,8 @@ interface ApiConfigScreenProps {
 }
 
 export const ApiConfigScreen = ({
-  onComplete,
-  showBackButton = false,
+  onComplete: _onComplete,
+  showBackButton: _showBackButton = false,
   onBack,
 }: ApiConfigScreenProps) => {
   const { isDark } = useTheme();
@@ -100,7 +100,7 @@ export const ApiConfigScreen = ({
       } else {
         router.replace("/");
       }
-    } catch (error) {
+    } catch (_error) {
       Alert.alert(
         "Error",
         "Failed to save API configuration. Please try again."

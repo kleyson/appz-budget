@@ -21,7 +21,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import type { User } from "../../types";
 import { getErrorMessage } from "../../utils/errorHandler";
-import { getThemeColors, getShadow, gradientColors, radius } from "../../utils/colors";
+import { getThemeColors, getShadow, radius } from "../../utils/colors";
 import { Button } from "../../components/shared";
 
 export const UserManagement = () => {

@@ -1,4 +1,4 @@
-import { StyleSheet, ViewStyle, TextStyle } from "react-native";
+import { StyleSheet } from "react-native";
 import { getThemeColors, colors, getShadow, radius, spacing } from "./colors";
 
 type ThemeColors = ReturnType<typeof getThemeColors>;

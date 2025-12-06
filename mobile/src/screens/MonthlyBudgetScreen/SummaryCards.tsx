@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../contexts/ThemeContext";
-import { getThemeColors, colors, getShadow, gradientColors, radius } from "../../utils/colors";
+import { getThemeColors, getShadow, gradientColors, radius } from "../../utils/colors";
 import { formatCurrency } from "../../utils/styles";
 import { SectionTitle } from "../../components/shared";
 import type { SummaryTotals } from "../../types";

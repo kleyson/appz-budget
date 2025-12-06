@@ -11,7 +11,6 @@ import { useMonths } from "../../hooks/useMonths";
 import { useTheme } from "../../contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { getThemeColors, getShadow, radius, rgba } from "../../utils/colors";
-import type { Month } from "../../types";
 
 interface MonthSelectorProps {
   selectedMonthId: number | null;
@@ -24,7 +23,7 @@ export const MonthSelector = ({
 }: MonthSelectorProps) => {
   const { isDark } = useTheme();
   const theme = getThemeColors(isDark);
-  const { data: months, isLoading } = useMonths();
+  const { data: months } = useMonths();
   const [modalVisible, setModalVisible] = React.useState(false);
 
   const selectedMonth = months?.find((m) => m.id === selectedMonthId);

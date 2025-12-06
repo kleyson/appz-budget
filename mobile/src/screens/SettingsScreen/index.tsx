@@ -40,6 +40,7 @@ export const SettingsScreen = () => {
     } else {
       setBackendVersion(null);
     }
+     
   }, [apiUrl]);
 
   const styles = getStyles(theme);

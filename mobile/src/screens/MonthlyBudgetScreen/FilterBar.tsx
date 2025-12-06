@@ -26,7 +26,7 @@ export const FilterBar = ({
   onCategoryChange,
   showCategoryFilter = true,
   showFilters,
-  onToggleFilters,
+  onToggleFilters: _onToggleFilters,
 }: FilterBarProps) => {
   const { isDark } = useTheme();
   const theme = getThemeColors(isDark);

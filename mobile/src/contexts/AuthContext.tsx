@@ -9,17 +9,11 @@ import { Alert } from "react-native";
 import { router } from "expo-router";
 import {
   authApi,
-  getToken,
   removeToken,
   setToken,
   setLogoutHandler,
 } from "../api/client";
-import {
-  removeBiometricCredentials,
-  isBiometricEnabled,
-  getBiometricCredentials,
-  authenticateWithBiometrics,
-} from "../utils/biometric";
+import { removeBiometricCredentials } from "../utils/biometric";
 import type { User, UserLogin } from "../types";
 
 interface AuthContextType {
@@ -61,7 +55,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     checkAuth();
   }, []);
 
-  const login = async (credentials: UserLogin, skipCheckAuth = false) => {
+  const login = async (credentials: UserLogin, _skipCheckAuth = false) => {
     const response = await authApi.login(credentials);
     await setToken(response.data.access_token);
     // Fetch full user details (which includes is_admin)
@@ -104,7 +98,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return () => {
       setLogoutHandler(() => {});
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   return (
