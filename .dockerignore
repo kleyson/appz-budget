@@ -96,6 +96,7 @@ start_backend.sh
 start_frontend.sh
 *.sh
 !docker-entrypoint.sh
+!backup.sh
 
 # Docker
 Dockerfile*
