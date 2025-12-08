@@ -83,8 +83,11 @@ export const ResetPassword = ({ token: tokenProp, onSwitchToLogin }: ResetPasswo
           <div className="rounded-md shadow-sm space-y-4">
             {!tokenProp && (
               <div>
-                <label htmlFor="token" className="sr-only">
-                  Reset Token
+                <label
+                  htmlFor="token"
+                  className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block"
+                >
+                  Reset Code or Token
                 </label>
                 <input
                   id="token"
@@ -94,8 +97,12 @@ export const ResetPassword = ({ token: tokenProp, onSwitchToLogin }: ResetPasswo
                   value={token}
                   onChange={(e) => setToken(e.target.value)}
                   className="appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  placeholder="Reset token"
+                  placeholder="6-digit code or full token"
                 />
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Enter the 6-digit code from your email or admin, or paste the full reset link
+                  token
+                </p>
               </div>
             )}
             <div>

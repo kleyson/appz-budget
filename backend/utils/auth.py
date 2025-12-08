@@ -52,3 +52,19 @@ def generate_reset_token() -> str:
     import secrets
 
     return secrets.token_urlsafe(32)
+
+
+def generate_short_code(length: int = 6) -> str:
+    """Generate a secure random short code for password reset
+
+    Args:
+        length: The length of the code (default: 6)
+
+    Returns:
+        A numeric code of the specified length
+    """
+    import secrets
+    import string
+
+    # Use only digits for easy typing
+    return "".join(secrets.choice(string.digits) for _ in range(length))

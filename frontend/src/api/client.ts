@@ -336,6 +336,27 @@ export const authApi = {
   changePassword: (data: ChangePasswordRequest): Promise<AxiosResponse<ChangePasswordResponse>> =>
     apiClient.post<ChangePasswordResponse>('/api/v1/auth/change-password', data),
   getMe: (): Promise<AxiosResponse<User>> => apiClient.get<User>('/api/v1/auth/me'),
+  getPasswordResets: (): Promise<
+    AxiosResponse<
+      Array<{
+        user_email: string;
+        short_code: string | null;
+        created_at: string;
+        expires_at: string;
+        minutes_remaining: number;
+      }>
+    >
+  > => apiClient.get('/api/v1/auth/password-resets'),
+  generateResetLink: (
+    userId: number
+  ): Promise<
+    AxiosResponse<{
+      user_email: string;
+      reset_url: string;
+      short_code: string;
+      expires_in_minutes: number;
+    }>
+  > => apiClient.post(`/api/v1/auth/users/${userId}/generate-reset-link`),
 };
 
 // User management endpoints (admin only)

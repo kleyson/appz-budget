@@ -219,6 +219,7 @@ class ForgotPasswordRequest(BaseModel):
 
 class ForgotPasswordResponse(BaseModel):
     message: str
+    email_sent: bool  # Whether email was sent successfully
     token: str | None = None  # Only for development, remove in production
 
 
@@ -267,6 +268,31 @@ class UserCreateAdmin(BaseModel):
     full_name: str | None = None
     is_active: bool = True
     is_admin: bool = False
+
+
+class PasswordResetItemResponse(BaseModel):
+    """Response for a single password reset request in admin list"""
+
+    user_email: str
+    short_code: str | None
+    created_at: str  # ISO datetime string
+    expires_at: str  # ISO datetime string
+    minutes_remaining: int
+
+
+class GenerateResetLinkRequest(BaseModel):
+    """Request to generate a reset link for a user (admin only)"""
+
+    user_id: int
+
+
+class GenerateResetLinkResponse(BaseModel):
+    """Response when admin generates a reset link"""
+
+    user_email: str
+    reset_url: str
+    short_code: str
+    expires_in_minutes: int
 
 
 class CloneExpensesResponse(BaseModel):

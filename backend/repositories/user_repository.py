@@ -47,13 +47,32 @@ class UserRepository:
         return user
 
     def create_reset_token(
-        self, user_id: int, token: str, expires_in_hours: int = 24
+        self,
+        user_id: int,
+        token: str,
+        short_code: str | None = None,
+        expires_in_hours: int | None = None,
+        expires_in_minutes: int | None = None,
     ) -> PasswordResetToken:
-        """Create a password reset token"""
+        """Create a password reset token
+
+        Args:
+            user_id: User ID
+            token: Long token string
+            short_code: Optional short numeric code
+            expires_in_hours: Expiration time in hours (default: 24)
+            expires_in_minutes: Expiration time in minutes (overrides hours if set)
+        """
+        if expires_in_minutes:
+            expires_at = datetime.utcnow() + timedelta(minutes=expires_in_minutes)
+        else:
+            expires_at = datetime.utcnow() + timedelta(hours=expires_in_hours or 24)
+
         reset_token = PasswordResetToken(
             user_id=user_id,
             token=token,
-            expires_at=datetime.utcnow() + timedelta(hours=expires_in_hours),
+            short_code=short_code,
+            expires_at=expires_at,
         )
         self.db.add(reset_token)
         self.db.commit()
@@ -66,6 +85,23 @@ class UserRepository:
             self.db.query(PasswordResetToken)
             .filter(PasswordResetToken.token == token, ~PasswordResetToken.used)
             .first()
+        )
+
+    def get_reset_token_by_short_code(self, short_code: str) -> PasswordResetToken | None:
+        """Get a password reset token by short code"""
+        return (
+            self.db.query(PasswordResetToken)
+            .filter(PasswordResetToken.short_code == short_code, ~PasswordResetToken.used)
+            .first()
+        )
+
+    def get_active_reset_tokens(self) -> list[PasswordResetToken]:
+        """Get all active (non-expired, non-used) password reset tokens"""
+        return (
+            self.db.query(PasswordResetToken)
+            .filter(~PasswordResetToken.used, PasswordResetToken.expires_at > datetime.utcnow())
+            .order_by(PasswordResetToken.created_at.desc())
+            .all()
         )
 
     def mark_reset_token_used(self, reset_token: PasswordResetToken) -> None:

@@ -209,8 +209,9 @@ class TestAuthController:
         assert response.status_code == 200
         data = response.json()
         assert "message" in data
-        # In development, token is returned
-        assert "token" in data
+        assert "email_sent" in data
+        # email_sent should be False when SMTP is not configured
+        assert data["email_sent"] is False
 
     def test_forgot_password_nonexistent_user(self, client, api_headers):
         """Test password reset request for nonexistent user"""
@@ -233,8 +234,12 @@ class TestAuthController:
 
         user_repo = UserRepository(test_db)
         service = UserService(user_repo)
-        result = service.request_password_reset("test@example.com")
-        token = result["token"]
+        service.request_password_reset("test@example.com")
+
+        # Get the token from database
+        reset_tokens = user_repo.get_active_reset_tokens()
+        assert len(reset_tokens) > 0
+        token = reset_tokens[0].token
 
         # Reset password
         response = client.post(
@@ -655,3 +660,395 @@ class TestUserManagement:
             headers={"Authorization": f"Bearer {token}", **api_headers},
         )
         assert response.status_code == 404
+
+
+class TestPasswordResetWithShortCodes:
+    """Tests for password reset with short codes"""
+
+    def test_short_code_generation(self):
+        """Test that short codes are generated correctly"""
+        from utils.auth import generate_short_code
+
+        # Test default length (6 digits)
+        code = generate_short_code()
+        assert len(code) == 6
+        assert code.isdigit()
+
+        # Test custom length
+        code_8 = generate_short_code(8)
+        assert len(code_8) == 8
+        assert code_8.isdigit()
+
+        # Test uniqueness - generate multiple codes
+        codes = {generate_short_code() for _ in range(100)}
+        # Should have high uniqueness (at least 90% unique)
+        assert len(codes) >= 90
+
+    def test_forgot_password_creates_short_code(self, client, test_db, sample_user, api_headers):
+        """Test that forgot password creates a short code"""
+        from repositories import UserRepository
+
+        user_repo = UserRepository(test_db)
+
+        response = client.post(
+            "/api/v1/auth/forgot-password",
+            json={"email": "test@example.com"},
+            headers=api_headers,
+        )
+        assert response.status_code == 200
+
+        # Check that reset token was created with short code
+        reset_tokens = user_repo.get_active_reset_tokens()
+        assert len(reset_tokens) > 0
+        assert reset_tokens[0].short_code is not None
+        assert len(reset_tokens[0].short_code) == 6
+        assert reset_tokens[0].short_code.isdigit()
+
+    def test_reset_password_with_short_code(self, client, test_db, sample_user, api_headers):
+        """Test resetting password with 6-digit short code"""
+        from repositories import UserRepository
+        from services import UserService
+
+        user_repo = UserRepository(test_db)
+        service = UserService(user_repo)
+        service.request_password_reset("test@example.com")
+
+        # Get the short code from database
+        reset_tokens = user_repo.get_active_reset_tokens()
+        assert len(reset_tokens) > 0
+        short_code = reset_tokens[0].short_code
+
+        # Reset password using short code
+        response = client.post(
+            "/api/v1/auth/reset-password",
+            json={
+                "token": short_code,
+                "new_password": "newpasswordwithcode123",
+            },
+            headers=api_headers,
+        )
+        assert response.status_code == 200
+        assert "successfully" in response.json()["message"].lower()
+
+        # Verify new password works
+        login_response = client.post(
+            "/api/v1/auth/login",
+            json={
+                "email": "test@example.com",
+                "password": "newpasswordwithcode123",
+            },
+            headers=api_headers,
+        )
+        assert login_response.status_code == 200
+
+    def test_reset_password_with_long_token(self, client, test_db, sample_user, api_headers):
+        """Test that long tokens still work (backward compatibility)"""
+        from repositories import UserRepository
+        from services import UserService
+
+        user_repo = UserRepository(test_db)
+        service = UserService(user_repo)
+        service.request_password_reset("test@example.com")
+
+        # Get the long token from database
+        reset_tokens = user_repo.get_active_reset_tokens()
+        assert len(reset_tokens) > 0
+        long_token = reset_tokens[0].token
+
+        # Reset password using long token
+        response = client.post(
+            "/api/v1/auth/reset-password",
+            json={
+                "token": long_token,
+                "new_password": "newpasswordwithlongtoken123",
+            },
+            headers=api_headers,
+        )
+        assert response.status_code == 200
+
+    def test_reset_password_invalid_short_code(self, client, api_headers):
+        """Test reset with invalid short code"""
+        response = client.post(
+            "/api/v1/auth/reset-password",
+            json={
+                "token": "999999",  # Non-existent short code
+                "new_password": "newpassword123",
+            },
+            headers=api_headers,
+        )
+        assert response.status_code == 400
+        assert (
+            "invalid" in response.json()["detail"].lower()
+            or "expired" in response.json()["detail"].lower()
+        )
+
+    def test_reset_password_used_short_code(self, client, test_db, sample_user, api_headers):
+        """Test that short code cannot be reused"""
+        from repositories import UserRepository
+        from services import UserService
+
+        user_repo = UserRepository(test_db)
+        service = UserService(user_repo)
+        service.request_password_reset("test@example.com")
+
+        # Get the short code
+        reset_tokens = user_repo.get_active_reset_tokens()
+        short_code = reset_tokens[0].short_code
+
+        # Use the code once
+        response1 = client.post(
+            "/api/v1/auth/reset-password",
+            json={"token": short_code, "new_password": "newpassword123"},
+            headers=api_headers,
+        )
+        assert response1.status_code == 200
+
+        # Try to use the same code again
+        # Note: Repository filters out used tokens, so error is "invalid or expired"
+        response2 = client.post(
+            "/api/v1/auth/reset-password",
+            json={"token": short_code, "new_password": "anotherpassword123"},
+            headers=api_headers,
+        )
+        assert response2.status_code == 400
+        assert (
+            "invalid" in response2.json()["detail"].lower()
+            or "expired" in response2.json()["detail"].lower()
+        )
+
+    def test_reset_password_expired_short_code(self, client, test_db, sample_user, api_headers):
+        """Test that expired short codes are rejected"""
+        from repositories import UserRepository
+        from utils.auth import generate_reset_token, generate_short_code
+
+        user_repo = UserRepository(test_db)
+
+        # Create an expired reset token manually
+        expired_token = generate_reset_token()
+        expired_code = generate_short_code()
+        user_repo.create_reset_token(
+            sample_user.id,
+            expired_token,
+            short_code=expired_code,
+            expires_in_minutes=-10,  # Already expired
+        )
+
+        # Try to use the expired code
+        response = client.post(
+            "/api/v1/auth/reset-password",
+            json={"token": expired_code, "new_password": "newpassword123"},
+            headers=api_headers,
+        )
+        assert response.status_code == 400
+        assert "expired" in response.json()["detail"].lower()
+
+
+class TestPasswordResetAdminEndpoints:
+    """Tests for admin password reset management endpoints"""
+
+    def get_auth_token(
+        self, client, api_headers, email="test@example.com", password="testpassword123"
+    ):
+        """Helper to get authentication token"""
+        response = client.post(
+            "/api/v1/auth/login",
+            json={"email": email, "password": password},
+            headers=api_headers,
+        )
+        assert response.status_code == 200
+        return response.json()["access_token"]
+
+    def test_list_password_resets(self, client, test_db, sample_user, api_headers):
+        """Test admin can list active password resets"""
+        from repositories import UserRepository
+        from services import UserService
+
+        # Create a password reset request
+        user_repo = UserRepository(test_db)
+        service = UserService(user_repo)
+        service.request_password_reset("test@example.com")
+
+        token = self.get_auth_token(client, api_headers)
+        response = client.get(
+            "/api/v1/auth/password-resets",
+            headers={"Authorization": f"Bearer {token}", **api_headers},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, list)
+        assert len(data) == 1
+        assert data[0]["user_email"] == "test@example.com"
+        assert "short_code" in data[0]
+        assert data[0]["short_code"] is not None
+        assert len(data[0]["short_code"]) == 6
+        assert "created_at" in data[0]
+        assert "expires_at" in data[0]
+        assert "minutes_remaining" in data[0]
+
+    def test_list_password_resets_non_admin(self, client, test_db, api_headers):
+        """Test non-admin cannot list password resets"""
+        from repositories import UserRepository
+        from utils.auth import get_password_hash
+
+        # Create a non-admin user
+        user_repo = UserRepository(test_db)
+        user_repo.create(
+            {
+                "email": "regular@example.com",
+                "hashed_password": get_password_hash("password123"),
+                "full_name": "Regular User",
+                "is_admin": False,
+            }
+        )
+
+        # Login as non-admin
+        login_response = client.post(
+            "/api/v1/auth/login",
+            json={"email": "regular@example.com", "password": "password123"},
+            headers=api_headers,
+        )
+        token = login_response.json()["access_token"]
+
+        # Try to list password resets
+        response = client.get(
+            "/api/v1/auth/password-resets",
+            headers={"Authorization": f"Bearer {token}", **api_headers},
+        )
+        assert response.status_code == 403
+
+    def test_generate_reset_link_for_user(self, client, test_db, sample_user, api_headers):
+        """Test admin can generate reset link for any user"""
+        token = self.get_auth_token(client, api_headers)
+        response = client.post(
+            f"/api/v1/auth/users/{sample_user.id}/generate-reset-link",
+            headers={"Authorization": f"Bearer {token}", **api_headers},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["user_email"] == "test@example.com"
+        assert "reset_url" in data
+        assert "short_code" in data
+        assert len(data["short_code"]) == 6
+        assert data["short_code"].isdigit()
+        assert "expires_in_minutes" in data
+        assert data["expires_in_minutes"] == 30
+
+        # Verify the generated code works
+        short_code = data["short_code"]
+        reset_response = client.post(
+            "/api/v1/auth/reset-password",
+            json={"token": short_code, "new_password": "admingeneratedpassword123"},
+            headers=api_headers,
+        )
+        assert reset_response.status_code == 200
+
+    def test_generate_reset_link_non_admin(self, client, test_db, api_headers):
+        """Test non-admin cannot generate reset links"""
+        from repositories import UserRepository
+        from utils.auth import get_password_hash
+
+        # Create a non-admin user
+        user_repo = UserRepository(test_db)
+        non_admin = user_repo.create(
+            {
+                "email": "regular@example.com",
+                "hashed_password": get_password_hash("password123"),
+                "full_name": "Regular User",
+                "is_admin": False,
+            }
+        )
+
+        # Login as non-admin
+        login_response = client.post(
+            "/api/v1/auth/login",
+            json={"email": "regular@example.com", "password": "password123"},
+            headers=api_headers,
+        )
+        token = login_response.json()["access_token"]
+
+        # Try to generate reset link
+        response = client.post(
+            f"/api/v1/auth/users/{non_admin.id}/generate-reset-link",
+            headers={"Authorization": f"Bearer {token}", **api_headers},
+        )
+        assert response.status_code == 403
+
+    def test_generate_reset_link_nonexistent_user(self, client, sample_user, api_headers):
+        """Test generating reset link for non-existent user"""
+        token = self.get_auth_token(client, api_headers)
+        response = client.post(
+            "/api/v1/auth/users/99999/generate-reset-link",
+            headers={"Authorization": f"Bearer {token}", **api_headers},
+        )
+        assert response.status_code == 404
+
+
+class TestPasswordResetRepository:
+    """Tests for password reset repository methods"""
+
+    def test_get_reset_token_by_short_code(self, test_db, sample_user):
+        """Test getting reset token by short code"""
+        from repositories import UserRepository
+        from utils.auth import generate_reset_token, generate_short_code
+
+        user_repo = UserRepository(test_db)
+        token = generate_reset_token()
+        short_code = generate_short_code()
+
+        # Create reset token
+        reset_token = user_repo.create_reset_token(
+            sample_user.id, token, short_code=short_code, expires_in_minutes=30
+        )
+
+        # Retrieve by short code
+        found_token = user_repo.get_reset_token_by_short_code(short_code)
+        assert found_token is not None
+        assert found_token.id == reset_token.id
+        assert found_token.short_code == short_code
+
+    def test_get_active_reset_tokens(self, test_db, sample_user):
+        """Test getting all active reset tokens"""
+        from repositories import UserRepository
+        from utils.auth import generate_reset_token, generate_short_code
+
+        user_repo = UserRepository(test_db)
+
+        # Create multiple reset tokens
+        for _ in range(3):
+            token = generate_reset_token()
+            short_code = generate_short_code()
+            user_repo.create_reset_token(
+                sample_user.id, token, short_code=short_code, expires_in_minutes=30
+            )
+
+        # Create an expired token
+        expired_token = generate_reset_token()
+        expired_code = generate_short_code()
+        user_repo.create_reset_token(
+            sample_user.id, expired_token, short_code=expired_code, expires_in_minutes=-10
+        )
+
+        # Get active tokens
+        active_tokens = user_repo.get_active_reset_tokens()
+        assert len(active_tokens) == 3  # Should not include expired token
+
+    def test_create_reset_token_with_minutes_expiration(self, test_db, sample_user):
+        """Test creating reset token with minute-based expiration"""
+        from datetime import datetime, timedelta
+
+        from repositories import UserRepository
+        from utils.auth import generate_reset_token, generate_short_code
+
+        user_repo = UserRepository(test_db)
+        token = generate_reset_token()
+        short_code = generate_short_code()
+
+        # Create with 30 minute expiration
+        reset_token = user_repo.create_reset_token(
+            sample_user.id, token, short_code=short_code, expires_in_minutes=30
+        )
+
+        # Check expiration is approximately 30 minutes from now
+        expected_expiration = datetime.utcnow() + timedelta(minutes=30)
+        time_diff = abs((reset_token.expires_at - expected_expiration).total_seconds())
+        assert time_diff < 5  # Within 5 seconds

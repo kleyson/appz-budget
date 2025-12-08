@@ -19,13 +19,16 @@ export const ForgotPassword = ({ onSwitchToLogin }: ForgotPasswordProps) => {
 
     try {
       const response = await authApi.forgotPassword({ email });
-      setMessage(response.data.message);
+
+      // Show message
+      let displayMessage = response.data.message;
+
       // In development, show the token
       if (response.data.token) {
-        setMessage(
-          `${response.data.message}\n\nReset token (dev only): ${response.data.token}\n\nIn production, this would be sent via email.`
-        );
+        displayMessage += `\n\nReset token (dev only): ${response.data.token}`;
       }
+
+      setMessage(displayMessage);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to send reset email. Please try again.');
     } finally {
@@ -41,7 +44,7 @@ export const ForgotPassword = ({ onSwitchToLogin }: ForgotPasswordProps) => {
             Reset your password
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-            Enter your email address and we'll send you a password reset link.
+            Enter your email address and we'll send you a password reset code.
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>

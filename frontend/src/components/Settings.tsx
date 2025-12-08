@@ -4,11 +4,18 @@ import { PeriodManagement } from './PeriodManagement';
 import { IncomeTypeManagement } from './IncomeTypeManagement';
 import { UserManagement } from './UserManagement';
 import { ChangePassword } from './ChangePassword';
+import { PasswordResetManagement } from './PasswordResetManagement';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardHeader, UnderlineTabs, PageTitle } from './shared';
 import type { Tab } from './shared';
 
-type SettingsTab = 'categories' | 'periods' | 'income-types' | 'users' | 'password';
+type SettingsTab =
+  | 'categories'
+  | 'periods'
+  | 'income-types'
+  | 'users'
+  | 'password'
+  | 'password-resets';
 
 export const Settings = () => {
   const { user } = useAuth();
@@ -20,10 +27,11 @@ export const Settings = () => {
     { id: 'income-types', label: 'Income Types', icon: '💵' },
     { id: 'password', label: 'Password', icon: '🔒' },
     { id: 'users', label: 'Users', icon: '👥' },
+    { id: 'password-resets', label: 'Password Resets', icon: '🔑' },
   ];
 
   const tabs = allTabs.filter((tab) => {
-    if (tab.id === 'users') {
+    if (tab.id === 'users' || tab.id === 'password-resets') {
       return user?.is_admin === true;
     }
     return true;
@@ -53,6 +61,7 @@ export const Settings = () => {
         {activeTab === 'income-types' && <IncomeTypeManagement />}
         {activeTab === 'password' && <ChangePassword />}
         {activeTab === 'users' && <UserManagement />}
+        {activeTab === 'password-resets' && <PasswordResetManagement />}
       </div>
     </Card>
   );

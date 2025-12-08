@@ -64,6 +64,9 @@ test-backend: ## Run backend tests only
 test-frontend: ## Run frontend tests only
 	cd frontend && npm run test:run
 
+test-mobile: ## Run mobile tests only
+	cd mobile && npm run test:run
+
 lint-frontend: ## Lint frontend code
 	cd frontend && npm run lint
 
@@ -204,15 +207,19 @@ verify: ## Run all linting, type checking, formatting checks, and tests
 	@$(MAKE) lint-mobile || (echo "❌ Mobile linting failed" && exit 1)
 	@echo "✅ Mobile linting OK"
 	@echo ""
-	@echo "10. TUI: Checking formatting..."
+	@echo "10. Mobile: Running tests..."
+	@$(MAKE) test-mobile || (echo "❌ Mobile tests failed" && exit 1)
+	@echo "✅ Mobile tests passed"
+	@echo ""
+	@echo "11. TUI: Checking formatting..."
 	@$(MAKE) tui-format-check || (echo "❌ TUI formatting check failed" && exit 1)
 	@echo "✅ TUI formatting OK"
 	@echo ""
-	@echo "11. TUI: Linting..."
+	@echo "12. TUI: Linting..."
 	@$(MAKE) tui-lint || (echo "❌ TUI linting failed" && exit 1)
 	@echo "✅ TUI linting OK"
 	@echo ""
-	@echo "12. TUI: Running tests..."
+	@echo "13. TUI: Running tests..."
 	@$(MAKE) tui-test || (echo "❌ TUI tests failed" && exit 1)
 	@echo "✅ TUI tests passed"
 	@echo ""

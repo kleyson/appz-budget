@@ -17,6 +17,8 @@ from schemas import (
     ChangePasswordResponse,
     ForgotPasswordRequest,
     ForgotPasswordResponse,
+    GenerateResetLinkResponse,
+    PasswordResetItemResponse,
     ResetPasswordRequest,
     ResetPasswordResponse,
     TokenResponse,
@@ -87,11 +89,15 @@ def forgot_password(
     service = UserService(user_repository)
     try:
         result = service.request_password_reset(request.email)
-        return ForgotPasswordResponse(message=result["message"], token=result.get("token"))
+        return ForgotPasswordResponse(
+            message=result["message"],
+            email_sent=result.get("email_sent", False),
+            token=result.get("token"),
+        )
     except Exception:
         # Always return success message for security (don't reveal if user exists)
         return ForgotPasswordResponse(
-            message="If the email exists, a password reset link has been sent"
+            message="If the email exists, a password reset link has been sent", email_sent=False
         )
 
 
@@ -228,3 +234,29 @@ def delete_user(
         raise HTTPException(status_code=404, detail=str(e)) from None
     except ValidationError as e:
         raise HTTPException(status_code=400, detail=str(e)) from None
+
+
+@router.get("/password-resets", response_model=list[PasswordResetItemResponse])
+def list_password_resets(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_admin_user),
+):
+    """List all active password reset requests (admin only)"""
+    user_repository = UserRepository(db)
+    service = UserService(user_repository)
+    return service.get_active_password_resets()
+
+
+@router.post("/users/{user_id}/generate-reset-link", response_model=GenerateResetLinkResponse)
+def generate_reset_link(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_admin_user),
+):
+    """Generate a password reset link for a specific user (admin only)"""
+    user_repository = UserRepository(db)
+    service = UserService(user_repository)
+    try:
+        return service.generate_reset_link_for_user(user_id)
+    except NotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from None

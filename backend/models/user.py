@@ -28,6 +28,7 @@ class PasswordResetToken(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, nullable=False, index=True)
     token = Column(String, unique=True, index=True, nullable=False)
+    short_code = Column(String(8), index=True, nullable=True)
     expires_at = Column(DateTime, nullable=False)
     used = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
