@@ -344,3 +344,35 @@ class MonthCloseResponse(BaseModel):
     closed_at: datetime | None = None
     closed_by: str | None = None
     message: str
+
+
+# Report schemas
+class CategoryTrendItem(BaseModel):
+    """Category spending for a single month"""
+
+    category: str
+    amount: float
+    color: str
+
+
+class MonthlyTrendData(BaseModel):
+    """Data for a single month in the trends report"""
+
+    month_id: int
+    month_name: str
+    year: int
+    month: int
+    total_income: float
+    total_expenses: float
+    net_savings: float
+    savings_rate: float  # Percentage (0-100)
+    categories: list[CategoryTrendItem]
+
+
+class MonthlyTrendsResponse(BaseModel):
+    """Response for monthly trends report"""
+
+    months: list[MonthlyTrendData]
+    average_income: float
+    average_expenses: float
+    average_savings_rate: float

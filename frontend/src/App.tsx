@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { DialogProvider } from './contexts/DialogContext';
 import { Layout } from './components/Layout';
 import { MonthlyBudget } from './components/MonthlyBudget';
+import { Reports } from './components/Reports';
 import { ExcelImport } from './components/ExcelImport';
 import { Settings } from './components/Settings';
 import { Login } from './components/Login';
@@ -21,7 +22,7 @@ const queryClient = new QueryClient({
   },
 });
 
-type TabId = 'expenses' | 'import' | 'settings';
+type TabId = 'expenses' | 'reports' | 'import' | 'settings';
 type AuthView = 'login' | 'forgot-password' | 'reset-password';
 
 const AppContent = () => {
@@ -90,6 +91,7 @@ const AppContent = () => {
   return (
     <Layout activeTab={activeTab} setActiveTab={setActiveTab} filters={null}>
       {activeTab === 'expenses' && <MonthlyBudget />}
+      {activeTab === 'reports' && <Reports />}
       {activeTab === 'import' && <ExcelImport />}
       {activeTab === 'settings' && <Settings />}
     </Layout>

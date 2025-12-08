@@ -27,6 +27,7 @@ import { useSummaryTotals } from "../../hooks/useSummary";
 import { Ionicons } from "@expo/vector-icons";
 import { ExpenseFormModal } from "./ExpenseFormModal";
 import { IncomeFormModal } from "./IncomeFormModal";
+import { PayExpenseModal } from "./PayExpenseModal";
 import { MonthSelector } from "./MonthSelector";
 import { FilterBar } from "./FilterBar";
 import { SummaryCards } from "./SummaryCards";
@@ -54,6 +55,7 @@ export const MonthlyBudgetScreen = () => {
   const [showIncomeForm, setShowIncomeForm] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [editingIncome, setEditingIncome] = useState<Income | null>(null);
+  const [payingExpense, setPayingExpense] = useState<Expense | null>(null);
   const [showFilters, setShowFilters] = useState(false);
 
   const { data: currentMonth } = useCurrentMonth();
@@ -249,30 +251,25 @@ export const MonthlyBudgetScreen = () => {
   };
 
   const handlePayExpense = (expense: Expense) => {
-    Alert.alert(
-      "Pay Expense",
-      `Add a payment of $${expense.budget.toFixed(2)} to "${expense.expense_name}"?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Pay",
-          onPress: async () => {
-            try {
-              await payExpenseMutation.mutateAsync({ id: expense.id });
-              Alert.alert(
-                "Success",
-                `Payment of $${expense.budget.toFixed(2)} has been added.`
-              );
-            } catch (_error) {
-              Alert.alert(
-                "Error",
-                "Failed to pay expense. Please try again."
-              );
-            }
-          },
-        },
-      ]
-    );
+    setPayingExpense(expense);
+  };
+
+  const handlePayConfirm = async (amount: number) => {
+    if (!payingExpense) return;
+
+    try {
+      await payExpenseMutation.mutateAsync({ id: payingExpense.id, data: { amount } });
+      setPayingExpense(null);
+      Alert.alert(
+        "Success",
+        `Payment of $${amount.toFixed(2)} has been added.`
+      );
+    } catch (_error) {
+      Alert.alert(
+        "Error",
+        "Failed to pay expense. Please try again."
+      );
+    }
   };
 
   const handleDeleteIncome = (id: number) => {
@@ -502,6 +499,14 @@ export const MonthlyBudgetScreen = () => {
           }}
         />
       )}
+
+      <PayExpenseModal
+        visible={!!payingExpense}
+        expense={payingExpense}
+        onClose={() => setPayingExpense(null)}
+        onConfirm={handlePayConfirm}
+        isLoading={payExpenseMutation.isPending}
+      />
     </View>
   );
 };

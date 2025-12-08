@@ -1,6 +1,7 @@
 """API controllers"""
 
 from .auth_controller import router as auth_router
+from .backup_controller import router as backup_router
 from .category_controller import router as category_router
 from .expense_controller import router as expense_router
 from .health_controller import router as health_router
@@ -18,6 +19,7 @@ __all__ = [
     "import_router",
     "month_router",
     "auth_router",
+    "backup_router",
     "health_router",
     "income_router",
     "income_type_router",

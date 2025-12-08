@@ -6,16 +6,43 @@ pub mod tabs;
 
 use ratatui::{
     layout::{Alignment, Constraint, Layout, Rect},
-    style::{Color, Modifier, Style},
-    text::{Line, Span},
+    style::{Color, Style},
     widgets::{Block, Borders, Clear, Paragraph},
     Frame,
 };
 
+use crate::state::forms::{
+    CategoryFormState, ExpenseFormState, IncomeFormState, IncomeTypeFormState, PasswordFormState,
+    PeriodFormState,
+};
 use crate::state::AppState;
 
 /// Render the appropriate screen based on app state
 pub fn render(app: &AppState, frame: &mut Frame) {
+    render_with_forms(
+        app,
+        frame,
+        &ExpenseFormState::default(),
+        &IncomeFormState::default(),
+        &CategoryFormState::default(),
+        &PeriodFormState::default(),
+        &IncomeTypeFormState::default(),
+        &PasswordFormState::default(),
+    );
+}
+
+/// Render the appropriate screen based on app state with form states
+#[allow(clippy::too_many_arguments)]
+pub fn render_with_forms(
+    app: &AppState,
+    frame: &mut Frame,
+    expense_form: &ExpenseFormState,
+    income_form: &IncomeFormState,
+    category_form: &CategoryFormState,
+    period_form: &PeriodFormState,
+    income_type_form: &IncomeTypeFormState,
+    password_form: &PasswordFormState,
+) {
     match app.screen {
         crate::state::Screen::Login => login::render(app, frame),
         crate::state::Screen::ApiConfig => {
@@ -23,7 +50,16 @@ pub fn render(app: &AppState, frame: &mut Frame) {
             // This shouldn't be called, but handle it gracefully
             login::render(app, frame)
         }
-        crate::state::Screen::Dashboard => dashboard::render(app, frame),
+        crate::state::Screen::Dashboard => dashboard::render_with_forms(
+            app,
+            frame,
+            expense_form,
+            income_form,
+            category_form,
+            period_form,
+            income_type_form,
+            password_form,
+        ),
     }
 
     // Render loading overlay if loading
@@ -61,31 +97,48 @@ enum MessageType {
     Success,
 }
 
-/// Render an error or success message
+/// Render an error or success message as a popup
 fn render_message(frame: &mut Frame, message: &str, msg_type: MessageType) {
     let area = frame.area();
+
+    let (title, border_color, text_color) = match msg_type {
+        MessageType::Error => (" Error ", Color::Red, Color::Red),
+        MessageType::Success => (" Success ", Color::Green, Color::Green),
+    };
+
+    // Calculate popup size based on message length
+    let msg_width = (message.len() as u16 + 4)
+        .min(area.width.saturating_sub(4))
+        .max(20);
+    let popup_width = msg_width + 4; // padding
+    let popup_height = 3;
+
+    // Center the popup horizontally and position it above the footer
     let message_area = Rect {
-        x: area.x + 2,
-        y: area.height.saturating_sub(3),
-        width: area.width.saturating_sub(4),
-        height: 1,
+        x: area.x + (area.width.saturating_sub(popup_width)) / 2,
+        y: area.height.saturating_sub(popup_height + 2), // +2 to be above footer
+        width: popup_width,
+        height: popup_height,
     };
 
-    let (prefix, color) = match msg_type {
-        MessageType::Error => ("Error: ", Color::Red),
-        MessageType::Success => ("", Color::Green),
-    };
+    // Create a bordered block for the message
+    let block = Block::default()
+        .title(title)
+        .title_alignment(Alignment::Center)
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(border_color))
+        .style(Style::default().bg(Color::Rgb(30, 30, 35)));
 
-    let text = Line::from(vec![
-        Span::styled(
-            prefix,
-            Style::default().fg(color).add_modifier(Modifier::BOLD),
-        ),
-        Span::styled(message, Style::default().fg(color)),
-    ]);
+    // Clear the area and render the block
+    frame.render_widget(Clear, message_area);
+    frame.render_widget(block.clone(), message_area);
 
-    let paragraph = Paragraph::new(text);
-    frame.render_widget(paragraph, message_area);
+    // Render the message text inside the block
+    let inner = block.inner(message_area);
+    let text = Paragraph::new(message)
+        .style(Style::default().fg(text_color))
+        .alignment(Alignment::Center);
+    frame.render_widget(text, inner);
 }
 
 /// Helper function to create a centered rect

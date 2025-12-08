@@ -255,3 +255,54 @@ export interface MonthCloseResponse {
   closed_by?: string | null;
   message: string;
 }
+
+// Report types
+export interface CategoryTrendItem {
+  category: string;
+  amount: number;
+  color: string;
+}
+
+export interface MonthlyTrendData {
+  month_id: number;
+  month_name: string;
+  year: number;
+  month: number;
+  total_income: number;
+  total_expenses: number;
+  net_savings: number;
+  savings_rate: number; // Percentage (0-100)
+  categories: CategoryTrendItem[];
+}
+
+export interface MonthlyTrendsResponse {
+  months: MonthlyTrendData[];
+  average_income: number;
+  average_expenses: number;
+  average_savings_rate: number;
+}
+
+// Backup types
+export interface BackupFile {
+  filename: string;
+  size: number;
+  created_at: string;
+}
+
+export interface BackupListResponse {
+  backups: BackupFile[];
+  backup_dir: string;
+}
+
+export interface BackupDownloadUrlResponse {
+  download_url: string;
+  expires_at: string;
+  valid_for_seconds: number;
+}
+
+export interface BackupCreateResponse {
+  message: string;
+  filename: string;
+  size: number;
+  created_at: string;
+}

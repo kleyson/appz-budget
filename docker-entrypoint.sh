@@ -1,23 +1,28 @@
 #!/bin/bash
 set -e
 
-# Create data directory if it doesn't exist
-mkdir -p /app/backend/data
+# Create data directories if they don't exist
+mkdir -p /app/backend/data /app/backend/data/backups
+chown -R appuser:appuser /app/backend/data
 
 # Set database path to data directory if not already set
 if [ -z "$DATABASE_URL" ]; then
   export DATABASE_URL="sqlite:///./data/budget.db"
 fi
 
-# Run database migrations
+# Start cron daemon for scheduled backups (runs as root)
+echo "Starting cron daemon for scheduled backups..."
+cron
+
+# Run database migrations as appuser
 echo "Running database migrations..."
 cd /app/backend
-uv run alembic upgrade head || echo "Migration completed or no migrations needed"
+su -s /bin/bash appuser -c "uv run alembic upgrade head" || echo "Migration completed or no migrations needed"
 
 # Seed initial admin user if it doesn't exist
 echo "Seeding initial admin user..."
-uv run python seed.py || echo "Seed script completed (admin user may already exist)"
+su -s /bin/bash appuser -c "uv run python seed.py" || echo "Seed script completed (admin user may already exist)"
 
-# Start the application
+# Start the application as appuser
 echo "Starting Appz Budget..."
-exec "$@"
+exec su -s /bin/bash appuser -c "$*"

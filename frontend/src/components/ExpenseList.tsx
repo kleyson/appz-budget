@@ -26,6 +26,7 @@ import { useCategories } from '../hooks/useCategories';
 import { usePeriods } from '../hooks/usePeriods';
 import { useMonth } from '../hooks/useMonths';
 import { ExpenseForm } from './ExpenseForm';
+import { PayExpenseModal } from './PayExpenseModal';
 import type { Expense } from '../types';
 import { formatCurrency } from '../utils/format';
 import { useDialog } from '../contexts/DialogContext';
@@ -265,6 +266,7 @@ export const ExpenseList = ({
   monthId = null,
 }: ExpenseListProps) => {
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [payingExpense, setPayingExpense] = useState<Expense | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [expandedPurchases, setExpandedPurchases] = useState<Set<number>>(new Set());
 
@@ -323,31 +325,28 @@ export const ExpenseList = ({
     }
   };
 
-  const handlePay = async (expense: Expense) => {
-    const confirmed = await showConfirm({
-      title: 'Pay Expense',
-      message: `Add a payment of ${formatCurrency(expense.budget)} to "${expense.expense_name}"?`,
-      type: 'info',
-      confirmText: 'Pay',
-      cancelText: 'Cancel',
-    });
+  const handlePay = (expense: Expense) => {
+    setPayingExpense(expense);
+  };
 
-    if (confirmed) {
-      try {
-        await payMutation.mutateAsync({ id: expense.id });
-        await showAlert({
-          title: 'Payment Added',
-          message: `Payment of ${formatCurrency(expense.budget)} has been added to the expense.`,
-          type: 'success',
-        });
-      } catch (error) {
-        console.error('Error paying expense:', error);
-        await showAlert({
-          title: 'Error',
-          message: 'Failed to pay expense. Please try again.',
-          type: 'error',
-        });
-      }
+  const handlePayConfirm = async (amount: number) => {
+    if (!payingExpense) return;
+
+    try {
+      await payMutation.mutateAsync({ id: payingExpense.id, data: { amount } });
+      setPayingExpense(null);
+      await showAlert({
+        title: 'Payment Added',
+        message: `Payment of ${formatCurrency(amount)} has been added to the expense.`,
+        type: 'success',
+      });
+    } catch (error) {
+      console.error('Error paying expense:', error);
+      await showAlert({
+        title: 'Error',
+        message: 'Failed to pay expense. Please try again.',
+        type: 'error',
+      });
     }
   };
 
@@ -433,6 +432,14 @@ export const ExpenseList = ({
           defaultMonthId={monthId}
         />
       )}
+
+      <PayExpenseModal
+        expense={payingExpense}
+        isOpen={!!payingExpense}
+        onClose={() => setPayingExpense(null)}
+        onConfirm={handlePayConfirm}
+        isLoading={payMutation.isPending}
+      />
 
       <div className="mt-4">
         {!expenses || expenses.length === 0 ? (

@@ -51,6 +51,8 @@ WORKDIR /app
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     curl \
+    cron \
+    sqlite3 \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
@@ -67,17 +69,26 @@ COPY --from=backend-builder /app/backend ./backend
 # Copy built frontend static files
 COPY --from=frontend-builder /app/backend/public ./backend/public
 
-# Copy startup script
+# Copy startup script and backup script
 COPY docker-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+COPY backup.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh /usr/local/bin/backup.sh
 
 WORKDIR /app/backend
 
 # Create non-root user for security
 RUN useradd -m -u 1000 appuser && \
-    mkdir -p /app/backend/data && \
+    mkdir -p /app/backend/data /app/backend/data/backups && \
     chown -R appuser:appuser /app
-USER appuser
+
+# Set up cron job for daily backups (runs at 2 AM as appuser)
+RUN echo "0 2 * * * appuser /usr/local/bin/backup.sh >> /var/log/backup.log 2>&1" > /etc/cron.d/backup-cron && \
+    chmod 0644 /etc/cron.d/backup-cron && \
+    crontab -u appuser /etc/cron.d/backup-cron && \
+    touch /var/log/backup.log && \
+    chown appuser:appuser /var/log/backup.log
+
+# Note: Container starts as root to start cron, then switches to appuser for the app
 
 # Expose port
 EXPOSE 8000

@@ -45,6 +45,7 @@ const DARK_GRAY: Color = Color::DarkGray;
 const WHITE: Color = Color::White;
 
 /// Render the API configuration screen
+#[allow(clippy::too_many_arguments)]
 pub fn render(
     frame: &mut Frame,
     api_url: &str,

@@ -181,6 +181,12 @@ pub enum Modal {
         expense_name: String,
         expense_id: i32,
         amount: f64,
+        amount_input: String,
+    },
+    ConfirmCloseMonth {
+        month_name: String,
+        month_id: i32,
+        is_closing: bool, // true = closing, false = opening
     },
     Help,
 }

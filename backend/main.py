@@ -11,6 +11,7 @@ from fastapi.staticfiles import StaticFiles
 
 from controllers import (
     auth_router,
+    backup_router,
     category_router,
     expense_router,
     health_router,
@@ -53,6 +54,7 @@ app.add_middleware(
 # Include routers (must be before static file serving)
 app.include_router(health_router)  # Health check - no auth required
 app.include_router(auth_router)
+app.include_router(backup_router)
 app.include_router(expense_router)
 app.include_router(income_router)
 app.include_router(income_type_router)

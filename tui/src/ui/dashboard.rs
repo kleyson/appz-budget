@@ -8,10 +8,38 @@ use ratatui::{
 
 use super::components;
 use super::tabs;
+use crate::state::forms::{
+    CategoryFormState, ExpenseFormState, IncomeFormState, IncomeTypeFormState, PasswordFormState,
+    PeriodFormState,
+};
 use crate::state::{AppState, DashboardTab};
 
 /// Render the main dashboard
 pub fn render(app: &AppState, frame: &mut Frame) {
+    render_with_forms(
+        app,
+        frame,
+        &ExpenseFormState::default(),
+        &IncomeFormState::default(),
+        &CategoryFormState::default(),
+        &PeriodFormState::default(),
+        &IncomeTypeFormState::default(),
+        &PasswordFormState::default(),
+    );
+}
+
+/// Render the main dashboard with form states
+#[allow(clippy::too_many_arguments)]
+pub fn render_with_forms(
+    app: &AppState,
+    frame: &mut Frame,
+    expense_form: &ExpenseFormState,
+    income_form: &IncomeFormState,
+    category_form: &CategoryFormState,
+    period_form: &PeriodFormState,
+    income_type_form: &IncomeTypeFormState,
+    password_form: &PasswordFormState,
+) {
     let area = frame.area();
 
     // Main layout: header, tabs, content, footer
@@ -43,7 +71,17 @@ pub fn render(app: &AppState, frame: &mut Frame) {
 
     // Render modal if present
     if let Some(ref modal) = app.ui.modal {
-        components::modal::render(frame, modal);
+        components::modal::render_with_forms(
+            frame,
+            modal,
+            expense_form,
+            income_form,
+            category_form,
+            period_form,
+            income_type_form,
+            password_form,
+            &app.data,
+        );
     }
 }
 
@@ -73,16 +111,36 @@ fn render_header(app: &AppState, frame: &mut Frame, area: Rect) {
     );
     frame.render_widget(title, header_chunks[0]);
 
-    // Month selector
-    let month_display = if let Some(month) = app.selected_month() {
-        format!("◀ {} ▶", month.display_name())
+    // Month selector with closed indicator
+    if let Some(month) = app.selected_month() {
+        let month_spans = if month.is_closed {
+            vec![
+                Span::raw("◀ "),
+                Span::styled(month.display_name(), Style::default().fg(Color::White)),
+                Span::raw(" "),
+                Span::styled(
+                    "[CLOSED]",
+                    Style::default()
+                        .fg(Color::Yellow)
+                        .add_modifier(Modifier::BOLD),
+                ),
+                Span::raw(" ▶"),
+            ]
+        } else {
+            vec![
+                Span::raw("◀ "),
+                Span::styled(month.display_name(), Style::default().fg(Color::White)),
+                Span::raw(" ▶"),
+            ]
+        };
+        let month_selector = Paragraph::new(Line::from(month_spans)).alignment(Alignment::Center);
+        frame.render_widget(month_selector, header_chunks[2]);
     } else {
-        "No month selected".to_string()
-    };
-    let month_selector = Paragraph::new(month_display)
-        .style(Style::default().fg(Color::White))
-        .alignment(Alignment::Center);
-    frame.render_widget(month_selector, header_chunks[2]);
+        let month_selector = Paragraph::new("No month selected")
+            .style(Style::default().fg(Color::DarkGray))
+            .alignment(Alignment::Center);
+        frame.render_widget(month_selector, header_chunks[2]);
+    }
 
     // Help hint
     let help = Paragraph::new("[?]")
@@ -120,27 +178,35 @@ fn render_footer(app: &AppState, frame: &mut Frame, area: Rect) {
     let shortcuts = match app.ui.selected_tab {
         DashboardTab::Summary => vec![
             ("h/l", "Month"),
+            ("c", "Close/Open"),
             ("Tab", "Tab"),
             ("q", "Quit"),
             ("?", "Help"),
         ],
         DashboardTab::Expenses => vec![
-            ("j/k", "Navigate"),
+            ("j/k", "Nav"),
             ("n", "New"),
             ("e", "Edit"),
-            ("d", "Delete"),
-            ("Tab", "Tab"),
+            ("d", "Del"),
+            ("p", "Pay"),
+            ("c", "Close"),
             ("q", "Quit"),
         ],
         DashboardTab::Income => vec![
-            ("j/k", "Navigate"),
+            ("j/k", "Nav"),
             ("n", "New"),
             ("e", "Edit"),
-            ("d", "Delete"),
+            ("d", "Del"),
+            ("c", "Close"),
             ("Tab", "Tab"),
             ("q", "Quit"),
         ],
-        DashboardTab::Charts => vec![("h/l", "Month"), ("Tab", "Tab"), ("q", "Quit")],
+        DashboardTab::Charts => vec![
+            ("h/l", "Month"),
+            ("c", "Close/Open"),
+            ("Tab", "Tab"),
+            ("q", "Quit"),
+        ],
         DashboardTab::Settings => vec![
             ("j/k", "Navigate"),
             ("n", "New"),

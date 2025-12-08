@@ -68,6 +68,13 @@ impl ExpenseField {
     }
 }
 
+/// Purchase editing mode within expense form
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PurchaseEditField {
+    Name,
+    Amount,
+}
+
 /// Expense form state
 #[derive(Debug, Clone)]
 pub struct ExpenseFormState {
@@ -79,7 +86,13 @@ pub struct ExpenseFormState {
     pub cost: String,
     pub notes: String,
     pub purchases: Vec<Purchase>,
+    /// String representation of purchase amounts for editing
+    pub purchase_amount_inputs: Vec<String>,
     pub focused_field: ExpenseField,
+    /// Currently selected purchase index when in Purchases field
+    pub selected_purchase: usize,
+    /// Which field in the purchase is being edited
+    pub purchase_edit_field: PurchaseEditField,
 }
 
 impl Default for ExpenseFormState {
@@ -93,13 +106,27 @@ impl Default for ExpenseFormState {
             cost: "0".to_string(),
             notes: String::new(),
             purchases: Vec::new(),
+            purchase_amount_inputs: Vec::new(),
             focused_field: ExpenseField::Name,
+            selected_purchase: 0,
+            purchase_edit_field: PurchaseEditField::Name,
         }
     }
 }
 
 impl ExpenseFormState {
     pub fn from_expense(expense: &Expense) -> Self {
+        let purchases = expense.purchases.clone().unwrap_or_default();
+        let purchase_amount_inputs = purchases
+            .iter()
+            .map(|p| {
+                if p.amount == 0.0 {
+                    String::new()
+                } else {
+                    format!("{}", p.amount)
+                }
+            })
+            .collect();
         Self {
             editing_id: Some(expense.id),
             name: expense.expense_name.clone(),
@@ -108,19 +135,86 @@ impl ExpenseFormState {
             budget: expense.budget.to_string(),
             cost: expense.cost.to_string(),
             notes: expense.notes.clone().unwrap_or_default(),
-            purchases: expense.purchases.clone().unwrap_or_default(),
+            purchases,
+            purchase_amount_inputs,
             focused_field: ExpenseField::Name,
+            selected_purchase: 0,
+            purchase_edit_field: PurchaseEditField::Name,
         }
+    }
+
+    /// Add a new empty purchase
+    pub fn add_purchase(&mut self) {
+        self.purchases.push(Purchase {
+            name: String::new(),
+            amount: 0.0,
+            date: None,
+        });
+        self.purchase_amount_inputs.push(String::new());
+        self.selected_purchase = self.purchases.len() - 1;
+        self.purchase_edit_field = PurchaseEditField::Name;
+    }
+
+    /// Remove selected purchase
+    pub fn remove_purchase(&mut self) {
+        if !self.purchases.is_empty() && self.selected_purchase < self.purchases.len() {
+            self.purchases.remove(self.selected_purchase);
+            self.purchase_amount_inputs.remove(self.selected_purchase);
+            if self.selected_purchase >= self.purchases.len() && self.selected_purchase > 0 {
+                self.selected_purchase -= 1;
+            }
+        }
+    }
+
+    /// Sync purchase amounts from string inputs to Purchase structs
+    pub fn sync_purchase_amounts(&mut self) {
+        for (i, amount_str) in self.purchase_amount_inputs.iter().enumerate() {
+            if let Some(purchase) = self.purchases.get_mut(i) {
+                purchase.amount = amount_str.parse().unwrap_or(0.0);
+            }
+        }
+    }
+
+    /// Get amount input for a specific purchase
+    pub fn get_purchase_amount_input(&self, index: usize) -> &str {
+        self.purchase_amount_inputs
+            .get(index)
+            .map(|s| s.as_str())
+            .unwrap_or("")
     }
 
     /// Calculate cost from purchases (always calculated, never manually editable)
     pub fn calculated_cost(&self) -> f64 {
-        self.purchases.iter().map(|p| p.amount).sum()
+        self.purchase_amount_inputs
+            .iter()
+            .map(|s| s.parse::<f64>().unwrap_or(0.0))
+            .sum()
+    }
+
+    /// Build purchases with synced amounts from string inputs
+    fn build_purchases(&self) -> Vec<Purchase> {
+        self.purchases
+            .iter()
+            .enumerate()
+            .map(|(i, p)| {
+                let amount = self
+                    .purchase_amount_inputs
+                    .get(i)
+                    .and_then(|s| s.parse().ok())
+                    .unwrap_or(0.0);
+                Purchase {
+                    name: p.name.clone(),
+                    amount,
+                    date: p.date.clone(),
+                }
+            })
+            .collect()
     }
 
     pub fn to_create(&self, month_id: i32) -> Option<ExpenseCreate> {
         let budget = self.budget.parse().ok()?;
-        let cost = self.calculated_cost();
+        let purchases = self.build_purchases();
+        let cost: f64 = purchases.iter().map(|p| p.amount).sum();
         Some(ExpenseCreate {
             expense_name: self.name.clone(),
             period: self.period.clone(),
@@ -133,10 +227,10 @@ impl ExpenseFormState {
                 Some(self.notes.clone())
             },
             month_id,
-            purchases: if self.purchases.is_empty() {
+            purchases: if purchases.is_empty() {
                 None
             } else {
-                Some(self.purchases.clone())
+                Some(purchases)
             },
             expense_date: None,
         })
@@ -144,7 +238,8 @@ impl ExpenseFormState {
 
     pub fn to_update(&self) -> Option<ExpenseUpdate> {
         let budget = self.budget.parse().ok()?;
-        let cost = self.calculated_cost();
+        let purchases = self.build_purchases();
+        let cost: f64 = purchases.iter().map(|p| p.amount).sum();
         Some(ExpenseUpdate {
             expense_name: Some(self.name.clone()),
             period: Some(self.period.clone()),
@@ -152,7 +247,7 @@ impl ExpenseFormState {
             budget: Some(budget),
             cost: Some(cost),
             notes: Some(self.notes.clone()),
-            purchases: Some(self.purchases.clone()),
+            purchases: Some(purchases),
             ..Default::default()
         })
     }
@@ -171,11 +266,7 @@ impl ExpenseFormState {
         if self.budget.parse::<f64>().is_err() {
             errors.push("Budget must be a valid number".to_string());
         }
-        if self.purchases.is_empty() {
-            errors.push("At least one purchase is required".to_string());
-        } else if self.calculated_cost() == 0.0 {
-            errors.push("Purchases must have amounts".to_string());
-        }
+        // Purchases are optional - no validation required
         errors
     }
 }

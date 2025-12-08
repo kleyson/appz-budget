@@ -34,7 +34,8 @@
       "Bash(.venv/bin/python:*)",
       "Skill(ui-ux-pro-max)",
       "Bash(npx tsc:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(codemap)"
     ],
     "deny": [],
     "ask": []

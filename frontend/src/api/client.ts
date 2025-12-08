@@ -24,6 +24,10 @@ import type {
   PayExpenseRequest,
   SummaryTotals,
   PeriodSummaryResponse,
+  MonthlyTrendsResponse,
+  BackupListResponse,
+  BackupDownloadUrlResponse,
+  BackupCreateResponse,
   UserRegister,
   UserLogin,
   TokenResponse,
@@ -290,6 +294,16 @@ export const summaryApi = {
       `/api/v1/summary/by-period${queryString ? `?${queryString}` : ''}`
     );
   },
+  getMonthlyTrends: (params?: {
+    num_months?: number;
+  }): Promise<AxiosResponse<MonthlyTrendsResponse>> => {
+    const queryParams = new URLSearchParams();
+    if (params?.num_months) queryParams.append('num_months', params.num_months.toString());
+    const queryString = queryParams.toString();
+    return apiClient.get<MonthlyTrendsResponse>(
+      `/api/v1/summary/monthly-trends${queryString ? `?${queryString}` : ''}`
+    );
+  },
 };
 
 // Import endpoint
@@ -337,4 +351,16 @@ export const usersApi = {
   ): Promise<AxiosResponse<User>> => apiClient.put<User>(`/api/v1/auth/users/${id}`, data),
   delete: (id: number): Promise<AxiosResponse<{ message: string }>> =>
     apiClient.delete(`/api/v1/auth/users/${id}`),
+};
+
+// Backup endpoints (admin only)
+export const backupsApi = {
+  getAll: (): Promise<AxiosResponse<BackupListResponse>> =>
+    apiClient.get<BackupListResponse>('/api/v1/backups'),
+  create: (): Promise<AxiosResponse<BackupCreateResponse>> =>
+    apiClient.post<BackupCreateResponse>('/api/v1/backups/create'),
+  getDownloadUrl: (filename: string): Promise<AxiosResponse<BackupDownloadUrlResponse>> =>
+    apiClient.get<BackupDownloadUrlResponse>(`/api/v1/backups/${filename}/download-url`),
+  delete: (filename: string): Promise<AxiosResponse<{ message: string }>> =>
+    apiClient.delete(`/api/v1/backups/${filename}`),
 };
