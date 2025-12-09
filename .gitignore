@@ -62,6 +62,13 @@ htmlcov/
 *.cover
 .hypothesis/
 
+# Coverage reports
+coverage/
+**/coverage/
+*.lcov
+coverage.json
+coverage-final.json
+
 # Logs
 *.log
 

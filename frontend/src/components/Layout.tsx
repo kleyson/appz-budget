@@ -1,7 +1,7 @@
 import { useState, ReactNode } from 'react';
 import { Sidebar } from './Sidebar';
 
-type TabId = 'expenses' | 'reports' | 'import' | 'settings';
+type TabId = 'expenses' | 'reports' | 'backup' | 'import' | 'settings';
 
 interface LayoutProps {
   children: ReactNode;
