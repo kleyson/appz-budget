@@ -10,7 +10,7 @@ interface PayExpenseModalProps {
   visible: boolean;
   expense: Expense | null;
   onClose: () => void;
-  onConfirm: (amount: number) => void;
+  onConfirm: (amount: number, purchaseName: string) => void;
   isLoading?: boolean;
 }
 
@@ -26,32 +26,42 @@ export const PayExpenseModal = ({
   const styles = getStyles(isDark, theme);
 
   const [amount, setAmount] = useState("");
+  const [purchaseName, setPurchaseName] = useState("");
 
-  // Reset amount to budget when expense changes or modal opens
+  const hasPurchases = expense?.purchases && expense.purchases.length > 0;
+  const isAddingPurchase = hasPurchases;
+
+  // Reset form when expense changes or modal opens
   useEffect(() => {
     if (expense && visible) {
-      setAmount(expense.budget.toFixed(2));
+      // If adding to existing purchases, start with empty amount; otherwise use budget
+      setAmount(isAddingPurchase ? "" : expense.budget.toFixed(2));
+      setPurchaseName("");
     }
-  }, [expense, visible]);
+  }, [expense, visible, isAddingPurchase]);
 
   const handleConfirm = () => {
     const parsedAmount = parseFloat(amount) || 0;
-    onConfirm(parsedAmount);
+    onConfirm(parsedAmount, purchaseName || "Payment");
   };
 
   const parsedAmount = parseFloat(amount) || 0;
 
   if (!expense) return null;
 
+  // Calculate current total from existing purchases
+  const currentTotal = expense.purchases?.reduce((sum, p) => sum + p.amount, 0) || 0;
+  const remainingBudget = expense.budget - currentTotal;
+
   return (
     <BottomSheetModal
       visible={visible}
       onClose={onClose}
-      title="Pay Expense"
-      icon="card-outline"
+      title={isAddingPurchase ? "Add Purchase" : "Pay Expense"}
+      icon={isAddingPurchase ? "add-circle-outline" : "card-outline"}
       iconBgColor={theme.successBg}
       iconColor={theme.success}
-      saveText={isLoading ? "Processing..." : "Pay"}
+      saveText={isLoading ? "Processing..." : isAddingPurchase ? "Add" : "Pay"}
       saveDisabled={isLoading || parsedAmount <= 0}
       saveGradient={gradientColors.emerald}
       saveIcon="checkmark-circle"
@@ -59,11 +69,22 @@ export const PayExpenseModal = ({
     >
       <View style={styles.container}>
         <Text style={styles.description}>
-          Add a payment to "<Text style={styles.expenseName}>{expense.expense_name}</Text>"
+          {isAddingPurchase ? 'Add a purchase to "' : 'Add a payment to "'}
+          <Text style={styles.expenseName}>{expense.expense_name}</Text>"
         </Text>
 
+        {isAddingPurchase && (
+          <FormInput
+            label="Purchase Name"
+            icon="pricetag-outline"
+            value={purchaseName}
+            onChangeText={setPurchaseName}
+            placeholder="e.g., Groceries, Gas, etc."
+          />
+        )}
+
         <FormInput
-          label="Payment Amount"
+          label={isAddingPurchase ? "Purchase Amount" : "Payment Amount"}
           icon="cash-outline"
           value={amount}
           onChangeText={setAmount}
@@ -71,9 +92,21 @@ export const PayExpenseModal = ({
           keyboardType="decimal-pad"
         />
 
-        <Text style={styles.budgetHint}>
-          Budgeted: {formatCurrency(expense.budget)}
-        </Text>
+        <View style={styles.hintsContainer}>
+          <Text style={styles.budgetHint}>
+            Budgeted: {formatCurrency(expense.budget)}
+          </Text>
+          {isAddingPurchase && (
+            <>
+              <Text style={styles.budgetHint}>
+                Current total: {formatCurrency(currentTotal)}
+              </Text>
+              <Text style={[styles.budgetHint, remainingBudget < 0 && styles.overBudget]}>
+                Remaining: {formatCurrency(remainingBudget)}
+              </Text>
+            </>
+          )}
+        </View>
       </View>
     </BottomSheetModal>
   );
@@ -94,9 +127,15 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       color: theme.text,
       fontWeight: "600",
     },
+    hintsContainer: {
+      marginTop: -spacing.sm,
+    },
     budgetHint: {
       fontSize: 12,
       color: theme.textMuted,
-      marginTop: -spacing.sm,
+      marginBottom: 2,
+    },
+    overBudget: {
+      color: theme.danger,
     },
   });

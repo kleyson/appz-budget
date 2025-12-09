@@ -163,7 +163,8 @@ def pay_expense(
     service = ExpenseService(expense_repository, month_repository)
     try:
         amount = pay_request.amount if pay_request else None
-        return service.pay_expense(expense_id, amount, user_name)
+        purchase_name = pay_request.name if pay_request else None
+        return service.pay_expense(expense_id, amount, user_name, purchase_name)
     except NotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e)) from None
     except ValidationError as e:

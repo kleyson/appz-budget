@@ -268,10 +268,14 @@ class ExpenseService:
         }
 
     def pay_expense(
-        self, expense_id: int, amount: float | None = None, user_name: str | None = None
+        self,
+        expense_id: int,
+        amount: float | None = None,
+        user_name: str | None = None,
+        purchase_name: str | None = None,
     ):
         """Pay an expense by adding a payment purchase entry with the budget amount.
-        Creates a new expense entry with title 'Payment' and the cost set to budget.
+        Creates a new expense entry with the given name (defaults to 'Payment') and the cost set to budget.
         """
         expense = self.repository.get_by_id(expense_id)
         if not expense:
@@ -286,9 +290,12 @@ class ExpenseService:
         # Use provided amount or budget amount
         payment_amount = amount if amount is not None else expense.budget
 
+        # Use provided name or default to "Payment"
+        entry_name = purchase_name if purchase_name else "Payment"
+
         # Add payment as a purchase entry with today's date
         today = date.today().isoformat()
-        payment_entry = {"name": "Payment", "amount": payment_amount, "date": today}
+        payment_entry = {"name": entry_name, "amount": payment_amount, "date": today}
 
         # Get existing purchases or create new list (create a copy to ensure SQLAlchemy detects the change)
         current_purchases = list(expense.purchases) if expense.purchases else []

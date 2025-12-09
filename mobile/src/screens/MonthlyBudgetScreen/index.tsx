@@ -254,20 +254,26 @@ export const MonthlyBudgetScreen = () => {
     setPayingExpense(expense);
   };
 
-  const handlePayConfirm = async (amount: number) => {
+  const handlePayConfirm = async (amount: number, purchaseName: string) => {
     if (!payingExpense) return;
 
+    const hasPurchases = payingExpense.purchases && payingExpense.purchases.length > 0;
+
     try {
-      await payExpenseMutation.mutateAsync({ id: payingExpense.id, data: { amount } });
+      await payExpenseMutation.mutateAsync({ id: payingExpense.id, data: { amount, name: purchaseName } });
       setPayingExpense(null);
       Alert.alert(
-        "Success",
-        `Payment of $${amount.toFixed(2)} has been added.`
+        hasPurchases ? "Purchase Added" : "Payment Added",
+        hasPurchases
+          ? `Purchase "${purchaseName}" of $${amount.toFixed(2)} has been added.`
+          : `Payment of $${amount.toFixed(2)} has been added.`
       );
     } catch (_error) {
       Alert.alert(
         "Error",
-        "Failed to pay expense. Please try again."
+        hasPurchases
+          ? "Failed to add purchase. Please try again."
+          : "Failed to pay expense. Please try again."
       );
     }
   };
@@ -673,15 +679,17 @@ const ExpenseList = ({
                 </View>
               </View>
               <View style={styles.listItemActions}>
-                {!(expense.purchases && expense.purchases.length > 0) && (
-                  <TouchableOpacity
-                    style={[styles.actionIcon, { backgroundColor: theme.successBg }]}
-                    onPress={() => onPay(expense)}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="card-outline" size={16} color={theme.success} />
-                  </TouchableOpacity>
-                )}
+                <TouchableOpacity
+                  style={[styles.actionIcon, { backgroundColor: theme.successBg }]}
+                  onPress={() => onPay(expense)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons
+                    name={expense.purchases && expense.purchases.length > 0 ? "add-circle-outline" : "card-outline"}
+                    size={16}
+                    color={theme.success}
+                  />
+                </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.actionIcon, { backgroundColor: theme.primaryBg }]}
                   onPress={() => onEdit(expense)}

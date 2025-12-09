@@ -359,6 +359,7 @@ class PayExpenseRequest(BaseModel):
     """Request to pay an expense - creates a payment entry"""
 
     amount: float | None = None  # If not provided, uses budget amount
+    name: str | None = None  # Purchase name, defaults to "Payment"
 
 
 class MonthCloseResponse(BaseModel):

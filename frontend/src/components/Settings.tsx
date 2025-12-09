@@ -6,7 +6,18 @@ import { UserManagement } from './UserManagement';
 import { ChangePassword } from './ChangePassword';
 import { PasswordResetManagement } from './PasswordResetManagement';
 import { useAuth } from '../contexts/AuthContext';
-import { Card, CardHeader, UnderlineTabs, PageTitle } from './shared';
+import {
+  Card,
+  CardHeader,
+  UnderlineTabs,
+  PageTitle,
+  TagIcon,
+  CalendarIcon,
+  DollarIcon,
+  LockIcon,
+  UsersIcon,
+  KeyIcon,
+} from './shared';
 import type { Tab } from './shared';
 
 type SettingsTab =
@@ -22,12 +33,12 @@ export const Settings = () => {
   const [activeTab, setActiveTab] = useState<SettingsTab>('categories');
 
   const allTabs: (Tab & { id: SettingsTab })[] = [
-    { id: 'categories', label: 'Categories', icon: '🏷️' },
-    { id: 'periods', label: 'Periods', icon: '📅' },
-    { id: 'income-types', label: 'Income Types', icon: '💵' },
-    { id: 'password', label: 'Password', icon: '🔒' },
-    { id: 'users', label: 'Users', icon: '👥' },
-    { id: 'password-resets', label: 'Password Resets', icon: '🔑' },
+    { id: 'categories', label: 'Categories', icon: <TagIcon /> },
+    { id: 'periods', label: 'Periods', icon: <CalendarIcon /> },
+    { id: 'income-types', label: 'Income Types', icon: <DollarIcon /> },
+    { id: 'password', label: 'Password', icon: <LockIcon /> },
+    { id: 'users', label: 'Users', icon: <UsersIcon /> },
+    { id: 'password-resets', label: 'Password Resets', icon: <KeyIcon /> },
   ];
 
   const tabs = allTabs.filter((tab) => {

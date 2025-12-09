@@ -30,7 +30,19 @@ import { PayExpenseModal } from './PayExpenseModal';
 import type { Expense } from '../types';
 import { formatCurrency } from '../utils/format';
 import { useDialog } from '../contexts/DialogContext';
-import { LoadingState, EmptyState, SectionTitle, Button, Badge, ColorChip } from './shared';
+import {
+  LoadingState,
+  EmptyState,
+  SectionTitle,
+  Button,
+  Badge,
+  ColorChip,
+  PlusIcon,
+  EditIcon,
+  TrashIcon,
+  WalletIcon,
+  DragHandleIcon,
+} from './shared';
 
 interface ExpenseListProps {
   periodFilter?: string | null;
@@ -93,9 +105,7 @@ function SortableExpenseRow({
               {...attributes}
               {...listeners}
             >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M7 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 2zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 14zm6-8a2 2 0 1 0-.001-4.001A2 2 0 0 0 13 6zm0 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 14z" />
-              </svg>
+              <DragHandleIcon />
             </button>
             <span className="truncate">{expense.expense_name}</span>
           </div>
@@ -148,26 +158,27 @@ function SortableExpenseRow({
         </td>
         <td className="px-4 py-4 text-sm text-right">
           <div className="flex items-center justify-end gap-2">
-            {!(expense.purchases && expense.purchases.length > 0) && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handlePay(expense);
-                }}
-                disabled={isMonthClosed}
-                className="p-2 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 text-green-600 dark:text-green-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title={isMonthClosed ? 'Month is closed' : 'Pay expense'}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
-                  />
-                </svg>
-              </button>
-            )}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePay(expense);
+              }}
+              disabled={isMonthClosed}
+              className="p-2 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 text-green-600 dark:text-green-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title={
+                isMonthClosed
+                  ? 'Month is closed'
+                  : expense.purchases && expense.purchases.length > 0
+                    ? 'Add purchase'
+                    : 'Pay expense'
+              }
+            >
+              {expense.purchases && expense.purchases.length > 0 ? (
+                <PlusIcon className="w-4 h-4" />
+              ) : (
+                <WalletIcon className="w-4 h-4" strokeWidth={2} />
+              )}
+            </button>
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -177,14 +188,7 @@ function SortableExpenseRow({
               className="p-2 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20 text-primary-600 dark:text-primary-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               title={isMonthClosed ? 'Month is closed' : 'Edit'}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                />
-              </svg>
+              <EditIcon className="w-4 h-4" strokeWidth={2} />
             </button>
             <button
               onClick={(e) => {
@@ -195,14 +199,7 @@ function SortableExpenseRow({
               className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               title={isMonthClosed ? 'Month is closed' : 'Delete'}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                />
-              </svg>
+              <TrashIcon className="w-4 h-4" strokeWidth={2} />
             </button>
           </div>
         </td>
@@ -329,22 +326,28 @@ export const ExpenseList = ({
     setPayingExpense(expense);
   };
 
-  const handlePayConfirm = async (amount: number) => {
+  const handlePayConfirm = async (amount: number, purchaseName: string) => {
     if (!payingExpense) return;
 
+    const hasPurchases = payingExpense.purchases && payingExpense.purchases.length > 0;
+
     try {
-      await payMutation.mutateAsync({ id: payingExpense.id, data: { amount } });
+      await payMutation.mutateAsync({ id: payingExpense.id, data: { amount, name: purchaseName } });
       setPayingExpense(null);
       await showAlert({
-        title: 'Payment Added',
-        message: `Payment of ${formatCurrency(amount)} has been added to the expense.`,
+        title: hasPurchases ? 'Purchase Added' : 'Payment Added',
+        message: hasPurchases
+          ? `Purchase "${purchaseName}" of ${formatCurrency(amount)} has been added to the expense.`
+          : `Payment of ${formatCurrency(amount)} has been added to the expense.`,
         type: 'success',
       });
     } catch (error) {
       console.error('Error paying expense:', error);
       await showAlert({
         title: 'Error',
-        message: 'Failed to pay expense. Please try again.',
+        message: hasPurchases
+          ? 'Failed to add purchase. Please try again.'
+          : 'Failed to pay expense. Please try again.',
         type: 'error',
       });
     }
@@ -415,7 +418,7 @@ export const ExpenseList = ({
           variant="primary"
           onClick={() => setShowForm(true)}
           disabled={isMonthClosed}
-          icon={<PlusIcon />}
+          icon={<PlusIcon className="w-4 h-4" />}
           title={isMonthClosed ? 'Month is closed' : undefined}
         >
           <span className="hidden sm:inline">Add Expense</span>
@@ -444,7 +447,7 @@ export const ExpenseList = ({
       <div className="mt-4">
         {!expenses || expenses.length === 0 ? (
           <EmptyState
-            icon={<ExpenseIcon />}
+            icon={<WalletIcon className="w-8 h-8" />}
             title="No expenses yet"
             description="Add your first expense to start tracking your budget."
           />
@@ -544,15 +547,13 @@ export const ExpenseList = ({
                       </div>
                     )}
                   <div className="flex gap-2 pt-3 border-t border-slate-200 dark:border-slate-700">
-                    {!(expense.purchases && expense.purchases.length > 0) && (
-                      <button
-                        onClick={() => handlePay(expense)}
-                        disabled={isMonthClosed}
-                        className="flex-1 text-sm px-3 py-2 rounded-lg border border-green-200 dark:border-green-800 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        Pay
-                      </button>
-                    )}
+                    <button
+                      onClick={() => handlePay(expense)}
+                      disabled={isMonthClosed}
+                      className="flex-1 text-sm px-3 py-2 rounded-lg border border-green-200 dark:border-green-800 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {expense.purchases && expense.purchases.length > 0 ? 'Add Purchase' : 'Pay'}
+                    </button>
                     <button
                       onClick={() => setEditingExpense(expense)}
                       disabled={isMonthClosed}
@@ -639,20 +640,3 @@ export const ExpenseList = ({
     </div>
   );
 };
-
-const PlusIcon = () => (
-  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-  </svg>
-);
-
-const ExpenseIcon = () => (
-  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={1.5}
-      d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
-    />
-  </svg>
-);

@@ -245,6 +245,7 @@ export interface IncomeUpdate {
 
 export interface PayExpenseRequest {
   amount?: number | null; // If not provided, uses budget amount
+  name?: string | null; // Purchase name, defaults to "Payment"
 }
 
 export interface MonthCloseResponse {
