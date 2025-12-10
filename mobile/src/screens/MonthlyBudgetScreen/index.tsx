@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -10,16 +10,30 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../contexts/ThemeContext";
-import { getThemeColors, colors, getShadow, isDarkColor, radius, gradientColors } from "../../utils/colors";
+import {
+  getThemeColors,
+  colors,
+  getShadow,
+  isDarkColor,
+  radius,
+  gradientColors,
+} from "../../utils/colors";
 import { formatCurrency } from "../../utils/styles";
 import {
   useExpenses,
   useDeleteExpense,
   useCloneExpensesToNextMonth,
   usePayExpense,
+  useRefreshBudgetData,
 } from "../../hooks/useExpenses";
 import { useIncomes, useDeleteIncome } from "../../hooks/useIncomes";
-import { useMonths, useCurrentMonth, useDeleteMonth, useCloseMonth, useOpenMonth } from "../../hooks/useMonths";
+import {
+  useMonths,
+  useCurrentMonth,
+  useDeleteMonth,
+  useCloseMonth,
+  useOpenMonth,
+} from "../../hooks/useMonths";
 import { usePeriods } from "../../hooks/usePeriods";
 import { useCategories } from "../../hooks/useCategories";
 import { useIncomeTypes } from "../../hooks/useIncomeTypes";
@@ -32,7 +46,7 @@ import { MonthSelector } from "./MonthSelector";
 import { FilterBar } from "./FilterBar";
 import { SummaryCards } from "./SummaryCards";
 import { Summary } from "./Summary";
-import { Tabs, Tab } from "../../components/shared";
+import { Tabs, Tab, CustomRefreshControl } from "../../components/shared";
 import type {
   Expense,
   Income,
@@ -47,6 +61,7 @@ type TabId = "expenses" | "income" | "summary";
 export const MonthlyBudgetScreen = () => {
   const { isDark } = useTheme();
   const theme = getThemeColors(isDark);
+  const { refresh: refreshBudgetData, isRefreshing } = useRefreshBudgetData();
   const [activeTab, setActiveTab] = useState<TabId>("summary");
   const [selectedPeriod, setSelectedPeriod] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
@@ -92,7 +107,9 @@ export const MonthlyBudgetScreen = () => {
       let defaultMonth = currentMonth;
 
       if (currentMonth?.is_closed && months.length > 0) {
-        const currentIdx = months.findIndex((m: Month) => m.id === currentMonth.id);
+        const currentIdx = months.findIndex(
+          (m: Month) => m.id === currentMonth.id
+        );
 
         for (let i = currentIdx - 1; i >= 0; i--) {
           if (!months[i].is_closed) {
@@ -127,10 +144,15 @@ export const MonthlyBudgetScreen = () => {
             text: "Reopen",
             onPress: async () => {
               try {
-                const result = await openMonthMutation.mutateAsync(selectedMonthId);
+                const result = await openMonthMutation.mutateAsync(
+                  selectedMonthId
+                );
                 Alert.alert("Success", result.message);
               } catch (_error) {
-                Alert.alert("Error", "Failed to reopen month. Please try again.");
+                Alert.alert(
+                  "Error",
+                  "Failed to reopen month. Please try again."
+                );
               }
             },
           },
@@ -148,10 +170,15 @@ export const MonthlyBudgetScreen = () => {
             style: "destructive",
             onPress: async () => {
               try {
-                const result = await closeMonthMutation.mutateAsync(selectedMonthId);
+                const result = await closeMonthMutation.mutateAsync(
+                  selectedMonthId
+                );
                 Alert.alert("Success", result.message);
               } catch (_error) {
-                Alert.alert("Error", "Failed to close month. Please try again.");
+                Alert.alert(
+                  "Error",
+                  "Failed to close month. Please try again."
+                );
               }
             },
           },
@@ -257,15 +284,21 @@ export const MonthlyBudgetScreen = () => {
   const handlePayConfirm = async (amount: number, purchaseName: string) => {
     if (!payingExpense) return;
 
-    const hasPurchases = payingExpense.purchases && payingExpense.purchases.length > 0;
+    const hasPurchases =
+      payingExpense.purchases && payingExpense.purchases.length > 0;
 
     try {
-      await payExpenseMutation.mutateAsync({ id: payingExpense.id, data: { amount, name: purchaseName } });
+      await payExpenseMutation.mutateAsync({
+        id: payingExpense.id,
+        data: { amount, name: purchaseName },
+      });
       setPayingExpense(null);
       Alert.alert(
         hasPurchases ? "Purchase Added" : "Payment Added",
         hasPurchases
-          ? `Purchase "${purchaseName}" of $${amount.toFixed(2)} has been added.`
+          ? `Purchase "${purchaseName}" of $${amount.toFixed(
+              2
+            )} has been added.`
           : `Payment of $${amount.toFixed(2)} has been added.`
       );
     } catch (_error) {
@@ -308,6 +341,10 @@ export const MonthlyBudgetScreen = () => {
     { id: "income", label: "Income", icon: "cash" },
   ];
 
+  const handleRefresh = useCallback(() => {
+    refreshBudgetData();
+  }, [refreshBudgetData]);
+
   const styles = getStyles(isDark, theme);
 
   return (
@@ -316,6 +353,14 @@ export const MonthlyBudgetScreen = () => {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        scrollEnabled={true}
+        refreshControl={
+          <CustomRefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            color={theme.primary}
+          />
+        }
       >
         {/* Header Section */}
         <View style={styles.headerSection}>
@@ -329,7 +374,10 @@ export const MonthlyBudgetScreen = () => {
             </View>
             {(activeTab === "expenses" || activeTab === "income") && (
               <TouchableOpacity
-                style={[styles.filterButton, showFilters && styles.filterButtonActive]}
+                style={[
+                  styles.filterButton,
+                  showFilters && styles.filterButtonActive,
+                ]}
                 onPress={() => setShowFilters(!showFilters)}
                 activeOpacity={0.7}
               >
@@ -347,11 +395,19 @@ export const MonthlyBudgetScreen = () => {
             <View style={styles.actionsRow}>
               <TouchableOpacity
                 style={styles.actionButtonFull}
-                onPress={() => activeTab === "income" ? setShowIncomeForm(true) : setShowExpenseForm(true)}
+                onPress={() =>
+                  activeTab === "income"
+                    ? setShowIncomeForm(true)
+                    : setShowExpenseForm(true)
+                }
                 activeOpacity={0.7}
               >
                 <LinearGradient
-                  colors={activeTab === "income" ? gradientColors.emerald : gradientColors.teal}
+                  colors={
+                    activeTab === "income"
+                      ? gradientColors.emerald
+                      : gradientColors.teal
+                  }
                   style={styles.actionButtonGradient}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
@@ -367,31 +423,73 @@ export const MonthlyBudgetScreen = () => {
                 disabled={cloneMutation.isPending}
                 activeOpacity={0.7}
               >
-                <View style={[styles.actionButtonFullInner, { backgroundColor: theme.primaryBg, borderColor: theme.primaryBorder }]}>
-                  <Ionicons name="copy-outline" size={18} color={theme.primary} />
-                  <Text style={[styles.actionButtonFullText, { color: theme.primary }]}>Clone</Text>
+                <View
+                  style={[
+                    styles.actionButtonFullInner,
+                    {
+                      backgroundColor: theme.primaryBg,
+                      borderColor: theme.primaryBorder,
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name="copy-outline"
+                    size={18}
+                    color={theme.primary}
+                  />
+                  <Text
+                    style={[
+                      styles.actionButtonFullText,
+                      { color: theme.primary },
+                    ]}
+                  >
+                    Clone
+                  </Text>
                 </View>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.actionButtonFull}
                 onPress={handleToggleMonthStatus}
-                disabled={closeMonthMutation.isPending || openMonthMutation.isPending}
+                disabled={
+                  closeMonthMutation.isPending || openMonthMutation.isPending
+                }
                 activeOpacity={0.7}
               >
-                <View style={[
-                  styles.actionButtonFullInner,
-                  {
-                    backgroundColor: selectedMonth?.is_closed ? theme.warningBg : theme.successBg,
-                    borderColor: selectedMonth?.is_closed ? theme.warningBorder : theme.successBorder
-                  }
-                ]}>
+                <View
+                  style={[
+                    styles.actionButtonFullInner,
+                    {
+                      backgroundColor: selectedMonth?.is_closed
+                        ? theme.warningBg
+                        : theme.successBg,
+                      borderColor: selectedMonth?.is_closed
+                        ? theme.warningBorder
+                        : theme.successBorder,
+                    },
+                  ]}
+                >
                   <Ionicons
-                    name={selectedMonth?.is_closed ? "lock-open-outline" : "lock-closed-outline"}
+                    name={
+                      selectedMonth?.is_closed
+                        ? "lock-open-outline"
+                        : "lock-closed-outline"
+                    }
                     size={18}
-                    color={selectedMonth?.is_closed ? theme.warning : theme.success}
+                    color={
+                      selectedMonth?.is_closed ? theme.warning : theme.success
+                    }
                   />
-                  <Text style={[styles.actionButtonFullText, { color: selectedMonth?.is_closed ? theme.warning : theme.success }]}>
+                  <Text
+                    style={[
+                      styles.actionButtonFullText,
+                      {
+                        color: selectedMonth?.is_closed
+                          ? theme.warning
+                          : theme.success,
+                      },
+                    ]}
+                  >
                     {selectedMonth?.is_closed ? "Open" : "Close"}
                   </Text>
                 </View>
@@ -403,28 +501,48 @@ export const MonthlyBudgetScreen = () => {
                 disabled={deleteMonthMutation.isPending}
                 activeOpacity={0.7}
               >
-                <View style={[styles.actionButtonFullInner, { backgroundColor: theme.dangerBg, borderColor: theme.dangerBorder }]}>
-                  <Ionicons name="trash-outline" size={18} color={theme.danger} />
-                  <Text style={[styles.actionButtonFullText, { color: theme.danger }]}>Delete</Text>
+                <View
+                  style={[
+                    styles.actionButtonFullInner,
+                    {
+                      backgroundColor: theme.dangerBg,
+                      borderColor: theme.dangerBorder,
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name="trash-outline"
+                    size={18}
+                    color={theme.danger}
+                  />
+                  <Text
+                    style={[
+                      styles.actionButtonFullText,
+                      { color: theme.danger },
+                    ]}
+                  >
+                    Delete
+                  </Text>
                 </View>
               </TouchableOpacity>
             </View>
           )}
 
           {/* Filter Bar */}
-          {showFilters && (activeTab === "expenses" || activeTab === "income") && (
-            <FilterBar
-              periods={periods || []}
-              categories={categories || []}
-              selectedPeriod={selectedPeriod}
-              selectedCategory={selectedCategory}
-              onPeriodChange={setSelectedPeriod}
-              onCategoryChange={setSelectedCategory}
-              showCategoryFilter={activeTab === "expenses"}
-              showFilters={showFilters}
-              onToggleFilters={() => setShowFilters(!showFilters)}
-            />
-          )}
+          {showFilters &&
+            (activeTab === "expenses" || activeTab === "income") && (
+              <FilterBar
+                periods={periods || []}
+                categories={categories || []}
+                selectedPeriod={selectedPeriod}
+                selectedCategory={selectedCategory}
+                onPeriodChange={setSelectedPeriod}
+                onCategoryChange={setSelectedCategory}
+                showCategoryFilter={activeTab === "expenses"}
+                showFilters={showFilters}
+                onToggleFilters={() => setShowFilters(!showFilters)}
+              />
+            )}
         </View>
 
         {/* Tabs */}
@@ -573,7 +691,9 @@ const ExpenseList = ({
         onPress={onAdd}
         activeOpacity={0.7}
       >
-        <View style={[styles.addButtonIcon, { backgroundColor: theme.dangerBg }]}>
+        <View
+          style={[styles.addButtonIcon, { backgroundColor: theme.dangerBg }]}
+        >
           <Ionicons name="wallet-outline" size={20} color={theme.danger} />
         </View>
         <Text style={styles.addButtonText}>Add Expense</Text>
@@ -595,11 +715,19 @@ const ExpenseList = ({
           const categoryColor = getCategoryColor(expense.category);
           const periodColor = getPeriodColor(expense.period);
           const isOnBudget = expense.cost <= expense.budget;
-          const progress = expense.budget > 0 ? Math.min((expense.cost / expense.budget) * 100, 100) : 0;
+          const progress =
+            expense.budget > 0
+              ? Math.min((expense.cost / expense.budget) * 100, 100)
+              : 0;
 
           return (
             <View key={expense.id} style={styles.listItem}>
-              <View style={[styles.listItemAccent, { backgroundColor: categoryColor }]} />
+              <View
+                style={[
+                  styles.listItemAccent,
+                  { backgroundColor: categoryColor },
+                ]}
+              />
               <View style={styles.listItemContent}>
                 <View style={styles.listItemHeader}>
                   <Text style={styles.listItemTitle} numberOfLines={1}>
@@ -626,19 +754,23 @@ const ExpenseList = ({
                     <Text
                       style={[
                         styles.chipText,
-                        { color: isDarkColor(categoryColor) ? "#fff" : "#0f172a" },
+                        {
+                          color: isDarkColor(categoryColor)
+                            ? "#fff"
+                            : "#0f172a",
+                        },
                       ]}
                     >
                       {expense.category}
                     </Text>
                   </View>
-                  <View
-                    style={[styles.chip, { backgroundColor: periodColor }]}
-                  >
+                  <View style={[styles.chip, { backgroundColor: periodColor }]}>
                     <Text
                       style={[
                         styles.chipText,
-                        { color: isDarkColor(periodColor) ? "#fff" : "#0f172a" },
+                        {
+                          color: isDarkColor(periodColor) ? "#fff" : "#0f172a",
+                        },
                       ]}
                     >
                       {expense.period}
@@ -654,18 +786,27 @@ const ExpenseList = ({
                         styles.progressFill,
                         {
                           width: `${progress}%`,
-                          backgroundColor: isOnBudget ? theme.success : theme.danger,
+                          backgroundColor: isOnBudget
+                            ? theme.success
+                            : theme.danger,
                         },
                       ]}
                     />
                   </View>
-                  <Text style={styles.progressText}>{progress.toFixed(0)}%</Text>
+                  <Text style={styles.progressText}>
+                    {progress.toFixed(0)}%
+                  </Text>
                 </View>
 
                 <View style={styles.amountRow}>
                   <View>
                     <Text style={styles.amountLabel}>Spent</Text>
-                    <Text style={[styles.listItemAmount, { color: isOnBudget ? theme.text : theme.danger }]}>
+                    <Text
+                      style={[
+                        styles.listItemAmount,
+                        { color: isOnBudget ? theme.text : theme.danger },
+                      ]}
+                    >
                       {formatCurrency(expense.cost)}
                     </Text>
                   </View>
@@ -680,25 +821,38 @@ const ExpenseList = ({
               </View>
               <View style={styles.listItemActions}>
                 <TouchableOpacity
-                  style={[styles.actionIcon, { backgroundColor: theme.successBg }]}
+                  style={[
+                    styles.actionIcon,
+                    { backgroundColor: theme.successBg },
+                  ]}
                   onPress={() => onPay(expense)}
                   activeOpacity={0.7}
                 >
                   <Ionicons
-                    name={expense.purchases && expense.purchases.length > 0 ? "add-circle-outline" : "card-outline"}
+                    name={
+                      expense.purchases && expense.purchases.length > 0
+                        ? "add-circle-outline"
+                        : "card-outline"
+                    }
                     size={16}
                     color={theme.success}
                   />
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.actionIcon, { backgroundColor: theme.primaryBg }]}
+                  style={[
+                    styles.actionIcon,
+                    { backgroundColor: theme.primaryBg },
+                  ]}
                   onPress={() => onEdit(expense)}
                   activeOpacity={0.7}
                 >
                   <Ionicons name="pencil" size={14} color={theme.primary} />
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.actionIcon, { backgroundColor: theme.dangerBg }]}
+                  style={[
+                    styles.actionIcon,
+                    { backgroundColor: theme.dangerBg },
+                  ]}
                   onPress={() => onDelete(expense.id)}
                   activeOpacity={0.7}
                 >
@@ -774,8 +928,14 @@ const IncomeList = ({
         onPress={onAdd}
         activeOpacity={0.7}
       >
-        <View style={[styles.addButtonIcon, { backgroundColor: theme.successBg }]}>
-          <Ionicons name="trending-up-outline" size={20} color={theme.success} />
+        <View
+          style={[styles.addButtonIcon, { backgroundColor: theme.successBg }]}
+        >
+          <Ionicons
+            name="trending-up-outline"
+            size={20}
+            color={theme.success}
+          />
         </View>
         <Text style={styles.addButtonText}>Add Income</Text>
         <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
@@ -795,11 +955,19 @@ const IncomeList = ({
         incomes.map((income: Income) => {
           const incomeTypeColor = getIncomeTypeColor(income.income_type_id);
           const periodColor = getPeriodColor(income.period);
-          const progress = income.budget > 0 ? Math.min((income.amount / income.budget) * 100, 100) : 0;
+          const progress =
+            income.budget > 0
+              ? Math.min((income.amount / income.budget) * 100, 100)
+              : 0;
 
           return (
             <View key={income.id} style={styles.listItem}>
-              <View style={[styles.listItemAccent, { backgroundColor: theme.success }]} />
+              <View
+                style={[
+                  styles.listItemAccent,
+                  { backgroundColor: theme.success },
+                ]}
+              />
               <View style={styles.listItemContent}>
                 <View style={styles.listItemHeader}>
                   <Text style={styles.listItemTitle} numberOfLines={1}>
@@ -814,19 +982,23 @@ const IncomeList = ({
                     <Text
                       style={[
                         styles.chipText,
-                        { color: isDarkColor(incomeTypeColor) ? "#fff" : "#0f172a" },
+                        {
+                          color: isDarkColor(incomeTypeColor)
+                            ? "#fff"
+                            : "#0f172a",
+                        },
                       ]}
                     >
                       {getIncomeTypeName(income.income_type_id)}
                     </Text>
                   </View>
-                  <View
-                    style={[styles.chip, { backgroundColor: periodColor }]}
-                  >
+                  <View style={[styles.chip, { backgroundColor: periodColor }]}>
                     <Text
                       style={[
                         styles.chipText,
-                        { color: isDarkColor(periodColor) ? "#fff" : "#0f172a" },
+                        {
+                          color: isDarkColor(periodColor) ? "#fff" : "#0f172a",
+                        },
                       ]}
                     >
                       {income.period}
@@ -847,13 +1019,17 @@ const IncomeList = ({
                       ]}
                     />
                   </View>
-                  <Text style={styles.progressText}>{progress.toFixed(0)}%</Text>
+                  <Text style={styles.progressText}>
+                    {progress.toFixed(0)}%
+                  </Text>
                 </View>
 
                 <View style={styles.amountRow}>
                   <View>
                     <Text style={styles.amountLabel}>Received</Text>
-                    <Text style={[styles.listItemAmount, { color: theme.success }]}>
+                    <Text
+                      style={[styles.listItemAmount, { color: theme.success }]}
+                    >
                       {formatCurrency(income.amount)}
                     </Text>
                   </View>
@@ -868,14 +1044,20 @@ const IncomeList = ({
               </View>
               <View style={styles.listItemActions}>
                 <TouchableOpacity
-                  style={[styles.actionIcon, { backgroundColor: theme.primaryBg }]}
+                  style={[
+                    styles.actionIcon,
+                    { backgroundColor: theme.primaryBg },
+                  ]}
                   onPress={() => onEdit(income)}
                   activeOpacity={0.7}
                 >
                   <Ionicons name="pencil" size={14} color={theme.primary} />
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.actionIcon, { backgroundColor: theme.dangerBg }]}
+                  style={[
+                    styles.actionIcon,
+                    { backgroundColor: theme.dangerBg },
+                  ]}
                   onPress={() => onDelete(income.id)}
                   activeOpacity={0.7}
                 >
@@ -900,7 +1082,7 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       flex: 1,
     },
     scrollContent: {
-      flexGrow: 1,
+      paddingBottom: 200,
     },
     headerSection: {
       padding: 16,
@@ -911,8 +1093,8 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       gap: 12,
     },
     headerRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       gap: 10,
     },
     monthSelectorContainer: {
@@ -974,7 +1156,10 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
     },
   });
 
-const getListStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
+const getListStyles = (
+  isDark: boolean,
+  theme: ReturnType<typeof getThemeColors>
+) =>
   StyleSheet.create({
     listContainer: {
       gap: 12,
@@ -1056,9 +1241,9 @@ const getListStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>
       gap: 10,
     },
     listItemHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
     },
     listItemTitle: {
       fontSize: 16,
@@ -1095,8 +1280,8 @@ const getListStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>
       fontWeight: "600",
     },
     progressContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       gap: 8,
     },
     progressBar: {
@@ -1104,18 +1289,18 @@ const getListStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>
       height: 5,
       backgroundColor: theme.divider,
       borderRadius: 3,
-      overflow: 'hidden',
+      overflow: "hidden",
     },
     progressFill: {
-      height: '100%',
+      height: "100%",
       borderRadius: 3,
     },
     progressText: {
       fontSize: 10,
-      fontWeight: '600',
+      fontWeight: "600",
       color: theme.textSecondary,
       width: 32,
-      textAlign: 'right',
+      textAlign: "right",
     },
     amountRow: {
       flexDirection: "row",
@@ -1124,8 +1309,8 @@ const getListStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>
     amountLabel: {
       fontSize: 10,
       color: theme.textMuted,
-      textTransform: 'uppercase',
-      fontWeight: '600',
+      textTransform: "uppercase",
+      fontWeight: "600",
       letterSpacing: 0.5,
       marginBottom: 2,
     },
@@ -1142,13 +1327,13 @@ const getListStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>
     listItemBudget: {
       fontSize: 14,
       color: theme.textSecondary,
-      fontWeight: '500',
+      fontWeight: "500",
     },
     listItemActions: {
       flexDirection: "column",
       gap: 6,
       padding: 10,
-      justifyContent: 'center',
+      justifyContent: "center",
     },
     actionIcon: {
       width: 32,

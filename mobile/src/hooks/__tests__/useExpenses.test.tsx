@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import React from 'react';
-import { renderHook, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import React from "react";
+import { renderHook, waitFor, act } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   useExpenses,
   useExpense,
@@ -10,12 +10,19 @@ import {
   useDeleteExpense,
   useCloneExpensesToNextMonth,
   usePayExpense,
-} from '../useExpenses';
-import { expensesApi } from '../../api/client';
-import type { Expense, ExpenseCreate, ExpenseUpdate, ExpenseFilters, PayExpenseRequest } from '../../types';
+  useRefreshBudgetData,
+} from "../useExpenses";
+import { expensesApi } from "../../api/client";
+import type {
+  Expense,
+  ExpenseCreate,
+  ExpenseUpdate,
+  ExpenseFilters,
+  PayExpenseRequest,
+} from "../../types";
 
 // Mock the API client
-vi.mock('../../api/client', () => ({
+vi.mock("../../api/client", () => ({
   expensesApi: {
     getAll: vi.fn(),
     getById: vi.fn(),
@@ -39,21 +46,21 @@ const createWrapper = () => {
   );
 };
 
-describe('useExpenses', () => {
+describe("useExpenses", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should fetch expenses successfully without filters', async () => {
+  it("should fetch expenses successfully without filters", async () => {
     const mockExpenses: Expense[] = [
       {
         id: 1,
-        expense_name: 'Grocery Shopping',
-        period: 'Fixed',
-        category: 'Groceries',
+        expense_name: "Grocery Shopping",
+        period: "Fixed",
+        category: "Groceries",
         budget: 500,
         cost: 450,
-        notes: 'Weekly shopping',
+        notes: "Weekly shopping",
         month_id: 1,
         purchases: null,
       },
@@ -73,13 +80,13 @@ describe('useExpenses', () => {
     expect(expensesApi.getAll).toHaveBeenCalledWith({});
   });
 
-  it('should fetch expenses with filters', async () => {
+  it("should fetch expenses with filters", async () => {
     const mockExpenses: Expense[] = [
       {
         id: 1,
-        expense_name: 'Grocery Shopping',
-        period: 'Fixed',
-        category: 'Groceries',
+        expense_name: "Grocery Shopping",
+        period: "Fixed",
+        category: "Groceries",
         budget: 500,
         cost: 450,
         notes: null,
@@ -89,8 +96,8 @@ describe('useExpenses', () => {
     ];
 
     const filters: ExpenseFilters = {
-      period: 'Fixed',
-      category: 'Groceries',
+      period: "Fixed",
+      category: "Groceries",
       month_id: 1,
     };
 
@@ -108,8 +115,8 @@ describe('useExpenses', () => {
     expect(expensesApi.getAll).toHaveBeenCalledWith(filters);
   });
 
-  it('should handle error when fetching expenses', async () => {
-    const error = new Error('Failed to fetch');
+  it("should handle error when fetching expenses", async () => {
+    const error = new Error("Failed to fetch");
     vi.mocked(expensesApi.getAll).mockRejectedValue(error);
 
     const { result } = renderHook(() => useExpenses(), {
@@ -122,20 +129,20 @@ describe('useExpenses', () => {
   });
 });
 
-describe('useExpense', () => {
+describe("useExpense", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should fetch single expense successfully', async () => {
+  it("should fetch single expense successfully", async () => {
     const mockExpense: Expense = {
       id: 1,
-      expense_name: 'Grocery Shopping',
-      period: 'Fixed',
-      category: 'Groceries',
+      expense_name: "Grocery Shopping",
+      period: "Fixed",
+      category: "Groceries",
       budget: 500,
       cost: 450,
-      notes: 'Weekly shopping',
+      notes: "Weekly shopping",
       month_id: 1,
       purchases: null,
     };
@@ -154,7 +161,7 @@ describe('useExpense', () => {
     expect(expensesApi.getById).toHaveBeenCalledWith(1);
   });
 
-  it('should not fetch when id is 0', async () => {
+  it("should not fetch when id is 0", async () => {
     const { result } = renderHook(() => useExpense(0), {
       wrapper: createWrapper(),
     });
@@ -166,8 +173,8 @@ describe('useExpense', () => {
     expect(result.current.isFetching).toBe(false);
   });
 
-  it('should handle error when fetching expense', async () => {
-    const error = new Error('Failed to fetch');
+  it("should handle error when fetching expense", async () => {
+    const error = new Error("Failed to fetch");
     vi.mocked(expensesApi.getById).mockRejectedValue(error);
 
     const { result } = renderHook(() => useExpense(1), {
@@ -180,19 +187,19 @@ describe('useExpense', () => {
   });
 });
 
-describe('useCreateExpense', () => {
+describe("useCreateExpense", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should create expense successfully', async () => {
+  it("should create expense successfully", async () => {
     const newExpense: ExpenseCreate = {
-      expense_name: 'New Expense',
-      period: 'Fixed',
-      category: 'Groceries',
+      expense_name: "New Expense",
+      period: "Fixed",
+      category: "Groceries",
       budget: 300,
       cost: 250,
-      notes: 'Test expense',
+      notes: "Test expense",
       month_id: 1,
       purchases: null,
     };
@@ -218,17 +225,17 @@ describe('useCreateExpense', () => {
     expect(expensesApi.create).toHaveBeenCalledWith(newExpense);
   });
 
-  it('should handle error when creating expense', async () => {
+  it("should handle error when creating expense", async () => {
     const newExpense: ExpenseCreate = {
-      expense_name: 'New Expense',
-      period: 'Fixed',
-      category: 'Groceries',
+      expense_name: "New Expense",
+      period: "Fixed",
+      category: "Groceries",
       budget: 300,
       cost: 250,
       month_id: 1,
     };
 
-    const error = new Error('Failed to create');
+    const error = new Error("Failed to create");
     vi.mocked(expensesApi.create).mockRejectedValue(error);
 
     const { result } = renderHook(() => useCreateExpense(), {
@@ -243,22 +250,22 @@ describe('useCreateExpense', () => {
   });
 });
 
-describe('useUpdateExpense', () => {
+describe("useUpdateExpense", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should update expense successfully', async () => {
+  it("should update expense successfully", async () => {
     const updateData: ExpenseUpdate = {
-      expense_name: 'Updated Expense',
+      expense_name: "Updated Expense",
       cost: 300,
     };
 
     const updatedExpense: Expense = {
       id: 1,
-      expense_name: 'Updated Expense',
-      period: 'Fixed',
-      category: 'Groceries',
+      expense_name: "Updated Expense",
+      period: "Fixed",
+      category: "Groceries",
       budget: 500,
       cost: 300,
       notes: null,
@@ -282,12 +289,12 @@ describe('useUpdateExpense', () => {
     expect(expensesApi.update).toHaveBeenCalledWith(1, updateData);
   });
 
-  it('should handle error when updating expense', async () => {
+  it("should handle error when updating expense", async () => {
     const updateData: ExpenseUpdate = {
       cost: 300,
     };
 
-    const error = new Error('Failed to update');
+    const error = new Error("Failed to update");
     vi.mocked(expensesApi.update).mockRejectedValue(error);
 
     const { result } = renderHook(() => useUpdateExpense(), {
@@ -302,12 +309,12 @@ describe('useUpdateExpense', () => {
   });
 });
 
-describe('useDeleteExpense', () => {
+describe("useDeleteExpense", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should delete expense successfully', async () => {
+  it("should delete expense successfully", async () => {
     vi.mocked(expensesApi.delete).mockResolvedValue({} as any);
 
     const { result } = renderHook(() => useDeleteExpense(), {
@@ -321,8 +328,8 @@ describe('useDeleteExpense', () => {
     expect(expensesApi.delete).toHaveBeenCalledWith(1);
   });
 
-  it('should handle error when deleting expense', async () => {
-    const error = new Error('Failed to delete');
+  it("should handle error when deleting expense", async () => {
+    const error = new Error("Failed to delete");
     vi.mocked(expensesApi.delete).mockRejectedValue(error);
 
     const { result } = renderHook(() => useDeleteExpense(), {
@@ -337,18 +344,18 @@ describe('useDeleteExpense', () => {
   });
 });
 
-describe('useCloneExpensesToNextMonth', () => {
+describe("useCloneExpensesToNextMonth", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should clone expenses to next month successfully', async () => {
+  it("should clone expenses to next month successfully", async () => {
     const mockResponse = {
-      message: 'Successfully cloned 3 expenses to December 2024',
+      message: "Successfully cloned 3 expenses to December 2024",
       cloned_count: 3,
       cloned_income_count: 0,
       next_month_id: 2,
-      next_month_name: 'December 2024',
+      next_month_name: "December 2024",
     };
 
     vi.mocked(expensesApi.cloneToNextMonth).mockResolvedValue({
@@ -367,8 +374,8 @@ describe('useCloneExpensesToNextMonth', () => {
     expect(expensesApi.cloneToNextMonth).toHaveBeenCalledWith(1);
   });
 
-  it('should handle error when cloning expenses', async () => {
-    const error = new Error('Failed to clone');
+  it("should handle error when cloning expenses", async () => {
+    const error = new Error("Failed to clone");
     vi.mocked(expensesApi.cloneToNextMonth).mockRejectedValue(error);
 
     const { result } = renderHook(() => useCloneExpensesToNextMonth(), {
@@ -383,21 +390,21 @@ describe('useCloneExpensesToNextMonth', () => {
   });
 });
 
-describe('usePayExpense', () => {
+describe("usePayExpense", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should pay expense successfully', async () => {
+  it("should pay expense successfully", async () => {
     const payData: PayExpenseRequest = {
       amount: 100,
     };
 
     const paidExpense: Expense = {
       id: 1,
-      expense_name: 'Grocery Shopping',
-      period: 'Fixed',
-      category: 'Groceries',
+      expense_name: "Grocery Shopping",
+      period: "Fixed",
+      category: "Groceries",
       budget: 500,
       cost: 100,
       notes: null,
@@ -421,12 +428,12 @@ describe('usePayExpense', () => {
     expect(expensesApi.pay).toHaveBeenCalledWith(1, payData);
   });
 
-  it('should pay expense without data', async () => {
+  it("should pay expense without data", async () => {
     const paidExpense: Expense = {
       id: 1,
-      expense_name: 'Grocery Shopping',
-      period: 'Fixed',
-      category: 'Groceries',
+      expense_name: "Grocery Shopping",
+      period: "Fixed",
+      category: "Groceries",
       budget: 500,
       cost: 500,
       notes: null,
@@ -450,12 +457,12 @@ describe('usePayExpense', () => {
     expect(expensesApi.pay).toHaveBeenCalledWith(1, undefined);
   });
 
-  it('should handle error when paying expense', async () => {
+  it("should handle error when paying expense", async () => {
     const payData: PayExpenseRequest = {
       amount: 100,
     };
 
-    const error = new Error('Failed to pay');
+    const error = new Error("Failed to pay");
     vi.mocked(expensesApi.pay).mockRejectedValue(error);
 
     const { result } = renderHook(() => usePayExpense(), {
@@ -470,3 +477,100 @@ describe('usePayExpense', () => {
   });
 });
 
+describe("useRefreshBudgetData", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("should return refresh function and isRefreshing state", () => {
+    const { result } = renderHook(() => useRefreshBudgetData(), {
+      wrapper: createWrapper(),
+    });
+
+    expect(result.current).toHaveProperty("refresh");
+    expect(result.current).toHaveProperty("isRefreshing");
+    expect(result.current.isRefreshing).toBe(false);
+    expect(typeof result.current.refresh).toBe("function");
+  });
+
+  it("should set isRefreshing to true when refresh starts", async () => {
+    const { result } = renderHook(() => useRefreshBudgetData(), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      const refreshPromise = result.current.refresh();
+      await vi.runAllTimersAsync();
+      await refreshPromise;
+    });
+
+    expect(result.current.isRefreshing).toBe(false);
+  });
+
+  it("should invalidate and refetch all query keys", async () => {
+    const { result } = renderHook(() => useRefreshBudgetData(), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      const refreshPromise = result.current.refresh();
+      await vi.runAllTimersAsync();
+      await refreshPromise;
+    });
+
+    expect(result.current.isRefreshing).toBe(false);
+  });
+
+  it("should handle errors and reset isRefreshing", async () => {
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+
+    const { result } = renderHook(() => useRefreshBudgetData(), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      const refreshPromise = result.current.refresh();
+      await vi.runAllTimersAsync();
+      await refreshPromise;
+    });
+
+    expect(result.current.isRefreshing).toBe(false);
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  it("should wait minimum 500ms before completing", async () => {
+    const { result } = renderHook(() => useRefreshBudgetData(), {
+      wrapper: createWrapper(),
+    });
+
+    let refreshPromise: Promise<void>;
+    await act(async () => {
+      refreshPromise = result.current.refresh();
+    });
+
+    // Check that it's refreshing immediately after starting
+    expect(result.current.isRefreshing).toBe(true);
+
+    await act(async () => {
+      // Advance 400ms - should still be refreshing
+      await vi.advanceTimersByTimeAsync(400);
+    });
+    expect(result.current.isRefreshing).toBe(true);
+
+    await act(async () => {
+      // Advance remaining 100ms and wait for completion
+      await vi.advanceTimersByTimeAsync(100);
+      await refreshPromise!;
+    });
+
+    expect(result.current.isRefreshing).toBe(false);
+  });
+});

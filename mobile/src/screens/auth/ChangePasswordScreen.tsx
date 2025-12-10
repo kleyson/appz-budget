@@ -241,7 +241,8 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
     },
     scrollContent: {
       flexGrow: 1,
-      padding: 0,
+      padding: 16,
+      paddingBottom: 200,
     },
     content: {
       width: "100%",

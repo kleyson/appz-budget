@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { View, FlatList, Alert, StyleSheet } from "react-native";
 import { useTheme } from "../../contexts/ThemeContext";
 import {
@@ -6,6 +6,7 @@ import {
   useCreateIncomeType,
   useUpdateIncomeType,
   useDeleteIncomeType,
+  useRefreshIncomeTypes,
 } from "../../hooks/useIncomeTypes";
 import type { IncomeType } from "../../types";
 import { getErrorMessage } from "../../utils/errorHandler";
@@ -17,18 +18,22 @@ import {
   ListItem,
   AddButton,
   LoadingState,
+  CustomRefreshControl,
 } from "../../components/shared";
 
 export const IncomeTypeManagement = () => {
   const { isDark } = useTheme();
   const theme = getThemeColors(isDark);
+  const { refresh: refreshIncomeTypes, isRefreshing } = useRefreshIncomeTypes();
   const { data: incomeTypes, isLoading } = useIncomeTypes();
   const createMutation = useCreateIncomeType();
   const updateMutation = useUpdateIncomeType();
   const deleteMutation = useDeleteIncomeType();
 
   const [showForm, setShowForm] = useState(false);
-  const [editingIncomeType, setEditingIncomeType] = useState<IncomeType | null>(null);
+  const [editingIncomeType, setEditingIncomeType] = useState<IncomeType | null>(
+    null
+  );
   const [name, setName] = useState("");
   const [color, setColor] = useState("#10b981");
 
@@ -49,7 +54,10 @@ export const IncomeTypeManagement = () => {
       }
       closeForm();
     } catch (error: unknown) {
-      Alert.alert("Error", getErrorMessage(error, "Failed to save income type"));
+      Alert.alert(
+        "Error",
+        getErrorMessage(error, "Failed to save income type")
+      );
     }
   };
 
@@ -94,19 +102,37 @@ export const IncomeTypeManagement = () => {
     setEditingIncomeType(null);
   };
 
+  const handleRefresh = useCallback(() => {
+    refreshIncomeTypes();
+  }, [refreshIncomeTypes]);
+
   if (isLoading) {
     return <LoadingState />;
   }
 
   return (
     <View style={styles.container}>
-      <AddButton label="Add Income Type" onPress={() => openForm()} variant="success" />
-
       <FlatList
+        style={styles.list}
         data={incomeTypes || []}
         keyExtractor={(item) => item.id.toString()}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
+        ListHeaderComponent={
+          <AddButton
+            label="Add Income Type"
+            onPress={() => openForm()}
+            variant="success"
+            style={styles.addButton}
+          />
+        }
+        refreshControl={
+          <CustomRefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            color={theme.primary}
+          />
+        }
         renderItem={({ item }) => (
           <ListItem
             name={item.name}
@@ -144,7 +170,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  list: {
+    flex: 1,
+  },
+  addButton: {
+    marginBottom: 12,
+  },
   listContent: {
+    padding: 16,
+    paddingBottom: 200,
     gap: 10,
   },
 });

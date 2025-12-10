@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { View, FlatList, Alert, StyleSheet } from "react-native";
 import { useTheme } from "../../contexts/ThemeContext";
 import {
@@ -6,6 +6,7 @@ import {
   useCreateCategory,
   useUpdateCategory,
   useDeleteCategory,
+  useRefreshCategories,
 } from "../../hooks/useCategories";
 import type { Category } from "../../types";
 import { getErrorMessage } from "../../utils/errorHandler";
@@ -17,11 +18,13 @@ import {
   ListItem,
   AddButton,
   LoadingState,
+  CustomRefreshControl,
 } from "../../components/shared";
 
 export const CategoryManagement = () => {
   const { isDark } = useTheme();
   const theme = getThemeColors(isDark);
+  const { refresh: refreshCategories, isRefreshing } = useRefreshCategories();
   const { data: categories, isLoading } = useCategories();
   const createMutation = useCreateCategory();
   const updateMutation = useUpdateCategory();
@@ -94,19 +97,36 @@ export const CategoryManagement = () => {
     setEditingCategory(null);
   };
 
+  const handleRefresh = useCallback(() => {
+    refreshCategories();
+  }, [refreshCategories]);
+
   if (isLoading) {
     return <LoadingState />;
   }
 
   return (
     <View style={styles.container}>
-      <AddButton label="Add Category" onPress={() => openForm()} />
-
       <FlatList
+        style={styles.list}
         data={categories || []}
         keyExtractor={(item) => item.id.toString()}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
+        ListHeaderComponent={
+          <AddButton
+            label="Add Category"
+            onPress={() => openForm()}
+            style={styles.addButton}
+          />
+        }
+        refreshControl={
+          <CustomRefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            color={theme.primary}
+          />
+        }
         renderItem={({ item }) => (
           <ListItem
             name={item.name}
@@ -144,7 +164,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  list: {
+    flex: 1,
+  },
+  addButton: {
+    marginBottom: 12,
+  },
   listContent: {
+    padding: 16,
+    paddingBottom: 200,
     gap: 10,
   },
 });

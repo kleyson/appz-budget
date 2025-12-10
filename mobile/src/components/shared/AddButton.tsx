@@ -1,5 +1,5 @@
 import React from "react";
-import { TouchableOpacity, View, Text, StyleSheet } from "react-native";
+import { TouchableOpacity, View, Text, StyleSheet, ViewStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../contexts/ThemeContext";
 import { getThemeColors, radius, spacing } from "../../utils/colors";
@@ -11,6 +11,7 @@ interface AddButtonProps {
   onPress: () => void;
   variant?: AddButtonVariant;
   icon?: keyof typeof Ionicons.glyphMap;
+  style?: ViewStyle;
 }
 
 export const AddButton = ({
@@ -18,6 +19,7 @@ export const AddButton = ({
   onPress,
   variant = "primary",
   icon = "add",
+  style,
 }: AddButtonProps) => {
   const { isDark } = useTheme();
   const theme = getThemeColors(isDark);
@@ -51,6 +53,7 @@ export const AddButton = ({
       style={[
         styles.container,
         { backgroundColor: colors.bg, borderColor: colors.border },
+        style,
       ]}
       onPress={onPress}
       activeOpacity={0.7}

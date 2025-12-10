@@ -1,13 +1,19 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import React from 'react';
-import { renderHook, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useUsers, useCreateUser, useUpdateUser, useDeleteUser } from '../useUsers';
-import { usersApi } from '../../api/client';
-import type { User, UserRegister } from '../../types';
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import React from "react";
+import { renderHook, waitFor, act } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  useUsers,
+  useCreateUser,
+  useUpdateUser,
+  useDeleteUser,
+  useRefreshUsers,
+} from "../useUsers";
+import { usersApi } from "../../api/client";
+import type { User, UserRegister } from "../../types";
 
 // Mock the API client
-vi.mock('../../api/client', () => ({
+vi.mock("../../api/client", () => ({
   usersApi: {
     getAll: vi.fn(),
     create: vi.fn(),
@@ -28,24 +34,24 @@ const createWrapper = () => {
   );
 };
 
-describe('useUsers', () => {
+describe("useUsers", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should fetch users successfully', async () => {
+  it("should fetch users successfully", async () => {
     const mockUsers: User[] = [
       {
         id: 1,
-        email: 'user1@example.com',
-        full_name: 'User One',
+        email: "user1@example.com",
+        full_name: "User One",
         is_active: true,
         is_admin: false,
       },
       {
         id: 2,
-        email: 'user2@example.com',
-        full_name: 'User Two',
+        email: "user2@example.com",
+        full_name: "User Two",
         is_active: false,
         is_admin: false,
       },
@@ -65,8 +71,8 @@ describe('useUsers', () => {
     expect(usersApi.getAll).toHaveBeenCalledOnce();
   });
 
-  it('should handle error when fetching users', async () => {
-    const error = new Error('Failed to fetch');
+  it("should handle error when fetching users", async () => {
+    const error = new Error("Failed to fetch");
     vi.mocked(usersApi.getAll).mockRejectedValue(error);
 
     const { result } = renderHook(() => useUsers(), {
@@ -79,23 +85,23 @@ describe('useUsers', () => {
   });
 });
 
-describe('useCreateUser', () => {
+describe("useCreateUser", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should create user successfully', async () => {
+  it("should create user successfully", async () => {
     const newUser: UserRegister & { is_active?: boolean } = {
-      email: 'newuser@example.com',
-      password: 'securepassword123',
-      full_name: 'New User',
+      email: "newuser@example.com",
+      password: "securepassword123",
+      full_name: "New User",
       is_active: true,
     };
 
     const createdUser: User = {
       id: 3,
-      email: 'newuser@example.com',
-      full_name: 'New User',
+      email: "newuser@example.com",
+      full_name: "New User",
       is_active: true,
       is_admin: false,
     };
@@ -116,13 +122,13 @@ describe('useCreateUser', () => {
     expect(usersApi.create).toHaveBeenCalledWith(newUser);
   });
 
-  it('should handle error when creating user', async () => {
+  it("should handle error when creating user", async () => {
     const newUser: UserRegister & { is_active?: boolean } = {
-      email: 'newuser@example.com',
-      password: 'securepassword123',
+      email: "newuser@example.com",
+      password: "securepassword123",
     };
 
-    const error = new Error('Failed to create');
+    const error = new Error("Failed to create");
     vi.mocked(usersApi.create).mockRejectedValue(error);
 
     const { result } = renderHook(() => useCreateUser(), {
@@ -137,22 +143,22 @@ describe('useCreateUser', () => {
   });
 });
 
-describe('useUpdateUser', () => {
+describe("useUpdateUser", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should update user successfully', async () => {
+  it("should update user successfully", async () => {
     const updateData: Partial<User> & { is_active?: boolean } = {
-      email: 'updated@example.com',
-      full_name: 'Updated Name',
+      email: "updated@example.com",
+      full_name: "Updated Name",
       is_active: false,
     };
 
     const updatedUser: User = {
       id: 1,
-      email: 'updated@example.com',
-      full_name: 'Updated Name',
+      email: "updated@example.com",
+      full_name: "Updated Name",
       is_active: false,
       is_admin: false,
     };
@@ -173,15 +179,15 @@ describe('useUpdateUser', () => {
     expect(usersApi.update).toHaveBeenCalledWith(1, updateData);
   });
 
-  it('should handle partial update', async () => {
+  it("should handle partial update", async () => {
     const updateData: Partial<User> & { is_active?: boolean } = {
-      full_name: 'Only Name Updated',
+      full_name: "Only Name Updated",
     };
 
     const updatedUser: User = {
       id: 1,
-      email: 'user1@example.com',
-      full_name: 'Only Name Updated',
+      email: "user1@example.com",
+      full_name: "Only Name Updated",
       is_active: true,
       is_admin: false,
     };
@@ -202,12 +208,12 @@ describe('useUpdateUser', () => {
     expect(usersApi.update).toHaveBeenCalledWith(1, updateData);
   });
 
-  it('should handle error when updating user', async () => {
+  it("should handle error when updating user", async () => {
     const updateData: Partial<User> & { is_active?: boolean } = {
-      email: 'updated@example.com',
+      email: "updated@example.com",
     };
 
-    const error = new Error('Failed to update');
+    const error = new Error("Failed to update");
     vi.mocked(usersApi.update).mockRejectedValue(error);
 
     const { result } = renderHook(() => useUpdateUser(), {
@@ -222,12 +228,12 @@ describe('useUpdateUser', () => {
   });
 });
 
-describe('useDeleteUser', () => {
+describe("useDeleteUser", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should delete user successfully', async () => {
+  it("should delete user successfully", async () => {
     vi.mocked(usersApi.delete).mockResolvedValue({} as any);
 
     const { result } = renderHook(() => useDeleteUser(), {
@@ -241,8 +247,8 @@ describe('useDeleteUser', () => {
     expect(usersApi.delete).toHaveBeenCalledWith(1);
   });
 
-  it('should handle error when deleting user', async () => {
-    const error = new Error('Failed to delete');
+  it("should handle error when deleting user", async () => {
+    const error = new Error("Failed to delete");
     vi.mocked(usersApi.delete).mockRejectedValue(error);
 
     const { result } = renderHook(() => useDeleteUser(), {
@@ -257,3 +263,100 @@ describe('useDeleteUser', () => {
   });
 });
 
+describe("useRefreshUsers", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("should return refresh function and isRefreshing state", () => {
+    const { result } = renderHook(() => useRefreshUsers(), {
+      wrapper: createWrapper(),
+    });
+
+    expect(result.current).toHaveProperty("refresh");
+    expect(result.current).toHaveProperty("isRefreshing");
+    expect(result.current.isRefreshing).toBe(false);
+    expect(typeof result.current.refresh).toBe("function");
+  });
+
+  it("should set isRefreshing to true when refresh starts", async () => {
+    const { result } = renderHook(() => useRefreshUsers(), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      const refreshPromise = result.current.refresh();
+      await vi.runAllTimersAsync();
+      await refreshPromise;
+    });
+
+    expect(result.current.isRefreshing).toBe(false);
+  });
+
+  it("should invalidate and refetch users queries", async () => {
+    const { result } = renderHook(() => useRefreshUsers(), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      const refreshPromise = result.current.refresh();
+      await vi.runAllTimersAsync();
+      await refreshPromise;
+    });
+
+    expect(result.current.isRefreshing).toBe(false);
+  });
+
+  it("should handle errors and reset isRefreshing", async () => {
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+
+    const { result } = renderHook(() => useRefreshUsers(), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      const refreshPromise = result.current.refresh();
+      await vi.runAllTimersAsync();
+      await refreshPromise;
+    });
+
+    expect(result.current.isRefreshing).toBe(false);
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  it("should wait minimum 500ms before completing", async () => {
+    const { result } = renderHook(() => useRefreshUsers(), {
+      wrapper: createWrapper(),
+    });
+
+    let refreshPromise: Promise<void>;
+    await act(async () => {
+      refreshPromise = result.current.refresh();
+    });
+
+    // Check that it's refreshing immediately after starting
+    expect(result.current.isRefreshing).toBe(true);
+
+    await act(async () => {
+      // Advance 400ms - should still be refreshing
+      await vi.advanceTimersByTimeAsync(400);
+    });
+    expect(result.current.isRefreshing).toBe(true);
+
+    await act(async () => {
+      // Advance remaining 100ms and wait for completion
+      await vi.advanceTimersByTimeAsync(100);
+      await refreshPromise!;
+    });
+
+    expect(result.current.isRefreshing).toBe(false);
+  });
+});

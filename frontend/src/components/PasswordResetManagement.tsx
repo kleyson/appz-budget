@@ -104,7 +104,7 @@ export const PasswordResetManagement = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="p-5 lg:p-6 space-y-6">
       <div>
         <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
           Active Password Reset Requests

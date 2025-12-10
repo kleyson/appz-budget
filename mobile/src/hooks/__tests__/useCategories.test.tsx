@@ -1,19 +1,25 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import React from 'react';
-import { renderHook, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import React from "react";
+import { renderHook, waitFor, act } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   useCategories,
   useCategorySummary,
   useCreateCategory,
   useUpdateCategory,
   useDeleteCategory,
-} from '../useCategories';
-import { categoriesApi } from '../../api/client';
-import type { Category, CategoryCreate, CategoryUpdate, CategorySummary } from '../../types';
+  useRefreshCategories,
+} from "../useCategories";
+import { categoriesApi } from "../../api/client";
+import type {
+  Category,
+  CategoryCreate,
+  CategoryUpdate,
+  CategorySummary,
+} from "../../types";
 
 // Mock the API client
-vi.mock('../../api/client', () => ({
+vi.mock("../../api/client", () => ({
   categoriesApi: {
     getAll: vi.fn(),
     getSummary: vi.fn(),
@@ -35,15 +41,15 @@ const createWrapper = () => {
   );
 };
 
-describe('useCategories', () => {
+describe("useCategories", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should fetch categories successfully', async () => {
+  it("should fetch categories successfully", async () => {
     const mockCategories: Category[] = [
-      { id: 1, name: 'Groceries', color: '#8b5cf6' },
-      { id: 2, name: 'Transport', color: '#ec4899' },
+      { id: 1, name: "Groceries", color: "#8b5cf6" },
+      { id: 2, name: "Transport", color: "#ec4899" },
     ];
 
     vi.mocked(categoriesApi.getAll).mockResolvedValue({
@@ -60,8 +66,8 @@ describe('useCategories', () => {
     expect(categoriesApi.getAll).toHaveBeenCalledOnce();
   });
 
-  it('should handle error when fetching categories', async () => {
-    const error = new Error('Failed to fetch');
+  it("should handle error when fetching categories", async () => {
+    const error = new Error("Failed to fetch");
     vi.mocked(categoriesApi.getAll).mockRejectedValue(error);
 
     const { result } = renderHook(() => useCategories(), {
@@ -74,15 +80,15 @@ describe('useCategories', () => {
   });
 });
 
-describe('useCategorySummary', () => {
+describe("useCategorySummary", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should fetch category summary successfully with period', async () => {
+  it("should fetch category summary successfully with period", async () => {
     const mockSummary: CategorySummary[] = [
       {
-        category: 'Groceries',
+        category: "Groceries",
         budget: 500,
         total: 450,
         over_budget: false,
@@ -93,17 +99,17 @@ describe('useCategorySummary', () => {
       data: mockSummary,
     } as any);
 
-    const { result } = renderHook(() => useCategorySummary('Period 1'), {
+    const { result } = renderHook(() => useCategorySummary("Period 1"), {
       wrapper: createWrapper(),
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(result.current.data).toEqual(mockSummary);
-    expect(categoriesApi.getSummary).toHaveBeenCalledWith('Period 1');
+    expect(categoriesApi.getSummary).toHaveBeenCalledWith("Period 1");
   });
 
-  it('should fetch category summary without period', async () => {
+  it("should fetch category summary without period", async () => {
     const mockSummary: CategorySummary[] = [];
 
     vi.mocked(categoriesApi.getSummary).mockResolvedValue({
@@ -120,21 +126,21 @@ describe('useCategorySummary', () => {
   });
 });
 
-describe('useCreateCategory', () => {
+describe("useCreateCategory", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should create category successfully', async () => {
+  it("should create category successfully", async () => {
     const newCategory: CategoryCreate = {
-      name: 'Entertainment',
-      color: '#06b6d4',
+      name: "Entertainment",
+      color: "#06b6d4",
     };
 
     const createdCategory: Category = {
       id: 3,
-      name: 'Entertainment',
-      color: '#06b6d4',
+      name: "Entertainment",
+      color: "#06b6d4",
     };
 
     vi.mocked(categoriesApi.create).mockResolvedValue({
@@ -153,13 +159,13 @@ describe('useCreateCategory', () => {
     expect(categoriesApi.create).toHaveBeenCalledWith(newCategory);
   });
 
-  it('should handle error when creating category', async () => {
+  it("should handle error when creating category", async () => {
     const newCategory: CategoryCreate = {
-      name: 'Entertainment',
-      color: '#06b6d4',
+      name: "Entertainment",
+      color: "#06b6d4",
     };
 
-    const error = new Error('Failed to create');
+    const error = new Error("Failed to create");
     vi.mocked(categoriesApi.create).mockRejectedValue(error);
 
     const { result } = renderHook(() => useCreateCategory(), {
@@ -174,21 +180,21 @@ describe('useCreateCategory', () => {
   });
 });
 
-describe('useUpdateCategory', () => {
+describe("useUpdateCategory", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should update category successfully', async () => {
+  it("should update category successfully", async () => {
     const updateData: CategoryUpdate = {
-      name: 'Updated Groceries',
-      color: '#10b981',
+      name: "Updated Groceries",
+      color: "#10b981",
     };
 
     const updatedCategory: Category = {
       id: 1,
-      name: 'Updated Groceries',
-      color: '#10b981',
+      name: "Updated Groceries",
+      color: "#10b981",
     };
 
     vi.mocked(categoriesApi.update).mockResolvedValue({
@@ -207,12 +213,12 @@ describe('useUpdateCategory', () => {
     expect(categoriesApi.update).toHaveBeenCalledWith(1, updateData);
   });
 
-  it('should handle error when updating category', async () => {
+  it("should handle error when updating category", async () => {
     const updateData: CategoryUpdate = {
-      name: 'Updated Groceries',
+      name: "Updated Groceries",
     };
 
-    const error = new Error('Failed to update');
+    const error = new Error("Failed to update");
     vi.mocked(categoriesApi.update).mockRejectedValue(error);
 
     const { result } = renderHook(() => useUpdateCategory(), {
@@ -227,12 +233,12 @@ describe('useUpdateCategory', () => {
   });
 });
 
-describe('useDeleteCategory', () => {
+describe("useDeleteCategory", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should delete category successfully', async () => {
+  it("should delete category successfully", async () => {
     vi.mocked(categoriesApi.delete).mockResolvedValue({} as any);
 
     const { result } = renderHook(() => useDeleteCategory(), {
@@ -246,8 +252,8 @@ describe('useDeleteCategory', () => {
     expect(categoriesApi.delete).toHaveBeenCalledWith(1);
   });
 
-  it('should handle error when deleting category', async () => {
-    const error = new Error('Failed to delete');
+  it("should handle error when deleting category", async () => {
+    const error = new Error("Failed to delete");
     vi.mocked(categoriesApi.delete).mockRejectedValue(error);
 
     const { result } = renderHook(() => useDeleteCategory(), {
@@ -262,3 +268,100 @@ describe('useDeleteCategory', () => {
   });
 });
 
+describe("useRefreshCategories", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("should return refresh function and isRefreshing state", () => {
+    const { result } = renderHook(() => useRefreshCategories(), {
+      wrapper: createWrapper(),
+    });
+
+    expect(result.current).toHaveProperty("refresh");
+    expect(result.current).toHaveProperty("isRefreshing");
+    expect(result.current.isRefreshing).toBe(false);
+    expect(typeof result.current.refresh).toBe("function");
+  });
+
+  it("should set isRefreshing to true when refresh starts", async () => {
+    const { result } = renderHook(() => useRefreshCategories(), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      const refreshPromise = result.current.refresh();
+      await vi.runAllTimersAsync();
+      await refreshPromise;
+    });
+
+    expect(result.current.isRefreshing).toBe(false);
+  });
+
+  it("should invalidate and refetch categories queries", async () => {
+    const { result } = renderHook(() => useRefreshCategories(), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      const refreshPromise = result.current.refresh();
+      await vi.runAllTimersAsync();
+      await refreshPromise;
+    });
+
+    expect(result.current.isRefreshing).toBe(false);
+  });
+
+  it("should handle errors and reset isRefreshing", async () => {
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+
+    const { result } = renderHook(() => useRefreshCategories(), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      const refreshPromise = result.current.refresh();
+      await vi.runAllTimersAsync();
+      await refreshPromise;
+    });
+
+    expect(result.current.isRefreshing).toBe(false);
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  it("should wait minimum 500ms before completing", async () => {
+    const { result } = renderHook(() => useRefreshCategories(), {
+      wrapper: createWrapper(),
+    });
+
+    let refreshPromise: Promise<void>;
+    await act(async () => {
+      refreshPromise = result.current.refresh();
+    });
+
+    // Check that it's refreshing immediately after starting
+    expect(result.current.isRefreshing).toBe(true);
+
+    await act(async () => {
+      // Advance 400ms - should still be refreshing
+      await vi.advanceTimersByTimeAsync(400);
+    });
+    expect(result.current.isRefreshing).toBe(true);
+
+    await act(async () => {
+      // Advance remaining 100ms and wait for completion
+      await vi.advanceTimersByTimeAsync(100);
+      await refreshPromise!;
+    });
+
+    expect(result.current.isRefreshing).toBe(false);
+  });
+});

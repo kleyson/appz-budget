@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -17,16 +17,18 @@ import {
   useCreateUser,
   useUpdateUser,
   useDeleteUser,
+  useRefreshUsers,
 } from "../../hooks/useUsers";
 import { Ionicons } from "@expo/vector-icons";
 import type { User } from "../../types";
 import { getErrorMessage } from "../../utils/errorHandler";
 import { getThemeColors, getShadow, radius } from "../../utils/colors";
-import { Button } from "../../components/shared";
+import { Button, CustomRefreshControl } from "../../components/shared";
 
 export const UserManagement = () => {
   const { isDark } = useTheme();
   const theme = getThemeColors(isDark);
+  const { refresh: refreshUsers, isRefreshing } = useRefreshUsers();
   const { data: users, isLoading } = useUsers();
   const createMutation = useCreateUser();
   const updateMutation = useUpdateUser();
@@ -104,7 +106,10 @@ export const UserManagement = () => {
             try {
               await deleteMutation.mutateAsync(user.id);
             } catch (error) {
-              Alert.alert("Error", getErrorMessage(error, "Failed to delete user"));
+              Alert.alert(
+                "Error",
+                getErrorMessage(error, "Failed to delete user")
+              );
             }
           },
         },
@@ -131,6 +136,10 @@ export const UserManagement = () => {
     setShowForm(true);
   };
 
+  const handleRefresh = useCallback(() => {
+    refreshUsers();
+  }, [refreshUsers]);
+
   const styles = getStyles(isDark, theme);
 
   if (isLoading) {
@@ -143,22 +152,45 @@ export const UserManagement = () => {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.addButton} onPress={() => openForm()} activeOpacity={0.7}>
-        <View style={styles.addButtonIcon}>
-          <Ionicons name="add" size={18} color={theme.primary} />
-        </View>
-        <Text style={styles.addButtonText}>Add User</Text>
-      </TouchableOpacity>
-
       <FlatList
+        style={styles.list}
         data={users || []}
         numColumns={2}
         keyExtractor={(item) => item.id.toString()}
         columnWrapperStyle={styles.row}
+        contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        ListHeaderComponent={
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => openForm()}
+            activeOpacity={0.7}
+          >
+            <View style={styles.addButtonIcon}>
+              <Ionicons name="add" size={18} color={theme.primary} />
+            </View>
+            <Text style={styles.addButtonText}>Add User</Text>
+          </TouchableOpacity>
+        }
+        refreshControl={
+          <CustomRefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            color={theme.primary}
+          />
+        }
         renderItem={({ item }) => (
           <View style={styles.card}>
-            <View style={[styles.colorBar, { backgroundColor: item.is_admin ? theme.primary : theme.success }]} />
+            <View
+              style={[
+                styles.colorBar,
+                {
+                  backgroundColor: item.is_admin
+                    ? theme.primary
+                    : theme.success,
+                },
+              ]}
+            />
             <View style={styles.cardContent}>
               <View style={styles.cardHeader}>
                 <View style={styles.userIcon}>
@@ -168,13 +200,27 @@ export const UserManagement = () => {
                     color={item.is_admin ? theme.primary : theme.success}
                   />
                 </View>
-                <View style={[styles.statusBadge, !item.is_active && styles.statusBadgeInactive]}>
-                  <Text style={[styles.statusText, !item.is_active && styles.statusTextInactive]}>
+                <View
+                  style={[
+                    styles.statusBadge,
+                    !item.is_active && styles.statusBadgeInactive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.statusText,
+                      !item.is_active && styles.statusTextInactive,
+                    ]}
+                  >
                     {item.is_active ? "Active" : "Inactive"}
                   </Text>
                 </View>
               </View>
-              <Text style={styles.cardEmail} numberOfLines={1} ellipsizeMode="tail">
+              <Text
+                style={styles.cardEmail}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
                 {item.email}
               </Text>
               {item.full_name && (
@@ -188,14 +234,22 @@ export const UserManagement = () => {
                   onPress={() => openForm(item)}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="pencil-outline" size={14} color={theme.primary} />
+                  <Ionicons
+                    name="pencil-outline"
+                    size={14}
+                    color={theme.primary}
+                  />
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.deleteButton}
                   onPress={() => handleDelete(item)}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="trash-outline" size={14} color={theme.danger} />
+                  <Ionicons
+                    name="trash-outline"
+                    size={14}
+                    color={theme.danger}
+                  />
                 </TouchableOpacity>
               </View>
             </View>
@@ -203,7 +257,12 @@ export const UserManagement = () => {
         )}
       />
 
-      <Modal visible={showForm} transparent animationType="slide" onRequestClose={() => setShowForm(false)}>
+      <Modal
+        visible={showForm}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowForm(false)}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
@@ -215,7 +274,11 @@ export const UserManagement = () => {
                   {editingUser ? "Edit User" : "Add User"}
                 </Text>
               </View>
-              <TouchableOpacity style={styles.closeButton} onPress={() => setShowForm(false)} activeOpacity={0.7}>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setShowForm(false)}
+                activeOpacity={0.7}
+              >
                 <Ionicons name="close" size={20} color={theme.textSecondary} />
               </TouchableOpacity>
             </View>
@@ -224,7 +287,11 @@ export const UserManagement = () => {
               <Text style={styles.label}>Email</Text>
               <View style={styles.inputWrapper}>
                 <View style={styles.inputIconWrapper}>
-                  <Ionicons name="mail-outline" size={18} color={theme.textMuted} />
+                  <Ionicons
+                    name="mail-outline"
+                    size={18}
+                    color={theme.textMuted}
+                  />
                 </View>
                 <TextInput
                   style={styles.input}
@@ -242,11 +309,19 @@ export const UserManagement = () => {
               <Text style={styles.label}>Password</Text>
               <View style={styles.inputWrapper}>
                 <View style={styles.inputIconWrapper}>
-                  <Ionicons name="lock-closed-outline" size={18} color={theme.textMuted} />
+                  <Ionicons
+                    name="lock-closed-outline"
+                    size={18}
+                    color={theme.textMuted}
+                  />
                 </View>
                 <TextInput
                   style={styles.input}
-                  placeholder={editingUser ? "Leave blank to keep current" : "Enter password"}
+                  placeholder={
+                    editingUser
+                      ? "Leave blank to keep current"
+                      : "Enter password"
+                  }
                   placeholderTextColor={theme.placeholder}
                   value={password}
                   onChangeText={setPassword}
@@ -259,7 +334,11 @@ export const UserManagement = () => {
               <Text style={styles.label}>Full Name (Optional)</Text>
               <View style={styles.inputWrapper}>
                 <View style={styles.inputIconWrapper}>
-                  <Ionicons name="person-outline" size={18} color={theme.textMuted} />
+                  <Ionicons
+                    name="person-outline"
+                    size={18}
+                    color={theme.textMuted}
+                  />
                 </View>
                 <TextInput
                   style={styles.input}
@@ -273,8 +352,17 @@ export const UserManagement = () => {
 
             <View style={styles.switchRow}>
               <View style={styles.switchLabel}>
-                <View style={[styles.switchIcon, { backgroundColor: theme.primaryBg }]}>
-                  <Ionicons name="shield-outline" size={16} color={theme.primary} />
+                <View
+                  style={[
+                    styles.switchIcon,
+                    { backgroundColor: theme.primaryBg },
+                  ]}
+                >
+                  <Ionicons
+                    name="shield-outline"
+                    size={16}
+                    color={theme.primary}
+                  />
                 </View>
                 <Text style={styles.switchText}>Admin</Text>
               </View>
@@ -291,8 +379,17 @@ export const UserManagement = () => {
 
             <View style={styles.switchRow}>
               <View style={styles.switchLabel}>
-                <View style={[styles.switchIcon, { backgroundColor: theme.successBg }]}>
-                  <Ionicons name="checkmark-circle-outline" size={16} color={theme.success} />
+                <View
+                  style={[
+                    styles.switchIcon,
+                    { backgroundColor: theme.successBg },
+                  ]}
+                >
+                  <Ionicons
+                    name="checkmark-circle-outline"
+                    size={16}
+                    color={theme.success}
+                  />
                 </View>
                 <Text style={styles.switchText}>Active</Text>
               </View>
@@ -334,6 +431,13 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
     container: {
       flex: 1,
     },
+    list: {
+      flex: 1,
+    },
+    listContent: {
+      padding: 16,
+      paddingBottom: 200,
+    },
     loadingContainer: {
       flex: 1,
       justifyContent: "center",
@@ -348,7 +452,7 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       borderRadius: radius.md,
       borderWidth: 1,
       borderColor: theme.primaryBorderSubtle,
-      marginBottom: 16,
+      marginBottom: 12,
     },
     addButtonIcon: {
       width: 28,

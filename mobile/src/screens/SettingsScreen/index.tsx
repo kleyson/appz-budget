@@ -94,7 +94,6 @@ const getStyles = (theme: ReturnType<typeof getThemeColors>) =>
     },
     content: {
       flex: 1,
-      padding: 16,
     },
     versionContainer: {
       paddingVertical: 12,

@@ -38,7 +38,11 @@
       "Bash(codemap)",
       "Bash(ls:*)",
       "Bash(uv run pytest:*)",
-      "Bash(uv sync:*)"
+      "Bash(uv sync:*)",
+      "Bash(make lint-mobile:*)",
+      "WebSearch",
+      "Bash(make test-mobile:*)",
+      "Bash(make lint-frontend:*)"
     ],
     "deny": [],
     "ask": []
