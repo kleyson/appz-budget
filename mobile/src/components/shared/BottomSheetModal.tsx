@@ -8,7 +8,7 @@ import {
   Platform,
   StyleSheet,
   Pressable,
-  Dimensions,
+  useWindowDimensions,
 } from "react-native";
 import Animated, {
   useSharedValue,
@@ -22,8 +22,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../contexts/ThemeContext";
 import { getThemeColors, getShadow, radius, spacing, gradientColors, rgba } from "../../utils/colors";
 import { springConfigs } from "../../utils/animations";
+import { useResponsive, responsive } from "../../hooks/useResponsive";
 
-const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface BottomSheetModalProps {
@@ -69,12 +69,14 @@ export const BottomSheetModal = ({
 }: BottomSheetModalProps) => {
   const { isDark } = useTheme();
   const theme = getThemeColors(isDark);
-  const styles = getStyles(isDark, theme);
+  const { isTablet } = useResponsive();
+  const { height: screenHeight } = useWindowDimensions();
+  const styles = getStyles(isDark, theme, isTablet);
 
   // Animation values
   const overlayOpacity = useSharedValue(0);
-  const translateY = useSharedValue(SCREEN_HEIGHT);
-  const contentScale = useSharedValue(0.95);
+  const translateY = useSharedValue(screenHeight);
+  const contentScale = useSharedValue(isTablet ? 0.9 : 0.95);
   const closeButtonScale = useSharedValue(1);
   const cancelButtonScale = useSharedValue(1);
   const saveButtonScale = useSharedValue(1);
@@ -88,13 +90,13 @@ export const BottomSheetModal = ({
     } else {
       // Animate out
       overlayOpacity.value = withTiming(0, { duration: 150 });
-      translateY.value = withTiming(SCREEN_HEIGHT, {
+      translateY.value = withTiming(screenHeight, {
         duration: 200,
         easing: Easing.in(Easing.cubic),
       });
-      contentScale.value = withTiming(0.95, { duration: 150 });
+      contentScale.value = withTiming(isTablet ? 0.9 : 0.95, { duration: 150 });
     }
-  }, [visible]);
+  }, [visible, screenHeight, isTablet]);
 
   const handleCancel = () => {
     onCancel?.();
@@ -234,33 +236,46 @@ export const BottomSheetModal = ({
             behavior={Platform.OS === "ios" ? "padding" : "height"}
             style={styles.keyboardView}
           >
-            {content}
+            <View style={styles.contentWrapper}>
+              {content}
+            </View>
           </KeyboardAvoidingView>
         ) : (
-          content
+          <View style={styles.contentWrapper}>
+            {content}
+          </View>
         )}
       </View>
     </Modal>
   );
 };
 
-const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
+const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>, isTablet: boolean) =>
   StyleSheet.create({
     modalContainer: {
       flex: 1,
-      justifyContent: "flex-end",
+      justifyContent: isTablet ? "center" : "flex-end",
     },
     overlay: {
       ...StyleSheet.absoluteFillObject,
       backgroundColor: rgba.overlay,
     },
     keyboardView: {
-      justifyContent: "flex-end",
+      flex: isTablet ? 1 : undefined,
+      justifyContent: isTablet ? "center" : "flex-end",
+    },
+    contentWrapper: {
+      maxWidth: isTablet ? responsive.maxWidths.modal : undefined,
+      width: isTablet ? "100%" : undefined,
+      alignSelf: isTablet ? "center" : undefined,
+      paddingHorizontal: isTablet ? spacing.xl : 0,
     },
     content: {
       backgroundColor: theme.cardSolid,
       borderTopLeftRadius: radius["2xl"],
       borderTopRightRadius: radius["2xl"],
+      borderBottomLeftRadius: isTablet ? radius["2xl"] : 0,
+      borderBottomRightRadius: isTablet ? radius["2xl"] : 0,
       padding: spacing.xl,
       paddingTop: spacing.sm,
       ...getShadow(isDark, "xl"),
@@ -269,7 +284,9 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       backgroundColor: theme.cardSolid,
       borderTopLeftRadius: radius["2xl"],
       borderTopRightRadius: radius["2xl"],
-      maxHeight: "90%",
+      borderBottomLeftRadius: isTablet ? radius["2xl"] : 0,
+      borderBottomRightRadius: isTablet ? radius["2xl"] : 0,
+      maxHeight: isTablet ? "80%" : "90%",
       paddingTop: spacing.sm,
       ...getShadow(isDark, "xl"),
     },

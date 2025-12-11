@@ -12,6 +12,7 @@ import {
 import type { Category } from "../../types";
 import { getErrorMessage } from "../../utils/errorHandler";
 import { getThemeColors, gradientColors } from "../../utils/colors";
+import { RefreshControl } from "react-native";
 import {
   BottomSheetModal,
   FormInput,
@@ -19,12 +20,13 @@ import {
   ListItem,
   AddButton,
   LoadingState,
-  CustomRefreshControl,
 } from "../../components/shared";
+import { useResponsive, responsive } from "../../hooks/useResponsive";
 
 export const CategoryManagement = () => {
   const { isDark } = useTheme();
   const theme = getThemeColors(isDark);
+  const { isTablet } = useResponsive();
   const { refresh: refreshCategories, isRefreshing } = useRefreshCategories();
   const { data: categories, isLoading } = useCategories();
   const createMutation = useCreateCategory();
@@ -106,6 +108,8 @@ export const CategoryManagement = () => {
     return <LoadingState />;
   }
 
+  const styles = getStyles(isTablet);
+
   return (
     <View style={styles.container}>
       <FlatList
@@ -124,10 +128,11 @@ export const CategoryManagement = () => {
           </Animated.View>
         }
         refreshControl={
-          <CustomRefreshControl
+          <RefreshControl
             refreshing={isRefreshing}
             onRefresh={handleRefresh}
-            color={theme.primary}
+            tintColor={theme.refreshControlTint}
+            colors={[theme.refreshControlTint]}
           />
         }
         renderItem={({ item, index }) => (
@@ -165,19 +170,23 @@ export const CategoryManagement = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  list: {
-    flex: 1,
-  },
-  addButton: {
-    marginBottom: 12,
-  },
-  listContent: {
-    padding: 16,
-    paddingBottom: 200,
-    gap: 10,
-  },
-});
+const getStyles = (isTablet: boolean) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    list: {
+      flex: 1,
+    },
+    addButton: {
+      marginBottom: 12,
+    },
+    listContent: {
+      padding: isTablet ? 24 : 16,
+      paddingBottom: 200,
+      gap: isTablet ? 12 : 10,
+      maxWidth: responsive.maxWidths.content,
+      alignSelf: "center",
+      width: "100%",
+    },
+  });

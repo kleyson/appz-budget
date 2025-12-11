@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from "rea
 import Animated, { FadeIn } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { getThemeColors, colors, radius } from "../../../utils/colors";
+import { useResponsive } from "../../../hooks/useResponsive";
 import { AnimatedExpenseItem } from "./AnimatedExpenseItem";
 import type { Expense, Category, Period } from "../../../types";
 
@@ -31,7 +32,8 @@ export const ExpenseList = ({
   theme,
   isDark,
 }: ExpenseListProps) => {
-  const styles = getStyles(theme);
+  const { columns, isTablet } = useResponsive();
+  const styles = getStyles(theme, isTablet);
 
   const getCategoryColor = (categoryName: string) => {
     const category = categories?.find(
@@ -54,6 +56,75 @@ export const ExpenseList = ({
     );
   }
 
+  // Render items in a responsive grid for tablets
+  const renderItems = () => {
+    if (expenses.length === 0) {
+      return (
+        <Animated.View
+          style={styles.emptyContainer}
+          entering={FadeIn.delay(100).duration(300)}
+        >
+          <View style={styles.emptyIcon}>
+            <Ionicons name="wallet-outline" size={40} color={theme.textMuted} />
+          </View>
+          <Text style={styles.emptyTitle}>No expenses yet</Text>
+          <Text style={styles.emptyText}>
+            Add your first expense to start tracking
+          </Text>
+        </Animated.View>
+      );
+    }
+
+    if (columns === 1) {
+      // Single column layout (phones)
+      return expenses.map((expense: Expense, index: number) => (
+        <AnimatedExpenseItem
+          key={expense.id}
+          expense={expense}
+          index={index}
+          categoryColor={getCategoryColor(expense.category)}
+          periodColor={getPeriodColor(expense.period)}
+          onEdit={() => onEdit(expense)}
+          onDelete={() => onDelete(expense.id)}
+          onPay={() => onPay(expense)}
+          theme={theme}
+          isDark={isDark}
+        />
+      ));
+    }
+
+    // Multi-column grid layout (tablets)
+    const rows: Expense[][] = [];
+    for (let i = 0; i < expenses.length; i += columns) {
+      rows.push(expenses.slice(i, i + columns));
+    }
+
+    return rows.map((row, rowIndex) => (
+      <View key={rowIndex} style={styles.gridRow}>
+        {row.map((expense, colIndex) => (
+          <View key={expense.id} style={styles.gridItem}>
+            <AnimatedExpenseItem
+              expense={expense}
+              index={rowIndex * columns + colIndex}
+              categoryColor={getCategoryColor(expense.category)}
+              periodColor={getPeriodColor(expense.period)}
+              onEdit={() => onEdit(expense)}
+              onDelete={() => onDelete(expense.id)}
+              onPay={() => onPay(expense)}
+              theme={theme}
+              isDark={isDark}
+            />
+          </View>
+        ))}
+        {/* Fill empty spots in last row */}
+        {row.length < columns &&
+          Array.from({ length: columns - row.length }).map((_, i) => (
+            <View key={`empty-${i}`} style={styles.gridItem} />
+          ))}
+      </View>
+    ));
+  };
+
   return (
     <View style={styles.listContainer}>
       <Animated.View entering={FadeIn.duration(300)}>
@@ -72,43 +143,22 @@ export const ExpenseList = ({
         </TouchableOpacity>
       </Animated.View>
 
-      {expenses.length === 0 ? (
-        <Animated.View
-          style={styles.emptyContainer}
-          entering={FadeIn.delay(100).duration(300)}
-        >
-          <View style={styles.emptyIcon}>
-            <Ionicons name="wallet-outline" size={40} color={theme.textMuted} />
-          </View>
-          <Text style={styles.emptyTitle}>No expenses yet</Text>
-          <Text style={styles.emptyText}>
-            Add your first expense to start tracking
-          </Text>
-        </Animated.View>
-      ) : (
-        expenses.map((expense: Expense, index: number) => (
-          <AnimatedExpenseItem
-            key={expense.id}
-            expense={expense}
-            index={index}
-            categoryColor={getCategoryColor(expense.category)}
-            periodColor={getPeriodColor(expense.period)}
-            onEdit={() => onEdit(expense)}
-            onDelete={() => onDelete(expense.id)}
-            onPay={() => onPay(expense)}
-            theme={theme}
-            isDark={isDark}
-          />
-        ))
-      )}
+      {renderItems()}
     </View>
   );
 };
 
-const getStyles = (theme: ReturnType<typeof getThemeColors>) =>
+const getStyles = (theme: ReturnType<typeof getThemeColors>, isTablet: boolean) =>
   StyleSheet.create({
     listContainer: {
+      gap: isTablet ? 16 : 12,
+    },
+    gridRow: {
+      flexDirection: "row",
       gap: 12,
+    },
+    gridItem: {
+      flex: 1,
     },
     loadingContainer: {
       padding: 48,

@@ -20,6 +20,7 @@ import type { Expense, ExpenseCreate, Purchase } from "../../types";
 import { getErrorMessage } from "../../utils/errorHandler";
 import { getThemeColors, getShadow, gradientColors, radius, spacing, rgba } from "../../utils/colors";
 import { FormInput, ChipGroup, IconButton } from "../../components/shared";
+import { useResponsive, responsive } from "../../hooks/useResponsive";
 
 interface ExpenseFormModalProps {
   visible: boolean;
@@ -36,6 +37,7 @@ export const ExpenseFormModal = ({
 }: ExpenseFormModalProps) => {
   const { isDark } = useTheme();
   const theme = getThemeColors(isDark);
+  const { isTablet } = useResponsive();
   const { data: categories } = useCategories();
   const { data: periods } = usePeriods();
   const createMutation = useCreateExpense();
@@ -141,12 +143,13 @@ export const ExpenseFormModal = ({
     }
   };
 
-  const styles = getStyles(isDark, theme);
+  const styles = getStyles(isDark, theme, isTablet);
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType={isTablet ? "fade" : "slide"} onRequestClose={onClose}>
       <View style={styles.overlay}>
+        <View style={styles.modalWrapper}>
         <View style={styles.modal}>
           {/* Header */}
           <View style={styles.header}>
@@ -340,23 +343,32 @@ export const ExpenseFormModal = ({
             </TouchableOpacity>
           </View>
         </View>
+        </View>
       </View>
     </Modal>
   );
 };
 
-const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
+const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>, isTablet: boolean) =>
   StyleSheet.create({
     overlay: {
       flex: 1,
       backgroundColor: rgba.overlay,
-      justifyContent: "flex-end",
+      justifyContent: isTablet ? "center" : "flex-end",
+    },
+    modalWrapper: {
+      maxWidth: isTablet ? responsive.maxWidths.modal : undefined,
+      width: isTablet ? "100%" : undefined,
+      alignSelf: isTablet ? "center" : undefined,
+      paddingHorizontal: isTablet ? spacing.xl : 0,
     },
     modal: {
       backgroundColor: theme.cardSolid,
       borderTopLeftRadius: radius["2xl"],
       borderTopRightRadius: radius["2xl"],
-      maxHeight: "90%",
+      borderBottomLeftRadius: isTablet ? radius["2xl"] : 0,
+      borderBottomRightRadius: isTablet ? radius["2xl"] : 0,
+      maxHeight: isTablet ? "80%" : "90%",
       ...getShadow(isDark, "xl"),
     },
     header: {

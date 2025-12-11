@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from "rea
 import Animated, { FadeIn } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { getThemeColors, colors, radius } from "../../../utils/colors";
+import { useResponsive } from "../../../hooks/useResponsive";
 import { AnimatedIncomeItem } from "./AnimatedIncomeItem";
 import type { Income, IncomeType, Period } from "../../../types";
 
@@ -29,7 +30,8 @@ export const IncomeList = ({
   theme,
   isDark,
 }: IncomeListProps) => {
-  const styles = getStyles(theme);
+  const { columns, isTablet } = useResponsive();
+  const styles = getStyles(theme, isTablet);
 
   const getIncomeTypeName = (incomeTypeId: number) => {
     const incomeType = incomeTypes?.find(
@@ -59,6 +61,75 @@ export const IncomeList = ({
     );
   }
 
+  // Render items in a responsive grid for tablets
+  const renderItems = () => {
+    if (incomes.length === 0) {
+      return (
+        <Animated.View
+          style={styles.emptyContainer}
+          entering={FadeIn.delay(100).duration(300)}
+        >
+          <View style={styles.emptyIcon}>
+            <Ionicons name="cash-outline" size={40} color={theme.textMuted} />
+          </View>
+          <Text style={styles.emptyTitle}>No income yet</Text>
+          <Text style={styles.emptyText}>
+            Add your income to track your earnings
+          </Text>
+        </Animated.View>
+      );
+    }
+
+    if (columns === 1) {
+      // Single column layout (phones)
+      return incomes.map((income: Income, index: number) => (
+        <AnimatedIncomeItem
+          key={income.id}
+          income={income}
+          index={index}
+          incomeTypeName={getIncomeTypeName(income.income_type_id)}
+          incomeTypeColor={getIncomeTypeColor(income.income_type_id)}
+          periodColor={getPeriodColor(income.period)}
+          onEdit={() => onEdit(income)}
+          onDelete={() => onDelete(income.id)}
+          theme={theme}
+          isDark={isDark}
+        />
+      ));
+    }
+
+    // Multi-column grid layout (tablets)
+    const rows: Income[][] = [];
+    for (let i = 0; i < incomes.length; i += columns) {
+      rows.push(incomes.slice(i, i + columns));
+    }
+
+    return rows.map((row, rowIndex) => (
+      <View key={rowIndex} style={styles.gridRow}>
+        {row.map((income, colIndex) => (
+          <View key={income.id} style={styles.gridItem}>
+            <AnimatedIncomeItem
+              income={income}
+              index={rowIndex * columns + colIndex}
+              incomeTypeName={getIncomeTypeName(income.income_type_id)}
+              incomeTypeColor={getIncomeTypeColor(income.income_type_id)}
+              periodColor={getPeriodColor(income.period)}
+              onEdit={() => onEdit(income)}
+              onDelete={() => onDelete(income.id)}
+              theme={theme}
+              isDark={isDark}
+            />
+          </View>
+        ))}
+        {/* Fill empty spots in last row */}
+        {row.length < columns &&
+          Array.from({ length: columns - row.length }).map((_, i) => (
+            <View key={`empty-${i}`} style={styles.gridItem} />
+          ))}
+      </View>
+    ));
+  };
+
   return (
     <View style={styles.listContainer}>
       <Animated.View entering={FadeIn.duration(300)}>
@@ -81,43 +152,22 @@ export const IncomeList = ({
         </TouchableOpacity>
       </Animated.View>
 
-      {incomes.length === 0 ? (
-        <Animated.View
-          style={styles.emptyContainer}
-          entering={FadeIn.delay(100).duration(300)}
-        >
-          <View style={styles.emptyIcon}>
-            <Ionicons name="cash-outline" size={40} color={theme.textMuted} />
-          </View>
-          <Text style={styles.emptyTitle}>No income yet</Text>
-          <Text style={styles.emptyText}>
-            Add your income to track your earnings
-          </Text>
-        </Animated.View>
-      ) : (
-        incomes.map((income: Income, index: number) => (
-          <AnimatedIncomeItem
-            key={income.id}
-            income={income}
-            index={index}
-            incomeTypeName={getIncomeTypeName(income.income_type_id)}
-            incomeTypeColor={getIncomeTypeColor(income.income_type_id)}
-            periodColor={getPeriodColor(income.period)}
-            onEdit={() => onEdit(income)}
-            onDelete={() => onDelete(income.id)}
-            theme={theme}
-            isDark={isDark}
-          />
-        ))
-      )}
+      {renderItems()}
     </View>
   );
 };
 
-const getStyles = (theme: ReturnType<typeof getThemeColors>) =>
+const getStyles = (theme: ReturnType<typeof getThemeColors>, isTablet: boolean) =>
   StyleSheet.create({
     listContainer: {
+      gap: isTablet ? 16 : 12,
+    },
+    gridRow: {
+      flexDirection: "row",
       gap: 12,
+    },
+    gridItem: {
+      flex: 1,
     },
     loadingContainer: {
       padding: 48,

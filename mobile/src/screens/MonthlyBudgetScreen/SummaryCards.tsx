@@ -17,6 +17,7 @@ import { getThemeColors, getShadow, gradientColors, radius } from "../../utils/c
 import { formatCurrency } from "../../utils/styles";
 import { SectionTitle } from "../../components/shared";
 import { springConfigs, getStaggerDelay } from "../../utils/animations";
+import { useResponsive } from "../../hooks/useResponsive";
 import type { SummaryTotals } from "../../types";
 
 interface SummaryCardsProps {
@@ -165,7 +166,8 @@ const AnimatedSection = ({
 export const SummaryCards = ({ totals }: SummaryCardsProps) => {
   const { isDark } = useTheme();
   const theme = getThemeColors(isDark);
-  const styles = getStyles(isDark, theme);
+  const { isTablet, isLandscape } = useResponsive();
+  const styles = getStyles(isDark, theme, isTablet);
 
   // Loading spinner animation
   const spinnerRotation = useSharedValue(0);
@@ -243,6 +245,49 @@ export const SummaryCards = ({ totals }: SummaryCardsProps) => {
     },
   ];
 
+  // On landscape tablets, show all sections in one row
+  const showHorizontalLayout = isTablet && isLandscape;
+
+  if (showHorizontalLayout) {
+    return (
+      <View style={styles.containerHorizontal}>
+        <AnimatedSection
+          title="Expenses"
+          iconName="trending-down"
+          iconBgColor={theme.dangerBg}
+          iconColor={theme.danger}
+          cards={expenseCards}
+          totals={totals}
+          sectionIndex={0}
+          isDark={isDark}
+          theme={theme}
+        />
+        <AnimatedSection
+          title="Income"
+          iconName="trending-up"
+          iconBgColor={theme.successBg}
+          iconColor={theme.success}
+          cards={incomeCards}
+          totals={totals}
+          sectionIndex={1}
+          isDark={isDark}
+          theme={theme}
+        />
+        <AnimatedSection
+          title="Balance"
+          iconName="wallet"
+          iconBgColor={theme.primaryBg}
+          iconColor={theme.primary}
+          cards={balanceCards}
+          totals={totals}
+          sectionIndex={2}
+          isDark={isDark}
+          theme={theme}
+        />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       {/* Expenses Section */}
@@ -287,10 +332,14 @@ export const SummaryCards = ({ totals }: SummaryCardsProps) => {
   );
 };
 
-const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
+const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>, isTablet: boolean) =>
   StyleSheet.create({
     container: {
-      gap: 20,
+      gap: isTablet ? 24 : 20,
+    },
+    containerHorizontal: {
+      flexDirection: "row",
+      gap: 16,
     },
     loadingContainer: {
       padding: 48,

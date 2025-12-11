@@ -124,6 +124,9 @@ export const getThemeColors = (isDark: boolean) => ({
   primaryLight: isDark ? colors.primary[400] : colors.primary[600],
   primaryBg: isDark ? 'rgba(20, 184, 166, 0.15)' : 'rgba(20, 184, 166, 0.1)',
 
+  // RefreshControl tint color (hardcoded hex required for iOS New Architecture)
+  refreshControlTint: isDark ? "#14b8a6" : "#0d9488",
+
   // CTA Purple accent
   cta: isDark ? colors.purple[400] : colors.purple[500],
   ctaBg: isDark ? 'rgba(139, 92, 246, 0.15)' : 'rgba(139, 92, 246, 0.1)',

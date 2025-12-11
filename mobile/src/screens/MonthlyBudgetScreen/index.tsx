@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Alert,
   ScrollView,
+  RefreshControl,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../contexts/ThemeContext";
@@ -43,7 +44,7 @@ import { SummaryCards } from "./SummaryCards";
 import { Summary } from "./Summary";
 import { ExpenseList } from "./ExpenseList";
 import { IncomeList } from "./IncomeList";
-import { Tabs, Tab, CustomRefreshControl } from "../../components/shared";
+import { Tabs, Tab } from "../../components/shared";
 import type { Expense, Income, Month } from "../../types";
 
 type TabId = "expenses" | "income" | "summary";
@@ -342,10 +343,11 @@ export const MonthlyBudgetScreen = () => {
         showsVerticalScrollIndicator={false}
         scrollEnabled={true}
         refreshControl={
-          <CustomRefreshControl
+          <RefreshControl
             refreshing={isRefreshing}
             onRefresh={handleRefresh}
-            color={theme.primary}
+            tintColor={theme.refreshControlTint}
+            colors={[theme.refreshControlTint]}
           />
         }
       >

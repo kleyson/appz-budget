@@ -10,6 +10,8 @@ import {
   Modal,
   Alert,
   Switch,
+  ScrollView,
+  RefreshControl,
 } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { useTheme } from "../../../contexts/ThemeContext";
@@ -24,12 +26,14 @@ import { Ionicons } from "@expo/vector-icons";
 import type { User } from "../../../types";
 import { getErrorMessage } from "../../../utils/errorHandler";
 import { getThemeColors, getShadow, radius } from "../../../utils/colors";
-import { Button, CustomRefreshControl } from "../../../components/shared";
+import { Button, ResponsiveModalContainer } from "../../../components/shared";
+import { useResponsive, responsive } from "../../../hooks/useResponsive";
 import { AnimatedUserCard } from "./AnimatedUserCard";
 
 export const UserManagement = () => {
   const { isDark } = useTheme();
   const theme = getThemeColors(isDark);
+  const { columns, isTablet } = useResponsive();
   const { refresh: refreshUsers, isRefreshing } = useRefreshUsers();
   const { data: users, isLoading } = useUsers();
   const createMutation = useCreateUser();
@@ -142,7 +146,9 @@ export const UserManagement = () => {
     refreshUsers();
   }, [refreshUsers]);
 
-  const styles = getStyles(isDark, theme);
+  // Use at least 2 columns for users, more on larger tablets
+  const userColumns = Math.max(2, columns);
+  const styles = getStyles(isDark, theme, isTablet);
 
   if (isLoading) {
     return (
@@ -157,7 +163,8 @@ export const UserManagement = () => {
       <FlatList
         style={styles.list}
         data={users || []}
-        numColumns={2}
+        key={userColumns} // Force re-render when columns change
+        numColumns={userColumns}
         keyExtractor={(item) => item.id.toString()}
         columnWrapperStyle={styles.row}
         contentContainerStyle={styles.listContent}
@@ -177,10 +184,11 @@ export const UserManagement = () => {
           </Animated.View>
         }
         refreshControl={
-          <CustomRefreshControl
+          <RefreshControl
             refreshing={isRefreshing}
             onRefresh={handleRefresh}
-            color={theme.primary}
+            tintColor={theme.refreshControlTint}
+            colors={[theme.refreshControlTint]}
           />
         }
         renderItem={({ item, index }) => (
@@ -198,11 +206,16 @@ export const UserManagement = () => {
       <Modal
         visible={showForm}
         transparent
-        animationType="slide"
+        animationType={isTablet ? "fade" : "slide"}
         onRequestClose={() => setShowForm(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <ScrollView
+            contentContainerStyle={styles.modalScrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+          <ResponsiveModalContainer style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <View style={styles.modalTitleRow}>
                 <View style={styles.modalIcon}>
@@ -357,14 +370,15 @@ export const UserManagement = () => {
                 style={{ flex: 1.5 }}
               />
             </View>
-          </View>
+          </ResponsiveModalContainer>
+          </ScrollView>
         </View>
       </Modal>
     </View>
   );
 };
 
-const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
+const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>, isTablet: boolean) =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -373,8 +387,11 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       flex: 1,
     },
     listContent: {
-      padding: 16,
+      padding: isTablet ? 24 : 16,
       paddingBottom: 200,
+      maxWidth: responsive.maxWidths.content,
+      alignSelf: "center",
+      width: "100%",
     },
     loadingContainer: {
       flex: 1,
@@ -412,12 +429,18 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
     modalOverlay: {
       flex: 1,
       backgroundColor: "rgba(0, 0, 0, 0.5)",
-      justifyContent: "flex-end",
+      justifyContent: isTablet ? "center" : "flex-end",
+    },
+    modalScrollContent: {
+      flexGrow: 1,
+      justifyContent: isTablet ? "center" : "flex-end",
     },
     modalContent: {
       backgroundColor: theme.cardSolid,
       borderTopLeftRadius: radius["2xl"],
       borderTopRightRadius: radius["2xl"],
+      borderBottomLeftRadius: isTablet ? radius["2xl"] : 0,
+      borderBottomRightRadius: isTablet ? radius["2xl"] : 0,
       padding: 20,
       ...getShadow(isDark, "xl"),
     },
