@@ -42,7 +42,8 @@
       "Bash(make lint-mobile:*)",
       "WebSearch",
       "Bash(make test-mobile:*)",
-      "Bash(make lint-frontend:*)"
+      "Bash(make lint-frontend:*)",
+      "Bash(make test-frontend:*)"
     ],
     "deny": [],
     "ask": []

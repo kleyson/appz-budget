@@ -41,14 +41,14 @@ export const Summary = ({ periodFilter = null, monthId = null }: SummaryProps) =
     <div className="p-5 lg:p-6">
       <SectionTitle className="mb-4">Summary by Period</SectionTitle>
 
-      <div className="overflow-x-auto mb-8">
+      <div className="-mx-5 lg:-mx-6 px-5 lg:px-6 overflow-x-auto mb-8">
         {!periodSummary || periodSummary.periods.length === 0 ? (
           <div className="text-center py-12 text-slate-500 dark:text-slate-400">
             <p className="text-lg">No period summary data available.</p>
           </div>
         ) : (
-          <div className="rounded-xl border border-slate-200/80 dark:border-slate-700/50 overflow-hidden">
-            <table className="w-full">
+          <div className="rounded-xl border border-slate-200/80 dark:border-slate-700/50 overflow-hidden inline-block min-w-full">
+            <table className="min-w-full">
               <thead className="table-header">
                 <tr>
                   <th className="table-header-cell">Period</th>
@@ -120,14 +120,14 @@ export const Summary = ({ periodFilter = null, monthId = null }: SummaryProps) =
 
       <SectionTitle className="mb-4">Expenses by Category</SectionTitle>
 
-      <div className="overflow-x-auto mb-8">
+      <div className="-mx-5 lg:-mx-6 px-5 lg:px-6 overflow-x-auto mb-8">
         {!summary || summary.length === 0 ? (
           <div className="text-center py-12 text-slate-500 dark:text-slate-400">
             <p className="text-lg">No category summary data available.</p>
           </div>
         ) : (
-          <div className="rounded-xl border border-slate-200/80 dark:border-slate-700/50 overflow-hidden">
-            <table className="w-full">
+          <div className="rounded-xl border border-slate-200/80 dark:border-slate-700/50 overflow-hidden inline-block min-w-full">
+            <table className="min-w-full">
               <thead className="table-header">
                 <tr>
                   <th className="table-header-cell">Category</th>
@@ -193,14 +193,14 @@ export const Summary = ({ periodFilter = null, monthId = null }: SummaryProps) =
 
       <SectionTitle className="mb-4">Income Summary</SectionTitle>
 
-      <div className="overflow-x-auto">
+      <div className="-mx-5 lg:-mx-6 px-5 lg:px-6 overflow-x-auto">
         {!incomeTypeSummary || incomeTypeSummary.length === 0 ? (
           <div className="text-center py-12 text-slate-500 dark:text-slate-400">
             <p className="text-lg">No income type summary data available.</p>
           </div>
         ) : (
-          <div className="rounded-xl border border-slate-200/80 dark:border-slate-700/50 overflow-hidden">
-            <table className="w-full">
+          <div className="rounded-xl border border-slate-200/80 dark:border-slate-700/50 overflow-hidden inline-block min-w-full">
+            <table className="min-w-full">
               <thead className="table-header">
                 <tr>
                   <th className="table-header-cell">Income Type</th>
