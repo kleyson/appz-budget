@@ -1,19 +1,27 @@
 import React from "react";
 import {
-  TouchableOpacity,
   Text,
   StyleSheet,
   ActivityIndicator,
   View,
   ViewStyle,
+  Pressable,
 } from "react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../contexts/ThemeContext";
 import { getThemeColors, getShadow, gradientColors, radius } from "../../utils/colors";
+import { springConfigs } from "../../utils/animations";
 
 type ButtonVariant = "primary" | "secondary" | "danger" | "success" | "ghost";
 type ButtonSize = "sm" | "md" | "lg";
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface ButtonProps {
   label: string;
@@ -47,6 +55,23 @@ export const Button = ({
   const styles = getStyles(isDark, theme);
 
   const isDisabled = disabled || loading;
+
+  // Animation values
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    if (!isDisabled) {
+      scale.value = withSpring(0.96, springConfigs.snappy);
+    }
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, springConfigs.snappy);
+  };
 
   const sizeStyles = {
     sm: { paddingVertical: 8, paddingHorizontal: 12, fontSize: 13, iconSize: 14 },
@@ -104,7 +129,7 @@ export const Button = ({
   // Secondary and Ghost variants don't use gradients
   if (variant === "secondary" || variant === "ghost") {
     return (
-      <TouchableOpacity
+      <AnimatedPressable
         style={[
           styles.button,
           variant === "secondary" && styles.secondaryButton,
@@ -115,29 +140,33 @@ export const Button = ({
           },
           fullWidth && styles.fullWidth,
           isDisabled && styles.disabled,
+          animatedStyle,
           style,
         ]}
         onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
         disabled={isDisabled}
-        activeOpacity={0.7}
       >
         {renderContent()}
-      </TouchableOpacity>
+      </AnimatedPressable>
     );
   }
 
   // Primary, danger, success variants use gradients
   return (
-    <TouchableOpacity
+    <AnimatedPressable
       style={[
         styles.gradientContainer,
         fullWidth && styles.fullWidth,
         isDisabled && styles.disabled,
+        animatedStyle,
         style,
       ]}
       onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       disabled={isDisabled}
-      activeOpacity={0.8}
     >
       <LinearGradient
         colors={getGradient()}
@@ -153,7 +182,7 @@ export const Button = ({
       >
         {renderContent()}
       </LinearGradient>
-    </TouchableOpacity>
+    </AnimatedPressable>
   );
 };
 

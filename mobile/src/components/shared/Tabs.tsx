@@ -1,14 +1,22 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import {
   View,
-  Text,
   StyleSheet,
-  TouchableOpacity,
   ScrollView,
+  Pressable,
+  LayoutChangeEvent,
 } from "react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  interpolateColor,
+} from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../contexts/ThemeContext";
 import { getThemeColors, radius } from "../../utils/colors";
+import { springConfigs } from "../../utils/animations";
 
 export interface Tab<T extends string> {
   id: T;
@@ -21,6 +29,87 @@ interface TabsProps<T extends string> {
   activeTab: T;
   onTabChange: (tabId: T) => void;
   showScrollIndicators?: boolean;
+}
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+interface AnimatedTabProps<T extends string> {
+  tab: Tab<T>;
+  isActive: boolean;
+  onPress: () => void;
+  theme: ReturnType<typeof getThemeColors>;
+  onLayout?: (event: LayoutChangeEvent) => void;
+}
+
+function AnimatedTab<T extends string>({
+  tab,
+  isActive,
+  onPress,
+  theme,
+  onLayout,
+}: AnimatedTabProps<T>) {
+  const styles = getStyles(theme);
+  const scale = useSharedValue(1);
+  const activeProgress = useSharedValue(isActive ? 1 : 0);
+
+  useEffect(() => {
+    activeProgress.value = withTiming(isActive ? 1 : 0, { duration: 200 });
+  }, [isActive]);
+
+  const animatedContainerStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    backgroundColor: interpolateColor(
+      activeProgress.value,
+      [0, 1],
+      [theme.surfaceSubtle, theme.primaryBg]
+    ),
+  }));
+
+  const animatedIconWrapperStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(
+      activeProgress.value,
+      [0, 1],
+      [theme.surfaceElevated, theme.primary]
+    ),
+  }));
+
+  const animatedTextStyle = useAnimatedStyle(() => ({
+    color: interpolateColor(
+      activeProgress.value,
+      [0, 1],
+      [theme.textSecondary, theme.primary]
+    ),
+    fontWeight: isActive ? "600" : "500",
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.95, springConfigs.snappy);
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, springConfigs.snappy);
+  };
+
+  return (
+    <AnimatedPressable
+      onLayout={onLayout}
+      style={[styles.tab, animatedContainerStyle]}
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+    >
+      <Animated.View style={[styles.tabIconWrapper, animatedIconWrapperStyle]}>
+        <Ionicons
+          name={tab.icon}
+          size={16}
+          color={isActive ? "#ffffff" : theme.textMuted}
+        />
+      </Animated.View>
+      <Animated.Text style={[styles.tabText, animatedTextStyle]} numberOfLines={1}>
+        {tab.label}
+      </Animated.Text>
+    </AnimatedPressable>
+  );
 }
 
 export function Tabs<T extends string>({
@@ -38,6 +127,14 @@ export function Tabs<T extends string>({
   const [scrollViewWidth, setScrollViewWidth] = useState(0);
 
   const styles = getStyles(theme);
+
+  // Indicator animation values
+  const indicatorOpacity = useSharedValue(0);
+
+  useEffect(() => {
+    // Fade in indicator after initial render
+    indicatorOpacity.value = withTiming(1, { duration: 300 });
+  }, []);
 
   const handleScroll = (event: any) => {
     if (!showScrollIndicators) return;
@@ -62,12 +159,20 @@ export function Tabs<T extends string>({
     setShowRightIndicator(contentWidth > width);
   };
 
+  const leftIndicatorStyle = useAnimatedStyle(() => ({
+    opacity: showLeftIndicator ? 1 : 0,
+  }));
+
+  const rightIndicatorStyle = useAnimatedStyle(() => ({
+    opacity: showRightIndicator ? 1 : 0,
+  }));
+
   return (
     <View style={styles.wrapper}>
-      {showScrollIndicators && showLeftIndicator && (
-        <View style={[styles.scrollIndicator, styles.leftIndicator]}>
+      {showScrollIndicators && (
+        <Animated.View style={[styles.scrollIndicator, styles.leftIndicator, leftIndicatorStyle]}>
           <Ionicons name="chevron-back" size={14} color={theme.textMuted} />
-        </View>
+        </Animated.View>
       )}
       <ScrollView
         ref={scrollViewRef}
@@ -83,38 +188,20 @@ export function Tabs<T extends string>({
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           return (
-            <TouchableOpacity
+            <AnimatedTab
               key={tab.id}
-              style={[styles.tab, isActive && styles.activeTab]}
+              tab={tab}
+              isActive={isActive}
               onPress={() => onTabChange(tab.id)}
-              activeOpacity={0.7}
-            >
-              <View
-                style={[
-                  styles.tabIconWrapper,
-                  isActive && styles.activeTabIconWrapper,
-                ]}
-              >
-                <Ionicons
-                  name={tab.icon}
-                  size={16}
-                  color={isActive ? "#ffffff" : theme.textMuted}
-                />
-              </View>
-              <Text
-                style={[styles.tabText, isActive && styles.activeTabText]}
-                numberOfLines={1}
-              >
-                {tab.label}
-              </Text>
-            </TouchableOpacity>
+              theme={theme}
+            />
           );
         })}
       </ScrollView>
-      {showScrollIndicators && showRightIndicator && (
-        <View style={[styles.scrollIndicator, styles.rightIndicator]}>
+      {showScrollIndicators && (
+        <Animated.View style={[styles.scrollIndicator, styles.rightIndicator, rightIndicatorStyle]}>
           <Ionicons name="chevron-forward" size={14} color={theme.textMuted} />
-        </View>
+        </Animated.View>
       )}
     </View>
   );
@@ -145,10 +232,6 @@ const getStyles = (theme: ReturnType<typeof getThemeColors>) =>
       paddingHorizontal: 12,
       gap: 8,
       borderRadius: radius.md,
-      backgroundColor: theme.surfaceSubtle,
-    },
-    activeTab: {
-      backgroundColor: theme.primaryBg,
     },
     tabIconWrapper: {
       width: 28,
@@ -156,19 +239,9 @@ const getStyles = (theme: ReturnType<typeof getThemeColors>) =>
       borderRadius: radius.sm,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: theme.surfaceElevated,
-    },
-    activeTabIconWrapper: {
-      backgroundColor: theme.primary,
     },
     tabText: {
       fontSize: 13,
-      fontWeight: "500",
-      color: theme.textSecondary,
-    },
-    activeTabText: {
-      color: theme.primary,
-      fontWeight: "600",
     },
     scrollIndicator: {
       position: "absolute",

@@ -15,3 +15,5 @@ export { Card } from "./Card";
 export { Badge } from "./Badge";
 export { SectionTitle, InputLabel, HintText, ValueLabel, ValueAmount } from "./Typography";
 export { CustomRefreshControl } from "./CustomRefreshControl";
+export { AnimatedChip } from "./AnimatedChip";
+export type { AnimatedChipProps } from "./AnimatedChip";

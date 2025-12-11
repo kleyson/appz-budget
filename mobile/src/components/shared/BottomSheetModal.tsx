@@ -1,18 +1,30 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   View,
   Text,
   Modal,
-  TouchableOpacity,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
+  Pressable,
+  Dimensions,
 } from "react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  Easing,
+} from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../contexts/ThemeContext";
 import { getThemeColors, getShadow, radius, spacing, gradientColors, rgba } from "../../utils/colors";
+import { springConfigs } from "../../utils/animations";
+
+const { height: SCREEN_HEIGHT } = Dimensions.get("window");
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface BottomSheetModalProps {
   visible: boolean;
@@ -59,13 +71,92 @@ export const BottomSheetModal = ({
   const theme = getThemeColors(isDark);
   const styles = getStyles(isDark, theme);
 
+  // Animation values
+  const overlayOpacity = useSharedValue(0);
+  const translateY = useSharedValue(SCREEN_HEIGHT);
+  const contentScale = useSharedValue(0.95);
+  const closeButtonScale = useSharedValue(1);
+  const cancelButtonScale = useSharedValue(1);
+  const saveButtonScale = useSharedValue(1);
+
+  useEffect(() => {
+    if (visible) {
+      // Animate in
+      overlayOpacity.value = withTiming(1, { duration: 200 });
+      translateY.value = withSpring(0, springConfigs.smooth);
+      contentScale.value = withSpring(1, springConfigs.gentle);
+    } else {
+      // Animate out
+      overlayOpacity.value = withTiming(0, { duration: 150 });
+      translateY.value = withTiming(SCREEN_HEIGHT, {
+        duration: 200,
+        easing: Easing.in(Easing.cubic),
+      });
+      contentScale.value = withTiming(0.95, { duration: 150 });
+    }
+  }, [visible]);
+
   const handleCancel = () => {
     onCancel?.();
     onClose();
   };
 
+  const overlayAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: overlayOpacity.value,
+  }));
+
+  const contentAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateY: translateY.value },
+      { scale: contentScale.value },
+    ],
+  }));
+
+  const closeButtonAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: closeButtonScale.value }],
+  }));
+
+  const cancelButtonAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: cancelButtonScale.value }],
+  }));
+
+  const saveButtonAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: saveButtonScale.value }],
+  }));
+
+  const handleCloseButtonPressIn = () => {
+    closeButtonScale.value = withSpring(0.9, springConfigs.snappy);
+  };
+
+  const handleCloseButtonPressOut = () => {
+    closeButtonScale.value = withSpring(1, springConfigs.snappy);
+  };
+
+  const handleCancelPressIn = () => {
+    cancelButtonScale.value = withSpring(0.96, springConfigs.snappy);
+  };
+
+  const handleCancelPressOut = () => {
+    cancelButtonScale.value = withSpring(1, springConfigs.snappy);
+  };
+
+  const handleSavePressIn = () => {
+    if (!saveDisabled) {
+      saveButtonScale.value = withSpring(0.96, springConfigs.snappy);
+    }
+  };
+
+  const handleSavePressOut = () => {
+    saveButtonScale.value = withSpring(1, springConfigs.snappy);
+  };
+
   const content = (
-    <View style={scrollable ? styles.contentScrollable : styles.content}>
+    <Animated.View style={[scrollable ? styles.contentScrollable : styles.content, contentAnimatedStyle]}>
+      {/* Drag Handle */}
+      <View style={styles.dragHandleContainer}>
+        <View style={styles.dragHandle} />
+      </View>
+
       {/* Header */}
       <View style={[styles.header, scrollable && styles.headerScrollable]}>
         <View style={styles.titleRow}>
@@ -76,9 +167,14 @@ export const BottomSheetModal = ({
           )}
           <Text style={styles.title}>{title}</Text>
         </View>
-        <TouchableOpacity style={styles.closeButton} onPress={onClose} activeOpacity={0.7}>
+        <AnimatedPressable
+          style={[styles.closeButton, closeButtonAnimatedStyle]}
+          onPress={onClose}
+          onPressIn={handleCloseButtonPressIn}
+          onPressOut={handleCloseButtonPressOut}
+        >
           <Ionicons name="close" size={20} color={theme.textSecondary} />
-        </TouchableOpacity>
+        </AnimatedPressable>
       </View>
 
       {/* Content */}
@@ -97,14 +193,20 @@ export const BottomSheetModal = ({
       {/* Footer */}
       {showFooter && (
         <View style={styles.footer}>
-          <TouchableOpacity style={styles.cancelButton} onPress={handleCancel} activeOpacity={0.7}>
+          <AnimatedPressable
+            style={[styles.cancelButton, cancelButtonAnimatedStyle]}
+            onPress={handleCancel}
+            onPressIn={handleCancelPressIn}
+            onPressOut={handleCancelPressOut}
+          >
             <Text style={styles.cancelButtonText}>{cancelText}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.saveButton, saveDisabled && styles.saveButtonDisabled]}
+          </AnimatedPressable>
+          <AnimatedPressable
+            style={[styles.saveButton, saveDisabled && styles.saveButtonDisabled, saveButtonAnimatedStyle]}
             onPress={onSave}
+            onPressIn={handleSavePressIn}
+            onPressOut={handleSavePressOut}
             disabled={saveDisabled}
-            activeOpacity={0.8}
           >
             <LinearGradient
               colors={saveGradient}
@@ -115,15 +217,18 @@ export const BottomSheetModal = ({
               <Ionicons name={saveIcon} size={18} color="#ffffff" />
               <Text style={styles.saveButtonText}>{saveText}</Text>
             </LinearGradient>
-          </TouchableOpacity>
+          </AnimatedPressable>
         </View>
       )}
-    </View>
+    </Animated.View>
   );
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.overlay}>
+    <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
+      <View style={styles.modalContainer}>
+        <Animated.View style={[styles.overlay, overlayAnimatedStyle]}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        </Animated.View>
         {keyboardAvoiding ? (
           <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -141,10 +246,13 @@ export const BottomSheetModal = ({
 
 const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
   StyleSheet.create({
-    overlay: {
+    modalContainer: {
       flex: 1,
-      backgroundColor: rgba.overlay,
       justifyContent: "flex-end",
+    },
+    overlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: rgba.overlay,
     },
     keyboardView: {
       justifyContent: "flex-end",
@@ -154,6 +262,7 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       borderTopLeftRadius: radius["2xl"],
       borderTopRightRadius: radius["2xl"],
       padding: spacing.xl,
+      paddingTop: spacing.sm,
       ...getShadow(isDark, "xl"),
     },
     contentScrollable: {
@@ -161,7 +270,18 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       borderTopLeftRadius: radius["2xl"],
       borderTopRightRadius: radius["2xl"],
       maxHeight: "90%",
+      paddingTop: spacing.sm,
       ...getShadow(isDark, "xl"),
+    },
+    dragHandleContainer: {
+      alignItems: "center",
+      paddingVertical: spacing.sm,
+    },
+    dragHandle: {
+      width: 36,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: theme.border,
     },
     scrollContent: {
       padding: spacing.xl,
@@ -172,10 +292,11 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       justifyContent: "space-between",
       alignItems: "center",
       marginBottom: spacing.xl,
+      marginTop: spacing.sm,
     },
     headerScrollable: {
       paddingHorizontal: spacing.xl,
-      paddingTop: spacing.xl,
+      paddingTop: spacing.md,
     },
     titleRow: {
       flexDirection: "row",

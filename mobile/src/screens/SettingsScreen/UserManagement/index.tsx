@@ -11,19 +11,21 @@ import {
   Alert,
   Switch,
 } from "react-native";
-import { useTheme } from "../../contexts/ThemeContext";
+import Animated, { FadeIn } from "react-native-reanimated";
+import { useTheme } from "../../../contexts/ThemeContext";
 import {
   useUsers,
   useCreateUser,
   useUpdateUser,
   useDeleteUser,
   useRefreshUsers,
-} from "../../hooks/useUsers";
+} from "../../../hooks/useUsers";
 import { Ionicons } from "@expo/vector-icons";
-import type { User } from "../../types";
-import { getErrorMessage } from "../../utils/errorHandler";
-import { getThemeColors, getShadow, radius } from "../../utils/colors";
-import { Button, CustomRefreshControl } from "../../components/shared";
+import type { User } from "../../../types";
+import { getErrorMessage } from "../../../utils/errorHandler";
+import { getThemeColors, getShadow, radius } from "../../../utils/colors";
+import { Button, CustomRefreshControl } from "../../../components/shared";
+import { AnimatedUserCard } from "./AnimatedUserCard";
 
 export const UserManagement = () => {
   const { isDark } = useTheme();
@@ -161,16 +163,18 @@ export const UserManagement = () => {
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={() => openForm()}
-            activeOpacity={0.7}
-          >
-            <View style={styles.addButtonIcon}>
-              <Ionicons name="add" size={18} color={theme.primary} />
-            </View>
-            <Text style={styles.addButtonText}>Add User</Text>
-          </TouchableOpacity>
+          <Animated.View entering={FadeIn.duration(300)}>
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={() => openForm()}
+              activeOpacity={0.7}
+            >
+              <View style={styles.addButtonIcon}>
+                <Ionicons name="add" size={18} color={theme.primary} />
+              </View>
+              <Text style={styles.addButtonText}>Add User</Text>
+            </TouchableOpacity>
+          </Animated.View>
         }
         refreshControl={
           <CustomRefreshControl
@@ -179,81 +183,15 @@ export const UserManagement = () => {
             color={theme.primary}
           />
         }
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <View
-              style={[
-                styles.colorBar,
-                {
-                  backgroundColor: item.is_admin
-                    ? theme.primary
-                    : theme.success,
-                },
-              ]}
-            />
-            <View style={styles.cardContent}>
-              <View style={styles.cardHeader}>
-                <View style={styles.userIcon}>
-                  <Ionicons
-                    name={item.is_admin ? "shield" : "person"}
-                    size={16}
-                    color={item.is_admin ? theme.primary : theme.success}
-                  />
-                </View>
-                <View
-                  style={[
-                    styles.statusBadge,
-                    !item.is_active && styles.statusBadgeInactive,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.statusText,
-                      !item.is_active && styles.statusTextInactive,
-                    ]}
-                  >
-                    {item.is_active ? "Active" : "Inactive"}
-                  </Text>
-                </View>
-              </View>
-              <Text
-                style={styles.cardEmail}
-                numberOfLines={1}
-                ellipsizeMode="tail"
-              >
-                {item.email}
-              </Text>
-              {item.full_name && (
-                <Text style={styles.cardName} numberOfLines={1}>
-                  {item.full_name}
-                </Text>
-              )}
-              <View style={styles.cardActions}>
-                <TouchableOpacity
-                  style={styles.editButton}
-                  onPress={() => openForm(item)}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons
-                    name="pencil-outline"
-                    size={14}
-                    color={theme.primary}
-                  />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.deleteButton}
-                  onPress={() => handleDelete(item)}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons
-                    name="trash-outline"
-                    size={14}
-                    color={theme.danger}
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
+        renderItem={({ item, index }) => (
+          <AnimatedUserCard
+            user={item}
+            index={index}
+            onEdit={() => openForm(item)}
+            onDelete={() => handleDelete(item)}
+            theme={theme}
+            isDark={isDark}
+          />
         )}
       />
 
@@ -470,89 +408,6 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
     row: {
       justifyContent: "space-between",
       gap: 12,
-    },
-    card: {
-      flex: 1,
-      minWidth: 0,
-      backgroundColor: theme.cardSolid,
-      borderRadius: radius.md,
-      borderWidth: 1,
-      borderColor: theme.border,
-      marginBottom: 12,
-      overflow: "hidden",
-      ...getShadow(isDark, "sm"),
-    },
-    colorBar: {
-      height: 4,
-    },
-    cardContent: {
-      padding: 12,
-      gap: 8,
-    },
-    cardHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-    },
-    userIcon: {
-      width: 28,
-      height: 28,
-      borderRadius: radius.sm,
-      backgroundColor: theme.surfaceDefault,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    statusBadge: {
-      paddingHorizontal: 8,
-      paddingVertical: 2,
-      borderRadius: radius.sm,
-      backgroundColor: theme.successBg,
-    },
-    statusBadgeInactive: {
-      backgroundColor: theme.surfaceDefault,
-    },
-    statusText: {
-      fontSize: 10,
-      fontWeight: "600",
-      color: theme.success,
-      textTransform: "uppercase",
-    },
-    statusTextInactive: {
-      color: theme.textMuted,
-    },
-    cardEmail: {
-      fontSize: 13,
-      fontWeight: "600",
-      color: theme.text,
-    },
-    cardName: {
-      fontSize: 12,
-      color: theme.textSecondary,
-    },
-    cardActions: {
-      flexDirection: "row",
-      gap: 8,
-      marginTop: 4,
-    },
-    editButton: {
-      flex: 1,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      paddingVertical: 8,
-      backgroundColor: theme.primaryBg,
-      borderRadius: radius.sm,
-      gap: 4,
-    },
-    deleteButton: {
-      flex: 1,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      paddingVertical: 8,
-      backgroundColor: theme.dangerBg,
-      borderRadius: radius.sm,
-      gap: 4,
     },
     modalOverlay: {
       flex: 1,

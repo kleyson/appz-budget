@@ -1,5 +1,12 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { View, Text, StyleSheet, ViewStyle } from "react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withDelay,
+  Easing,
+} from "react-native-reanimated";
 import { useTheme } from "../../contexts/ThemeContext";
 import { getThemeColors } from "../../utils/colors";
 
@@ -9,6 +16,10 @@ interface ProgressBarProps {
   showPercentage?: boolean;
   size?: "sm" | "md" | "lg";
   style?: ViewStyle;
+  /** Enable entrance animation */
+  animated?: boolean;
+  /** Delay before animation starts (ms) */
+  animationDelay?: number;
 }
 
 export const ProgressBar = ({
@@ -17,6 +28,8 @@ export const ProgressBar = ({
   showPercentage = true,
   size = "md",
   style,
+  animated = true,
+  animationDelay = 0,
 }: ProgressBarProps) => {
   const { isDark } = useTheme();
   const theme = getThemeColors(isDark);
@@ -28,17 +41,38 @@ export const ProgressBar = ({
   const heights = { sm: 4, md: 6, lg: 8 };
   const height = heights[size];
 
+  // Animation value
+  const animatedProgress = useSharedValue(animated ? 0 : clampedProgress);
+
+  useEffect(() => {
+    if (animated) {
+      animatedProgress.value = withDelay(
+        animationDelay,
+        withTiming(clampedProgress, {
+          duration: 600,
+          easing: Easing.out(Easing.cubic),
+        })
+      );
+    } else {
+      animatedProgress.value = clampedProgress;
+    }
+  }, [clampedProgress, animated, animationDelay]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    width: `${animatedProgress.value}%`,
+  }));
+
   return (
     <View style={[styles.container, style]}>
       <View style={[styles.track, { height, borderRadius: height / 2 }]}>
-        <View
+        <Animated.View
           style={[
             styles.fill,
             {
-              width: `${clampedProgress}%`,
               backgroundColor: fillColor,
               borderRadius: height / 2,
             },
+            animatedStyle,
           ]}
         />
       </View>

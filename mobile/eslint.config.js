@@ -91,6 +91,9 @@ export default defineConfig([
         { allowConstantExport: true },
       ],
       "react-hooks/set-state-in-effect": "off",
+      // Disable immutability rule for react-native-reanimated shared values
+      // SharedValue.value is a proxy that triggers UI thread updates
+      "react-hooks/immutability": "off",
     },
   },
 ]);

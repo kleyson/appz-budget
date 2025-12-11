@@ -1,11 +1,22 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { View, Text, StyleSheet } from "react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withDelay,
+  withSpring,
+  withTiming,
+  Easing,
+  FadeIn,
+  SlideInRight,
+} from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../contexts/ThemeContext";
 import { getThemeColors, getShadow, gradientColors, radius } from "../../utils/colors";
 import { formatCurrency } from "../../utils/styles";
 import { SectionTitle } from "../../components/shared";
+import { springConfigs, getStaggerDelay } from "../../utils/animations";
 import type { SummaryTotals } from "../../types";
 
 interface SummaryCardsProps {
@@ -20,15 +31,162 @@ interface CardConfig {
   type: 'expense' | 'income' | 'balance';
 }
 
+interface AnimatedCardProps {
+  card: CardConfig;
+  index: number;
+  totals: SummaryTotals;
+  isDark: boolean;
+  theme: ReturnType<typeof getThemeColors>;
+}
+
+const AnimatedCard = ({ card, index, totals, isDark, theme }: AnimatedCardProps) => {
+  const styles = getCardStyles(isDark, theme);
+
+  // Animation values
+  const opacity = useSharedValue(0);
+  const translateY = useSharedValue(30);
+  const scale = useSharedValue(0.9);
+
+  useEffect(() => {
+    const delay = getStaggerDelay(index, 80);
+    opacity.value = withDelay(delay, withTiming(1, { duration: 300 }));
+    translateY.value = withDelay(delay, withSpring(0, springConfigs.gentle));
+    scale.value = withDelay(delay, withSpring(1, springConfigs.gentle));
+  }, [index]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [
+      { translateY: translateY.value },
+      { scale: scale.value },
+    ],
+  }));
+
+  const percentage = totals.total_budgeted_income === 0
+    ? null
+    : ((card.value / totals.total_budgeted_income) * 100).toFixed(0);
+  const isPositive = card.value >= 0;
+
+  return (
+    <Animated.View style={[styles.cardWrapper, animatedStyle]}>
+      <View style={styles.card}>
+        <LinearGradient
+          colors={card.gradientColors}
+          style={styles.accentBar}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+        />
+
+        <View style={styles.cardContent}>
+          <View style={styles.cardHeader}>
+            <View style={[styles.iconContainer, { backgroundColor: `${card.gradientColors[0]}20` }]}>
+              <Ionicons name={card.iconName} size={18} color={card.gradientColors[0]} />
+            </View>
+            {percentage && (
+              <View style={[styles.percentBadge, { backgroundColor: `${card.gradientColors[0]}15` }]}>
+                <Text style={[styles.percentText, { color: card.gradientColors[0] }]}>
+                  {isPositive ? "+" : ""}{percentage}%
+                </Text>
+              </View>
+            )}
+          </View>
+
+          <Text style={styles.cardLabel}>{card.title}</Text>
+          <Text
+            style={[
+              styles.cardValue,
+              { color: card.value === 0 ? theme.textMuted : card.gradientColors[0] },
+            ]}
+          >
+            {!isPositive && "-"}{formatCurrency(card.value)}
+          </Text>
+        </View>
+      </View>
+    </Animated.View>
+  );
+};
+
+interface AnimatedSectionProps {
+  title: string;
+  iconName: keyof typeof Ionicons.glyphMap;
+  iconBgColor: string;
+  iconColor: string;
+  cards: CardConfig[];
+  totals: SummaryTotals;
+  sectionIndex: number;
+  isDark: boolean;
+  theme: ReturnType<typeof getThemeColors>;
+}
+
+const AnimatedSection = ({
+  title,
+  iconName,
+  iconBgColor,
+  iconColor,
+  cards,
+  totals,
+  sectionIndex,
+  isDark,
+  theme,
+}: AnimatedSectionProps) => {
+  const styles = getSectionStyles(theme);
+  const baseIndex = sectionIndex * 2;
+
+  return (
+    <Animated.View
+      style={styles.section}
+      entering={FadeIn.delay(sectionIndex * 100).duration(300)}
+    >
+      <Animated.View
+        style={styles.sectionHeader}
+        entering={SlideInRight.delay(sectionIndex * 100).duration(300)}
+      >
+        <View style={[styles.sectionIcon, { backgroundColor: iconBgColor }]}>
+          <Ionicons name={iconName} size={16} color={iconColor} />
+        </View>
+        <SectionTitle>{title}</SectionTitle>
+      </Animated.View>
+      <View style={styles.grid}>
+        {cards.map((card, idx) => (
+          <AnimatedCard
+            key={`${card.title}-${idx}`}
+            card={card}
+            index={baseIndex + idx}
+            totals={totals}
+            isDark={isDark}
+            theme={theme}
+          />
+        ))}
+      </View>
+    </Animated.View>
+  );
+};
+
 export const SummaryCards = ({ totals }: SummaryCardsProps) => {
   const { isDark } = useTheme();
   const theme = getThemeColors(isDark);
   const styles = getStyles(isDark, theme);
 
+  // Loading spinner animation
+  const spinnerRotation = useSharedValue(0);
+
+  useEffect(() => {
+    if (!totals) {
+      spinnerRotation.value = withTiming(360, {
+        duration: 1000,
+        easing: Easing.linear,
+      });
+    }
+  }, [totals]);
+
+  const spinnerStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${spinnerRotation.value}deg` }],
+  }));
+
   if (!totals) {
     return (
       <View style={styles.loadingContainer}>
-        <View style={styles.loadingSpinner} />
+        <Animated.View style={[styles.loadingSpinner, spinnerStyle]} />
         <Text style={styles.loadingText}>Loading summary...</Text>
       </View>
     );
@@ -85,94 +243,46 @@ export const SummaryCards = ({ totals }: SummaryCardsProps) => {
     },
   ];
 
-  const getPercentage = (value: number) => {
-    if (totals.total_budgeted_income === 0) return null;
-    return ((value / totals.total_budgeted_income) * 100).toFixed(0);
-  };
-
-  const renderCard = (card: CardConfig, index: number) => {
-    const percentage = getPercentage(card.value);
-    const isPositive = card.value >= 0;
-
-    return (
-      <View key={`${card.title}-${index}`} style={styles.cardWrapper}>
-        <View style={styles.card}>
-          <LinearGradient
-            colors={card.gradientColors}
-            style={styles.accentBar}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-          />
-
-          <View style={styles.cardContent}>
-            <View style={styles.cardHeader}>
-              <View style={[styles.iconContainer, { backgroundColor: `${card.gradientColors[0]}20` }]}>
-                <Ionicons name={card.iconName} size={18} color={card.gradientColors[0]} />
-              </View>
-              {percentage && (
-                <View style={[styles.percentBadge, { backgroundColor: `${card.gradientColors[0]}15` }]}>
-                  <Text style={[styles.percentText, { color: card.gradientColors[0] }]}>
-                    {isPositive ? "+" : ""}{percentage}%
-                  </Text>
-                </View>
-              )}
-            </View>
-
-            <Text style={styles.cardLabel}>{card.title}</Text>
-            <Text
-              style={[
-                styles.cardValue,
-                { color: card.value === 0 ? theme.textMuted : card.gradientColors[0] },
-              ]}
-            >
-              {!isPositive && "-"}{formatCurrency(card.value)}
-            </Text>
-          </View>
-        </View>
-      </View>
-    );
-  };
-
   return (
     <View style={styles.container}>
       {/* Expenses Section */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <View style={[styles.sectionIcon, { backgroundColor: theme.dangerBg }]}>
-            <Ionicons name="trending-down" size={16} color={theme.danger} />
-          </View>
-          <SectionTitle>Expenses</SectionTitle>
-        </View>
-        <View style={styles.grid}>
-          {expenseCards.map(renderCard)}
-        </View>
-      </View>
+      <AnimatedSection
+        title="Expenses"
+        iconName="trending-down"
+        iconBgColor={theme.dangerBg}
+        iconColor={theme.danger}
+        cards={expenseCards}
+        totals={totals}
+        sectionIndex={0}
+        isDark={isDark}
+        theme={theme}
+      />
 
       {/* Income Section */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <View style={[styles.sectionIcon, { backgroundColor: theme.successBg }]}>
-            <Ionicons name="trending-up" size={16} color={theme.success} />
-          </View>
-          <SectionTitle>Income</SectionTitle>
-        </View>
-        <View style={styles.grid}>
-          {incomeCards.map(renderCard)}
-        </View>
-      </View>
+      <AnimatedSection
+        title="Income"
+        iconName="trending-up"
+        iconBgColor={theme.successBg}
+        iconColor={theme.success}
+        cards={incomeCards}
+        totals={totals}
+        sectionIndex={1}
+        isDark={isDark}
+        theme={theme}
+      />
 
       {/* Balance Section */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <View style={[styles.sectionIcon, { backgroundColor: theme.primaryBg }]}>
-            <Ionicons name="wallet" size={16} color={theme.primary} />
-          </View>
-          <SectionTitle>Balance</SectionTitle>
-        </View>
-        <View style={styles.grid}>
-          {balanceCards.map(renderCard)}
-        </View>
-      </View>
+      <AnimatedSection
+        title="Balance"
+        iconName="wallet"
+        iconBgColor={theme.primaryBg}
+        iconColor={theme.primary}
+        cards={balanceCards}
+        totals={totals}
+        sectionIndex={2}
+        isDark={isDark}
+        theme={theme}
+      />
     </View>
   );
 };
@@ -181,21 +291,6 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
   StyleSheet.create({
     container: {
       gap: 20,
-    },
-    section: {
-      gap: 12,
-    },
-    sectionHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 10,
-    },
-    sectionIcon: {
-      width: 28,
-      height: 28,
-      borderRadius: radius.sm,
-      alignItems: 'center',
-      justifyContent: 'center',
     },
     loadingContainer: {
       padding: 48,
@@ -213,10 +308,33 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       marginTop: 12,
       color: theme.textSecondary,
     },
+  });
+
+const getSectionStyles = (_theme: ReturnType<typeof getThemeColors>) =>
+  StyleSheet.create({
+    section: {
+      gap: 12,
+    },
+    sectionHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+    },
+    sectionIcon: {
+      width: 28,
+      height: 28,
+      borderRadius: radius.sm,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
     grid: {
       flexDirection: "row",
       gap: 12,
     },
+  });
+
+const getCardStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
+  StyleSheet.create({
     cardWrapper: {
       flex: 1,
     },

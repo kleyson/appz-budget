@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet } from "react-native";
+import Animated, { FadeIn, FadeOut, SlideInRight } from "react-native-reanimated";
 import { useTheme } from "../../contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { CategoryManagement } from "./CategoryManagement";
@@ -40,24 +41,41 @@ export const SettingsScreen = () => {
     } else {
       setBackendVersion(null);
     }
-     
+
   }, [apiUrl]);
 
   const styles = getStyles(theme);
+
+  const renderTabContent = () => {
+    // Use a unique key based on activeTab to trigger enter/exit animations
+    return (
+      <Animated.View
+        key={activeTab}
+        style={styles.contentWrapper}
+        entering={SlideInRight.duration(250).springify()}
+        exiting={FadeOut.duration(150)}
+      >
+        {activeTab === "categories" && <CategoryManagement />}
+        {activeTab === "periods" && <PeriodManagement />}
+        {activeTab === "income-types" && <IncomeTypeManagement />}
+        {activeTab === "users" && <UserManagement />}
+        {activeTab === "change-password" && <ChangePasswordScreen />}
+      </Animated.View>
+    );
+  };
 
   return (
     <View style={styles.container}>
       <Tabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
 
       <View style={styles.content}>
-        {activeTab === "categories" && <CategoryManagement />}
-        {activeTab === "periods" && <PeriodManagement />}
-        {activeTab === "income-types" && <IncomeTypeManagement />}
-        {activeTab === "users" && <UserManagement />}
-        {activeTab === "change-password" && <ChangePasswordScreen />}
+        {renderTabContent()}
       </View>
 
-      <View style={styles.versionContainer}>
+      <Animated.View
+        style={styles.versionContainer}
+        entering={FadeIn.delay(300).duration(300)}
+      >
         <View style={styles.versionRow}>
           <View style={styles.versionItem}>
             <Ionicons name="phone-portrait-outline" size={12} color={theme.textMuted} />
@@ -81,7 +99,7 @@ export const SettingsScreen = () => {
             </>
           )}
         </View>
-      </View>
+      </Animated.View>
     </View>
   );
 };
@@ -93,6 +111,9 @@ const getStyles = (theme: ReturnType<typeof getThemeColors>) =>
       backgroundColor: theme.background,
     },
     content: {
+      flex: 1,
+    },
+    contentWrapper: {
       flex: 1,
     },
     versionContainer: {

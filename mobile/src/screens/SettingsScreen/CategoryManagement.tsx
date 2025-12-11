@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { View, FlatList, Alert, StyleSheet } from "react-native";
+import Animated, { FadeIn } from "react-native-reanimated";
 import { useTheme } from "../../contexts/ThemeContext";
 import {
   useCategories,
@@ -114,11 +115,13 @@ export const CategoryManagement = () => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
-          <AddButton
-            label="Add Category"
-            onPress={() => openForm()}
-            style={styles.addButton}
-          />
+          <Animated.View entering={FadeIn.duration(300)}>
+            <AddButton
+              label="Add Category"
+              onPress={() => openForm()}
+              style={styles.addButton}
+            />
+          </Animated.View>
         }
         refreshControl={
           <CustomRefreshControl
@@ -127,12 +130,14 @@ export const CategoryManagement = () => {
             color={theme.primary}
           />
         }
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
           <ListItem
             name={item.name}
             color={item.color}
             onEdit={() => openForm(item)}
             onDelete={() => handleDelete(item)}
+            animated
+            animationIndex={index}
           />
         )}
       />

@@ -1,9 +1,23 @@
-import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
+import React, { useEffect } from "react";
+import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  interpolate,
+  Extrapolation,
+  FadeIn,
+  FadeOut,
+  Layout,
+} from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../contexts/ThemeContext";
-import { getThemeColors, radius, isDarkColor } from "../../utils/colors";
+import { getThemeColors, radius } from "../../utils/colors";
+import { springConfigs } from "../../utils/animations";
+import { AnimatedChip } from "../../components/shared";
 import type { Period, Category } from "../../types";
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface FilterBarProps {
   periods: Period[];
@@ -30,130 +44,124 @@ export const FilterBar = ({
 }: FilterBarProps) => {
   const { isDark } = useTheme();
   const theme = getThemeColors(isDark);
-  const styles = getStyles(isDark, theme);
+  const styles = getStyles(theme);
+
+  const expandProgress = useSharedValue(showFilters ? 1 : 0);
+
+  useEffect(() => {
+    expandProgress.value = withSpring(showFilters ? 1 : 0, springConfigs.smooth);
+  }, [showFilters]);
+
+  const containerAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: expandProgress.value,
+    transform: [
+      {
+        translateY: interpolate(
+          expandProgress.value,
+          [0, 1],
+          [-10, 0],
+          Extrapolation.CLAMP
+        ),
+      },
+    ],
+  }));
+
+  if (!showFilters) {
+    return null;
+  }
 
   return (
-    <View style={styles.container}>
-      {showFilters && (
-        <View style={styles.filtersContent}>
-          {/* Period Filter */}
-          <View style={styles.filterGroup}>
+    <Animated.View
+      style={[styles.container, containerAnimatedStyle]}
+      entering={FadeIn.duration(200)}
+      exiting={FadeOut.duration(150)}
+    >
+      <View style={styles.filtersContent}>
+        {/* Period Filter */}
+        <Animated.View
+          style={styles.filterGroup}
+          entering={FadeIn.delay(50).duration(200)}
+          layout={Layout.springify()}
+        >
+          <View style={styles.filterHeader}>
+            <Animated.View
+              style={[styles.filterIcon, { backgroundColor: theme.primaryBg }]}
+              entering={FadeIn.delay(100).duration(200)}
+            >
+              <Ionicons name="calendar-outline" size={14} color={theme.primary} />
+            </Animated.View>
+            <Text style={styles.label}>Period</Text>
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chips}
+          >
+            <AnimatedChip
+              label="All"
+              isSelected={selectedPeriod === ""}
+              onPress={() => onPeriodChange("")}
+              index={0}
+              theme={theme}
+            />
+            {periods.map((period, idx) => (
+              <AnimatedChip
+                key={period.id}
+                label={period.name}
+                isSelected={selectedPeriod === period.name}
+                color={selectedPeriod === period.name ? period.color : undefined}
+                onPress={() => onPeriodChange(period.name)}
+                index={idx + 1}
+                theme={theme}
+              />
+            ))}
+          </ScrollView>
+        </Animated.View>
+
+        {/* Category Filter */}
+        {showCategoryFilter && (
+          <Animated.View
+            style={styles.filterGroup}
+            entering={FadeIn.delay(150).duration(200)}
+            layout={Layout.springify()}
+          >
             <View style={styles.filterHeader}>
-              <View style={[styles.filterIcon, { backgroundColor: theme.primaryBg }]}>
-                <Ionicons name="calendar-outline" size={14} color={theme.primary} />
-              </View>
-              <Text style={styles.label}>Period</Text>
+              <Animated.View
+                style={[styles.filterIcon, { backgroundColor: theme.dangerBg }]}
+                entering={FadeIn.delay(200).duration(200)}
+              >
+                <Ionicons name="pricetag-outline" size={14} color={theme.danger} />
+              </Animated.View>
+              <Text style={styles.label}>Category</Text>
             </View>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.chips}
             >
-              <TouchableOpacity
-                style={[styles.chip, selectedPeriod === "" && styles.chipActive]}
-                onPress={() => onPeriodChange("")}
-                activeOpacity={0.7}
-              >
-                <Text
-                  style={[styles.chipText, selectedPeriod === "" && styles.chipTextActive]}
-                >
-                  All
-                </Text>
-              </TouchableOpacity>
-              {periods.map((period) => {
-                const isSelected = selectedPeriod === period.name;
-                return (
-                  <TouchableOpacity
-                    key={period.id}
-                    style={[
-                      styles.chip,
-                      isSelected && styles.chipActive,
-                      isSelected && { backgroundColor: period.color, borderColor: period.color },
-                    ]}
-                    onPress={() => onPeriodChange(period.name)}
-                    activeOpacity={0.7}
-                  >
-                    <Text
-                      style={[
-                        styles.chipText,
-                        isSelected && styles.chipTextActive,
-                        isSelected && {
-                          color: isDarkColor(period.color) ? "#ffffff" : "#0f172a",
-                        },
-                      ]}
-                    >
-                      {period.name}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
+              <AnimatedChip
+                label="All"
+                isSelected={selectedCategory === ""}
+                onPress={() => onCategoryChange("")}
+                index={0}
+                theme={theme}
+              />
+              {categories.map((category, idx) => (
+                <AnimatedChip
+                  key={category.id}
+                  label={category.name}
+                  isSelected={selectedCategory === category.name}
+                  color={selectedCategory === category.name ? category.color : undefined}
+                  onPress={() => onCategoryChange(category.name)}
+                  index={idx + 1}
+                  theme={theme}
+                />
+              ))}
             </ScrollView>
-          </View>
-
-          {/* Category Filter */}
-          {showCategoryFilter && (
-            <View style={styles.filterGroup}>
-              <View style={styles.filterHeader}>
-                <View style={[styles.filterIcon, { backgroundColor: theme.dangerBg }]}>
-                  <Ionicons name="pricetag-outline" size={14} color={theme.danger} />
-                </View>
-                <Text style={styles.label}>Category</Text>
-              </View>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.chips}
-              >
-                <TouchableOpacity
-                  style={[styles.chip, selectedCategory === "" && styles.chipActive]}
-                  onPress={() => onCategoryChange("")}
-                  activeOpacity={0.7}
-                >
-                  <Text
-                    style={[
-                      styles.chipText,
-                      selectedCategory === "" && styles.chipTextActive,
-                    ]}
-                  >
-                    All
-                  </Text>
-                </TouchableOpacity>
-                {categories.map((category) => {
-                  const isSelected = selectedCategory === category.name;
-                  return (
-                    <TouchableOpacity
-                      key={category.id}
-                      style={[
-                        styles.chip,
-                        isSelected && styles.chipActive,
-                        isSelected && {
-                          backgroundColor: category.color,
-                          borderColor: category.color,
-                        },
-                      ]}
-                      onPress={() => onCategoryChange(category.name)}
-                      activeOpacity={0.7}
-                    >
-                      <Text
-                        style={[
-                          styles.chipText,
-                          isSelected && styles.chipTextActive,
-                          isSelected && {
-                            color: isDarkColor(category.color) ? "#ffffff" : "#0f172a",
-                          },
-                        ]}
-                      >
-                        {category.name}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
-            </View>
-          )}
-        </View>
-      )}
-    </View>
+          </Animated.View>
+        )}
+      </View>
+    </Animated.View>
   );
 };
 
@@ -166,24 +174,49 @@ export const FilterToggleButton = ({
 }) => {
   const { isDark } = useTheme();
   const theme = getThemeColors(isDark);
-  const styles = getToggleStyles(isDark, theme);
+  const styles = getToggleStyles(theme);
+
+  const scale = useSharedValue(1);
+  const rotation = useSharedValue(0);
+
+  useEffect(() => {
+    rotation.value = withSpring(showFilters ? 180 : 0, springConfigs.snappy);
+  }, [showFilters]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { scale: scale.value },
+      { rotate: `${rotation.value}deg` },
+    ],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.9, springConfigs.snappy);
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, springConfigs.snappy);
+  };
 
   return (
-    <TouchableOpacity
+    <AnimatedPressable
       style={[styles.toggleButton, showFilters && styles.toggleButtonActive]}
       onPress={onToggle}
-      activeOpacity={0.7}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
     >
-      <Ionicons
-        name={showFilters ? "filter" : "filter-outline"}
-        size={18}
-        color={showFilters ? theme.primary : theme.textSecondary}
-      />
-    </TouchableOpacity>
+      <Animated.View style={animatedStyle}>
+        <Ionicons
+          name={showFilters ? "filter" : "filter-outline"}
+          size={18}
+          color={showFilters ? theme.primary : theme.textSecondary}
+        />
+      </Animated.View>
+    </AnimatedPressable>
   );
 };
 
-const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
+const getStyles = (theme: ReturnType<typeof getThemeColors>) =>
   StyleSheet.create({
     container: {
       gap: 12,
@@ -218,30 +251,9 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       gap: 8,
       paddingRight: 16,
     },
-    chip: {
-      paddingHorizontal: 14,
-      paddingVertical: 8,
-      borderRadius: radius.md,
-      borderWidth: 1,
-      borderColor: theme.border,
-      backgroundColor: theme.surfaceSubtle,
-    },
-    chipActive: {
-      borderColor: theme.primary,
-      backgroundColor: theme.primaryBg,
-    },
-    chipText: {
-      fontSize: 13,
-      fontWeight: "500",
-      color: theme.textSecondary,
-    },
-    chipTextActive: {
-      fontWeight: "600",
-      color: theme.primary,
-    },
   });
 
-const getToggleStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
+const getToggleStyles = (theme: ReturnType<typeof getThemeColors>) =>
   StyleSheet.create({
     toggleButton: {
       alignItems: "center",
