@@ -43,7 +43,8 @@
       "WebSearch",
       "Bash(make test-mobile:*)",
       "Bash(make lint-frontend:*)",
-      "Bash(make test-frontend:*)"
+      "Bash(make test-frontend:*)",
+      "Bash(make type-check-mobile:*)"
     ],
     "deny": [],
     "ask": []

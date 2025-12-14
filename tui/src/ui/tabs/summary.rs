@@ -264,7 +264,7 @@ fn render_category_summary(app: &AppState, frame: &mut Frame, area: Rect) {
     });
     let header = Row::new(header_cells).height(1);
 
-    let rows: Vec<Row> = app
+    let mut rows: Vec<Row> = app
         .data
         .category_summary
         .iter()
@@ -282,6 +282,59 @@ fn render_category_summary(app: &AppState, frame: &mut Frame, area: Rect) {
             ])
         })
         .collect();
+
+    // Calculate totals
+    let total_budget: f64 = app.data.category_summary.iter().map(|cs| cs.budget).sum();
+    let total_actual: f64 = app.data.category_summary.iter().map(|cs| cs.total).sum();
+    let total_paid_capped: f64 = app
+        .data
+        .category_summary
+        .iter()
+        .map(|cs| cs.total.min(cs.budget))
+        .sum();
+    let diff_without_over = total_budget - total_paid_capped;
+    let diff_with_over = total_budget - total_actual;
+
+    // Add Budget Control row (without over amounts)
+    let budget_control_diff_color = if diff_without_over >= 0.0 {
+        Color::Green
+    } else {
+        Color::Red
+    };
+    let budget_control_row = Row::new(vec![
+        Cell::from("Budget Control").style(Style::default().fg(Color::DarkGray)),
+        Cell::from(format_currency(total_budget)).style(Style::default().fg(Color::White)),
+        Cell::from(format_currency(total_paid_capped)).style(Style::default().fg(Color::White)),
+        Cell::from(format_currency(diff_without_over))
+            .style(Style::default().fg(budget_control_diff_color)),
+    ]);
+    rows.push(budget_control_row);
+
+    // Add Total (with over) row
+    let total_diff_color = if diff_with_over >= 0.0 {
+        Color::Green
+    } else {
+        Color::Red
+    };
+    let total_row = Row::new(vec![
+        Cell::from("Total (with over)").style(Style::default().add_modifier(Modifier::BOLD)),
+        Cell::from(format_currency(total_budget)).style(
+            Style::default()
+                .fg(Color::White)
+                .add_modifier(Modifier::BOLD),
+        ),
+        Cell::from(format_currency(total_actual)).style(
+            Style::default()
+                .fg(Color::White)
+                .add_modifier(Modifier::BOLD),
+        ),
+        Cell::from(format_currency(diff_with_over)).style(
+            Style::default()
+                .fg(total_diff_color)
+                .add_modifier(Modifier::BOLD),
+        ),
+    ]);
+    rows.push(total_row);
 
     let table = Table::new(
         rows,

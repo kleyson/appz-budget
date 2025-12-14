@@ -185,6 +185,64 @@ export const Summary = ({ periodFilter = null, monthId = null }: SummaryProps) =
                     </tr>
                   );
                 })}
+                {(() => {
+                  const totalBudget = summary?.reduce((acc, item) => acc + item.budget, 0) || 0;
+                  const totalActual = summary?.reduce((acc, item) => acc + item.total, 0) || 0;
+                  const totalPaidCapped =
+                    summary?.reduce(
+                      (acc, item) => acc + Math.min(item.total, item.budget),
+                      0
+                    ) || 0;
+                  const diffWithoutOver = totalBudget - totalPaidCapped;
+                  const diffWithOver = totalBudget - totalActual;
+
+                  return (
+                    <>
+                      <tr className="bg-slate-50 dark:bg-slate-800/30 font-medium">
+                        <td className="table-cell text-slate-700 dark:text-slate-300">
+                          Budget Control
+                        </td>
+                        <td className="table-cell text-right text-slate-900 dark:text-white">
+                          {formatCurrency(totalBudget)}
+                        </td>
+                        <td className="table-cell text-right text-slate-900 dark:text-white">
+                          {formatCurrency(totalPaidCapped)}
+                        </td>
+                        <td className="table-cell"></td>
+                        <td
+                          className={`table-cell text-right font-semibold ${
+                            diffWithoutOver >= 0
+                              ? 'text-emerald-600 dark:text-emerald-400'
+                              : 'text-red-600 dark:text-red-400'
+                          }`}
+                        >
+                          {formatCurrency(diffWithoutOver)}
+                        </td>
+                      </tr>
+                      <tr className="bg-slate-100 dark:bg-slate-800/50 font-semibold">
+                        <td className="table-cell text-slate-900 dark:text-white">
+                          Total (with over)
+                        </td>
+                        <td className="table-cell text-right text-slate-900 dark:text-white">
+                          {formatCurrency(totalBudget)}
+                        </td>
+                        <td className="table-cell text-right text-slate-900 dark:text-white">
+                          {formatCurrency(totalActual)}
+                        </td>
+                        <td className="table-cell"></td>
+                        <td
+                          className={`table-cell text-right font-semibold ${
+                            diffWithOver >= 0
+                              ? 'text-emerald-600 dark:text-emerald-400'
+                              : 'text-red-600 dark:text-red-400'
+                          }`}
+                        >
+                          {formatCurrency(diffWithOver)}
+                        </td>
+                      </tr>
+                    </>
+                  );
+                })()}
               </tbody>
             </table>
           </div>
