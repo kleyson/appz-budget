@@ -189,10 +189,7 @@ export const Summary = ({ periodFilter = null, monthId = null }: SummaryProps) =
                   const totalBudget = summary?.reduce((acc, item) => acc + item.budget, 0) || 0;
                   const totalActual = summary?.reduce((acc, item) => acc + item.total, 0) || 0;
                   const totalPaidCapped =
-                    summary?.reduce(
-                      (acc, item) => acc + Math.min(item.total, item.budget),
-                      0
-                    ) || 0;
+                    summary?.reduce((acc, item) => acc + Math.min(item.total, item.budget), 0) || 0;
                   const diffWithoutOver = totalBudget - totalPaidCapped;
                   const diffWithOver = totalBudget - totalActual;
 
