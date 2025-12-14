@@ -49,3 +49,8 @@ api-key.json
 # generated native folders
 /ios
 /android
+
+# Build artifacts
+*.aab
+*.apk
+*.ipa
