@@ -257,6 +257,103 @@ export const Summary = ({ periodFilter = null, monthId = null }: SummaryProps) =
                 </View>
               );
             })}
+
+            {/* Budget Control Total Card */}
+            {(() => {
+              const totalBudget = summary.reduce((acc: number, item: CategorySummary) => acc + item.budget, 0);
+              const totalPaidCapped = summary.reduce(
+                (acc: number, item: CategorySummary) => acc + Math.min(item.total, item.budget),
+                0
+              );
+              const diffWithoutOver = totalBudget - totalPaidCapped;
+
+              return (
+                <View style={[styles.card, styles.summaryCard]}>
+                  <View style={styles.cardTopRow}>
+                    <Text style={styles.summaryCardTitle}>Budget Control</Text>
+                  </View>
+                  <View style={styles.cardBottomRow}>
+                    <View style={styles.valueContainer}>
+                      <Text style={styles.valueLabel}>Spent</Text>
+                      <Text style={styles.valueAmount}>{formatCurrency(totalPaidCapped)}</Text>
+                    </View>
+                    <View style={styles.valueContainer}>
+                      <Text style={styles.valueLabel}>Budget</Text>
+                      <Text style={styles.valueAmount}>{formatCurrency(totalBudget)}</Text>
+                    </View>
+                    <View style={styles.valueContainer}>
+                      <Text style={styles.valueLabel}>Left</Text>
+                      <Text
+                        style={[
+                          styles.valueAmount,
+                          styles.valueBold,
+                          { color: diffWithoutOver >= 0 ? theme.success : theme.danger },
+                        ]}
+                      >
+                        {diffWithoutOver < 0 ? '-' : ''}{formatCurrency(diffWithoutOver)}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              );
+            })()}
+
+            {/* Total with Over Card */}
+            <View style={styles.totalCard}>
+              <LinearGradient
+                colors={gradientColors.purple}
+                style={styles.totalGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                {(() => {
+                  const totalBudget = summary.reduce((acc: number, item: CategorySummary) => acc + item.budget, 0);
+                  const totalActual = summary.reduce((acc: number, item: CategorySummary) => acc + item.total, 0);
+                  const diffWithOver = totalBudget - totalActual;
+
+                  return (
+                    <View style={styles.totalContent}>
+                      <View style={styles.totalRow}>
+                        <Text style={styles.totalLabel}>Total (with over)</Text>
+                        <View style={styles.totalValueContainer}>
+                          <Ionicons name="wallet" size={14} color="rgba(255,255,255,0.8)" />
+                          <Text style={styles.totalValueLabel}>Budget</Text>
+                          <Text style={styles.totalValue}>
+                            {formatCurrency(totalBudget)}
+                          </Text>
+                        </View>
+                      </View>
+                      <View style={styles.totalRow}>
+                        <View />
+                        <View style={styles.totalValueContainer}>
+                          <Ionicons name="cart" size={14} color="rgba(255,255,255,0.8)" />
+                          <Text style={styles.totalValueLabel}>Spent</Text>
+                          <Text style={styles.totalValue}>
+                            {formatCurrency(totalActual)}
+                          </Text>
+                        </View>
+                      </View>
+                      <View style={styles.totalDivider} />
+                      <View style={styles.totalRow}>
+                        <View />
+                        <View style={styles.totalValueContainer}>
+                          <Ionicons
+                            name={diffWithOver >= 0 ? 'checkmark-circle' : 'alert-circle'}
+                            size={14}
+                            color="#ffffff"
+                          />
+                          <Text style={[styles.totalValueLabel, { color: '#ffffff' }]}>Left</Text>
+                          <Text style={[styles.totalValue, styles.totalValueBold]}>
+                            {diffWithOver < 0 ? '-' : ''}
+                            {formatCurrency(diffWithOver)}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  );
+                })()}
+              </LinearGradient>
+            </View>
           </View>
         )}
       </View>
@@ -493,5 +590,15 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       height: 1,
       backgroundColor: 'rgba(255,255,255,0.2)',
       marginVertical: 4,
+    },
+    summaryCard: {
+      backgroundColor: theme.surfaceSubtle,
+      borderWidth: 2,
+      borderColor: theme.border,
+    },
+    summaryCardTitle: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: theme.textSecondary,
     },
   });
