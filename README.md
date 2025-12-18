@@ -16,6 +16,7 @@ You can try Appz Budget without installing anything:
 ## ✨ Features
 
 ### Core Functionality
+
 - 📊 **Monthly Budget Tracking** - Track expenses and income by month with month closing
 - 💵 **Income Management** - Manage different income types and sources with budgeted amounts
 - 📈 **Visual Analytics** - Interactive charts and summaries for better insights
@@ -24,12 +25,14 @@ You can try Appz Budget without installing anything:
 - 📥 **Excel Import** - Import expenses from Excel spreadsheets
 
 ### Authentication & Security
+
 - 🔐 **User Authentication** - Secure JWT-based login with password reset
 - 📧 **Email Integration** - SMTP support for password reset emails (optional)
 - 👥 **User Management** - Admin panel for managing users and viewing password reset requests
 - 🔑 **API Key Authentication** - Secure backend API access
 
 ### Multi-Platform Support
+
 - 🌐 **Web Application** - Responsive React app with dark mode
 - 📱 **Mobile App** - Native iOS and Android apps with biometric authentication
 - 💻 **Terminal UI** - Cross-platform Rust-based TUI with vim-style navigation
@@ -81,12 +84,14 @@ The easiest way to run Appz Budget is using Docker Compose. No need to clone the
 You can customize the application using environment variables in a `.env` file or directly in `docker-compose.yml`:
 
 #### Core Configuration (Required)
+
 - `API_KEY` - Secret API key for backend authentication (**required**, change the default!)
 - `DATABASE_URL` - Database connection string (default: `sqlite:///./data/budget.db`)
 - `PORT` - Port to expose the application (default: `8000`)
 - `FRONTEND_URL` - Frontend URL for password reset links (default: `http://localhost:8000`)
 
 #### SMTP Email Configuration (Optional)
+
 Configure these to enable password reset emails. If not configured, reset codes will only appear in Docker logs.
 
 - `SMTP_HOST` - SMTP server hostname (e.g., `smtp.gmail.com`)
@@ -97,6 +102,7 @@ Configure these to enable password reset emails. If not configured, reset codes 
 - `SMTP_USE_TLS` - Use TLS encryption (default: `true`)
 
 #### Password Reset Configuration (Optional)
+
 - `RESET_CODE_LENGTH` - Length of the short reset code (default: `6`)
 - `RESET_CODE_EXPIRATION_MINUTES` - Code validity duration (default: `30`)
 - `RESET_TOKEN_EXPIRATION_HOURS` - Full token validity duration (default: `24`)
@@ -104,6 +110,7 @@ Configure these to enable password reset emails. If not configured, reset codes 
 **SMTP Examples**: See `.env.example` for Gmail, SendGrid, Mailgun, and AWS SES configurations.
 
 **Without SMTP**: Admin users can view active password reset codes via:
+
 - Admin panel: Settings → Password Resets tab
 - Docker logs: `docker logs -f appz-budget`
 
@@ -147,12 +154,14 @@ The mobile app provides all web features in a native mobile experience with biom
 
 1. Install [Expo Go](https://expo.dev/client) on your device
 2. Clone the repository and navigate to the mobile directory:
+
    ```bash
    cd mobile
    npm install
    ```
 
 3. Configure the API URL in `src/api/client.ts`:
+
    - iOS Simulator: `http://localhost:8000`
    - Android Emulator: `http://10.0.2.2:8000`
    - Physical device: `http://YOUR_COMPUTER_IP:8000`
@@ -165,6 +174,7 @@ The mobile app provides all web features in a native mobile experience with biom
    ```
 
 ### Features
+
 - ✅ Biometric authentication (Face ID, Touch ID, fingerprint)
 - ✅ All web features: expenses, income, categories, periods, reports
 - ✅ Native mobile UI with smooth animations
@@ -188,6 +198,7 @@ cargo build --release
 ```
 
 Or use Make from project root:
+
 ```bash
 make tui              # Build release binary
 make tui-dev          # Run in development mode
@@ -196,6 +207,7 @@ make tui-dev          # Run in development mode
 ### Configuration
 
 On first run, edit the config file at:
+
 - **Linux**: `~/.config/budget-tui/config.toml`
 - **macOS**: `~/Library/Application Support/budget-tui/config.toml`
 - **Windows**: `%APPDATA%\budget-tui\config.toml`
@@ -207,6 +219,7 @@ api_key = "your-api-key-here"
 ```
 
 ### Features
+
 - ⌨️ Vim-style keyboard navigation (`hjkl`, `j/k` for up/down)
 - 📊 ASCII charts for budget visualization
 - 🚀 Fast, lightweight single binary (~5MB)
@@ -215,6 +228,7 @@ api_key = "your-api-key-here"
 - 🎨 Cross-platform: Linux, macOS, Windows
 
 ### Quick Keyboard Shortcuts
+
 - `q` - Quit
 - `Tab` - Next tab
 - `1-5` - Jump to tab
@@ -235,6 +249,35 @@ For detailed usage and shortcuts, see [tui/README.md](tui/README.md).
 - **State Management**: TanStack Query (React Query)
 - **Authentication**: JWT tokens with HTTP-only cookies
 
+## 🔧 Development Setup
+
+### Git Hooks
+
+This project includes pre-commit hooks that automatically run code verification before each commit. This ensures code quality, formatting, linting, and tests pass.
+
+**Install the hooks:**
+
+```bash
+./install-hooks.sh
+```
+
+The pre-commit hook will:
+
+- ✅ Check backend formatting and linting
+- ✅ Run backend tests
+- ✅ Check frontend formatting, linting, and type checking
+- ✅ Run frontend tests
+- ✅ Check mobile type checking, linting, and tests
+- ✅ Check TUI formatting, linting, and tests
+
+**Skip the hook (not recommended):**
+
+```bash
+git commit --no-verify
+```
+
+> **Note**: The hooks are stored in the `hooks/` directory and can be shared with the team. Run `./install-hooks.sh` after cloning the repository.
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
@@ -248,3 +291,12 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 If you find this project useful, consider supporting its development:
 
 <a href="https://www.buymeacoffee.com/kleyson" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: 41px !important;width: 174px !important;box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;-webkit-box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;" ></a>
+
+## Useful commands
+
+```shell
+npx expo run:ios --simulator="iPhone 15 Pro"
+xcrun simctl list devices
+npx expo prebuild --clean --platform ios
+open mobile/ios/AppzBudget.xcworkspace
+```

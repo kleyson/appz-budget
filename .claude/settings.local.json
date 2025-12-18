@@ -44,7 +44,10 @@
       "Bash(make test-mobile:*)",
       "Bash(make lint-frontend:*)",
       "Bash(make test-frontend:*)",
-      "Bash(make type-check-mobile:*)"
+      "Bash(make type-check-mobile:*)",
+      "Bash(sips -g all:*)",
+      "Bash(sips:*)",
+      "Bash(cp:*)"
     ],
     "deny": [],
     "ask": []
