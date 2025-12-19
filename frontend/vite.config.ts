@@ -1,0 +1,115 @@
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { copyFileSync, mkdirSync, readdirSync, statSync, existsSync, readFileSync } from 'fs';
+import { join } from 'path';
+
+// Plugin to copy public files to public folder
+// index.html stays in public folder along with all other assets
+const copyPublicToPublic = () => {
+  return {
+    name: 'copy-public-to-public',
+    closeBundle() {
+      const publicDir = join(__dirname, 'public');
+      const outPublicDir = join(__dirname, '../backend/public');
+
+      // Create public directory in output
+      mkdirSync(outPublicDir, { recursive: true });
+
+      // Copy all files from public to public folder (with original names)
+      // This includes favicons, manifest, etc. that aren't processed by Vite
+      if (existsSync(publicDir)) {
+        const files = readdirSync(publicDir);
+        files.forEach((file) => {
+          const src = join(publicDir, file);
+          const dest = join(outPublicDir, file);
+          if (statSync(src).isFile()) {
+            copyFileSync(src, dest);
+          }
+        });
+      }
+      // index.html is built by Vite and will be in outPublicDir already
+    },
+  };
+};
+
+// Read version from VERSION file
+function getVersion(): string {
+  // Try multiple possible locations for the VERSION file
+  const possiblePaths = [
+    join(__dirname, '../VERSION'), // Local development (from frontend/)
+    join(__dirname, '../../VERSION'), // Docker build (from /app/frontend/)
+    join(process.cwd(), 'VERSION'), // Current working directory
+    join(process.cwd(), '../VERSION'), // Parent of current working directory
+  ];
+
+  for (const versionFile of possiblePaths) {
+    try {
+      if (existsSync(versionFile)) {
+        const version = readFileSync(versionFile, 'utf-8').trim();
+        if (version) {
+          console.log(`📦 Building frontend with version: ${version} (from ${versionFile})`);
+          return version;
+        }
+      }
+    } catch (error) {
+      // Continue to next path
+      continue;
+    }
+  }
+
+  console.warn('⚠️  VERSION file not found in any expected location, using fallback: unknown');
+  console.warn('   Tried paths:', possiblePaths.join(', '));
+  return 'unknown';
+}
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [
+    react({
+      fastRefresh: true,
+    }),
+    copyPublicToPublic(),
+  ],
+  base: '/public/',
+  publicDir: 'public', // Keep publicDir enabled so files are available during dev
+  define: {
+    __APP_VERSION__: JSON.stringify(getVersion()),
+  },
+  envPrefix: 'VITE_',
+  server: {
+    host: '0.0.0.0',
+    port: 5173,
+    strictPort: false,
+    hmr: {
+      clientPort: 5173,
+    },
+    watch: {
+      usePolling: false,
+    },
+  },
+  build: {
+    outDir: '../backend/public',
+    emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        // All built assets go directly in public folder (no subfolder)
+        // Exclude public files from hashing by using a function
+        assetFileNames: (assetInfo) => {
+          // Don't hash files that come from public directory (they're copied separately)
+          const name = assetInfo.name || '';
+          if (
+            name.includes('favicon') ||
+            name.includes('android-chrome') ||
+            name.includes('apple-touch') ||
+            name.includes('site.webmanifest')
+          ) {
+            return '[name][extname]';
+          }
+          return '[name]-[hash][extname]';
+        },
+        chunkFileNames: '[name]-[hash].js',
+        entryFileNames: '[name]-[hash].js',
+      },
+    },
+  },
+});

@@ -1,0 +1,642 @@
+import React, { useState } from 'react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import {
+  useExpenses,
+  useDeleteExpense,
+  useReorderExpenses,
+  usePayExpense,
+} from '../hooks/useExpenses';
+import { useCategories } from '../hooks/useCategories';
+import { usePeriods } from '../hooks/usePeriods';
+import { useMonth } from '../hooks/useMonths';
+import { ExpenseForm } from './ExpenseForm';
+import { PayExpenseModal } from './PayExpenseModal';
+import type { Expense } from '../types';
+import { formatCurrency } from '../utils/format';
+import { useDialog } from '../contexts/DialogContext';
+import {
+  LoadingState,
+  EmptyState,
+  SectionTitle,
+  Button,
+  Badge,
+  ColorChip,
+  PlusIcon,
+  EditIcon,
+  TrashIcon,
+  WalletIcon,
+  DragHandleIcon,
+} from './shared';
+
+interface ExpenseListProps {
+  periodFilter?: string | null;
+  categoryFilter?: string | null;
+  monthId?: number | null;
+}
+
+interface SortableExpenseRowProps {
+  expense: Expense;
+  getCategoryColor: (categoryName: string) => string;
+  getPeriodColor: (periodName: string) => string;
+  formatCurrency: (amount: number) => string;
+  expandedPurchases: Set<number>;
+  togglePurchases: (expenseId: number) => void;
+  setEditingExpense: (expense: Expense) => void;
+  handleDelete: (id: number) => void;
+  handlePay: (expense: Expense) => void;
+  isMonthClosed: boolean;
+}
+
+function SortableExpenseRow({
+  expense,
+  getCategoryColor,
+  getPeriodColor,
+  formatCurrency,
+  expandedPurchases,
+  togglePurchases,
+  setEditingExpense,
+  handleDelete,
+  handlePay,
+  isMonthClosed,
+}: SortableExpenseRowProps) {
+  const isWithinBudget = expense.budget >= expense.cost;
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: expense.id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <React.Fragment>
+      <tr
+        ref={setNodeRef}
+        style={style}
+        className={`group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors ${
+          isDragging ? 'bg-slate-100 dark:bg-slate-800' : ''
+        }`}
+      >
+        <td className="px-4 py-4 text-sm font-medium text-slate-900 dark:text-white">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              className={`text-slate-300 dark:text-slate-600 hover:text-slate-500 dark:hover:text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity ${
+                isDragging ? 'cursor-grabbing' : 'cursor-grab'
+              }`}
+              {...attributes}
+              {...listeners}
+            >
+              <DragHandleIcon />
+            </button>
+            <span className="truncate">{expense.expense_name}</span>
+          </div>
+        </td>
+        <td className="px-4 py-4 text-sm">
+          <ColorChip color={getPeriodColor(expense.period)}>{expense.period}</ColorChip>
+        </td>
+        <td className="px-4 py-4 text-sm">
+          <ColorChip color={getCategoryColor(expense.category)}>{expense.category}</ColorChip>
+        </td>
+        <td
+          className={`px-4 py-4 text-sm text-right font-medium tabular-nums ${
+            expense.budget === 0
+              ? 'text-slate-400 dark:text-slate-500'
+              : 'text-slate-900 dark:text-white'
+          }`}
+        >
+          {formatCurrency(expense.budget)}
+        </td>
+        <td
+          className={`px-4 py-4 text-sm text-right font-medium tabular-nums ${
+            expense.cost === 0
+              ? 'text-slate-400 dark:text-slate-500'
+              : 'text-slate-900 dark:text-white'
+          }`}
+        >
+          {formatCurrency(expense.cost)}
+        </td>
+        <td className="px-4 py-4 text-sm">
+          <Badge variant={isWithinBudget ? 'success' : 'danger'}>
+            {isWithinBudget ? 'On Budget' : 'Over Budget'}
+          </Badge>
+        </td>
+        <td className="px-4 py-4 text-sm">
+          {(expense.purchases && expense.purchases.length > 0) || expense.notes ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                togglePurchases(expense.id);
+              }}
+              className="text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 font-medium transition-colors"
+            >
+              {expense.purchases && expense.purchases.length > 0
+                ? `${expense.purchases.length} ${expense.purchases.length === 1 ? 'purchase' : 'purchases'}`
+                : 'Details'}
+            </button>
+          ) : (
+            <span className="text-slate-400 dark:text-slate-500">—</span>
+          )}
+        </td>
+        <td className="px-4 py-4 text-sm text-right">
+          <div className="flex items-center justify-end gap-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePay(expense);
+              }}
+              disabled={isMonthClosed}
+              className="p-2 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 text-green-600 dark:text-green-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title={
+                isMonthClosed
+                  ? 'Month is closed'
+                  : expense.purchases && expense.purchases.length > 0
+                    ? 'Add purchase'
+                    : 'Pay expense'
+              }
+            >
+              {expense.purchases && expense.purchases.length > 0 ? (
+                <PlusIcon className="w-4 h-4" />
+              ) : (
+                <WalletIcon className="w-4 h-4" strokeWidth={2} />
+              )}
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditingExpense(expense);
+              }}
+              disabled={isMonthClosed}
+              className="p-2 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20 text-primary-600 dark:text-primary-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title={isMonthClosed ? 'Month is closed' : 'Edit'}
+            >
+              <EditIcon className="w-4 h-4" strokeWidth={2} />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(expense.id);
+              }}
+              disabled={isMonthClosed}
+              className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title={isMonthClosed ? 'Month is closed' : 'Delete'}
+            >
+              <TrashIcon className="w-4 h-4" strokeWidth={2} />
+            </button>
+          </div>
+        </td>
+      </tr>
+      {((expense.purchases && expense.purchases.length > 0) || expense.notes) &&
+        expandedPurchases.has(expense.id) && (
+          <tr className="bg-slate-50/50 dark:bg-slate-800/30">
+            <td colSpan={8} className="px-4 py-4">
+              <div className="text-sm space-y-4 ml-7">
+                {expense.purchases && expense.purchases.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+                      Purchases
+                    </p>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                      {expense.purchases.map((purchase, idx) => (
+                        <div
+                          key={idx}
+                          className="flex justify-between items-center bg-white dark:bg-slate-800 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700"
+                        >
+                          <span className="text-slate-700 dark:text-slate-300 truncate">
+                            {purchase.name}
+                          </span>
+                          <span
+                            className={`font-medium ml-2 tabular-nums ${
+                              purchase.amount === 0
+                                ? 'text-slate-400 dark:text-slate-500'
+                                : 'text-slate-900 dark:text-white'
+                            }`}
+                          >
+                            {formatCurrency(purchase.amount)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {expense.notes && (
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+                      Notes
+                    </p>
+                    <div className="bg-white dark:bg-slate-800 px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700">
+                      <p className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
+                        {expense.notes}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </td>
+          </tr>
+        )}
+    </React.Fragment>
+  );
+}
+
+export const ExpenseList = ({
+  periodFilter = null,
+  categoryFilter = null,
+  monthId = null,
+}: ExpenseListProps) => {
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [payingExpense, setPayingExpense] = useState<Expense | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [expandedPurchases, setExpandedPurchases] = useState<Set<number>>(new Set());
+
+  const { data: expenses, isLoading } = useExpenses({
+    period: periodFilter,
+    category: categoryFilter,
+    month_id: monthId,
+  });
+  const { data: categories } = useCategories();
+  const { data: periods } = usePeriods();
+  const { data: currentMonthData } = useMonth(monthId || 0);
+  const deleteMutation = useDeleteExpense();
+  const reorderMutation = useReorderExpenses();
+  const payMutation = usePayExpense();
+  const { showConfirm, showAlert } = useDialog();
+
+  const isMonthClosed = currentMonthData?.is_closed ?? false;
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const getCategoryColor = (categoryName: string): string => {
+    const category = categories?.find((c) => c.name === categoryName);
+    return category?.color || '#5a6ff2';
+  };
+
+  const getPeriodColor = (periodName: string): string => {
+    const period = periods?.find((p) => p.name === periodName);
+    return period?.color || '#5a6ff2';
+  };
+
+  const handleDelete = async (id: number) => {
+    const confirmed = await showConfirm({
+      title: 'Delete Expense',
+      message: 'Are you sure you want to delete this expense?',
+      type: 'danger',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+    });
+
+    if (confirmed) {
+      try {
+        await deleteMutation.mutateAsync(id);
+      } catch (error) {
+        console.error('Error deleting expense:', error);
+        await showAlert({
+          title: 'Error',
+          message: 'Failed to delete expense. Please try again.',
+          type: 'error',
+        });
+      }
+    }
+  };
+
+  const handlePay = (expense: Expense) => {
+    setPayingExpense(expense);
+  };
+
+  const handlePayConfirm = async (amount: number, purchaseName: string) => {
+    if (!payingExpense) return;
+
+    const hasPurchases = payingExpense.purchases && payingExpense.purchases.length > 0;
+
+    try {
+      await payMutation.mutateAsync({ id: payingExpense.id, data: { amount, name: purchaseName } });
+      setPayingExpense(null);
+      await showAlert({
+        title: hasPurchases ? 'Purchase Added' : 'Payment Added',
+        message: hasPurchases
+          ? `Purchase "${purchaseName}" of ${formatCurrency(amount)} has been added to the expense.`
+          : `Payment of ${formatCurrency(amount)} has been added to the expense.`,
+        type: 'success',
+      });
+    } catch (error) {
+      console.error('Error paying expense:', error);
+      await showAlert({
+        title: 'Error',
+        message: hasPurchases
+          ? 'Failed to add purchase. Please try again.'
+          : 'Failed to pay expense. Please try again.',
+        type: 'error',
+      });
+    }
+  };
+
+  const togglePurchases = (expenseId: number) => {
+    setExpandedPurchases((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(expenseId)) {
+        newSet.delete(expenseId);
+      } else {
+        newSet.add(expenseId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id || !expenses) {
+      return;
+    }
+
+    const oldIndex = expenses.findIndex((exp) => exp.id === active.id);
+    const newIndex = expenses.findIndex((exp) => exp.id === over.id);
+
+    if (oldIndex === -1 || newIndex === -1) {
+      return;
+    }
+
+    const reorderedExpenses = arrayMove(expenses, oldIndex, newIndex);
+    const expenseIds = reorderedExpenses.map((exp) => exp.id);
+
+    try {
+      await reorderMutation.mutateAsync({
+        expenseIds,
+        filters: {
+          period: periodFilter,
+          category: categoryFilter,
+          month_id: monthId,
+        },
+      });
+    } catch (error) {
+      console.error('Error reordering expenses:', error);
+      await showAlert({
+        title: 'Error',
+        message: 'Failed to reorder expenses. Please try again.',
+        type: 'error',
+      });
+    }
+  };
+
+  if (isLoading) {
+    return <LoadingState text="Loading expenses..." />;
+  }
+
+  return (
+    <div className="p-5 lg:p-6">
+      <div className="flex items-center justify-between mb-5">
+        <div>
+          <SectionTitle>Expenses</SectionTitle>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            {expenses?.length || 0} {expenses?.length === 1 ? 'expense' : 'expenses'}
+          </p>
+        </div>
+        <Button
+          variant="primary"
+          onClick={() => setShowForm(true)}
+          disabled={isMonthClosed}
+          icon={<PlusIcon className="w-4 h-4" />}
+          title={isMonthClosed ? 'Month is closed' : undefined}
+        >
+          <span className="hidden sm:inline">Add Expense</span>
+          <span className="sm:hidden">Add</span>
+        </Button>
+      </div>
+
+      {showForm && <ExpenseForm onClose={() => setShowForm(false)} defaultMonthId={monthId} />}
+
+      {editingExpense && (
+        <ExpenseForm
+          expense={editingExpense}
+          onClose={() => setEditingExpense(null)}
+          defaultMonthId={monthId}
+        />
+      )}
+
+      <PayExpenseModal
+        expense={payingExpense}
+        isOpen={!!payingExpense}
+        onClose={() => setPayingExpense(null)}
+        onConfirm={handlePayConfirm}
+        isLoading={payMutation.isPending}
+      />
+
+      <div className="mt-4">
+        {!expenses || expenses.length === 0 ? (
+          <EmptyState
+            icon={<WalletIcon className="w-8 h-8" />}
+            title="No expenses yet"
+            description="Add your first expense to start tracking your budget."
+          />
+        ) : (
+          <>
+            {/* Mobile/Tablet: Cards */}
+            <div className="lg:hidden grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {expenses?.map((expense, index) => (
+                <div
+                  key={expense.id}
+                  className="bg-white dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/50 rounded-xl p-4 card-hover animate-slide-up opacity-0"
+                  style={{ animationDelay: `${index * 0.03}s`, animationFillMode: 'forwards' }}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <h4 className="font-medium text-slate-900 dark:text-white truncate pr-2">
+                      {expense.expense_name}
+                    </h4>
+                    <Badge variant={expense.budget >= expense.cost ? 'success' : 'danger'}>
+                      {expense.budget >= expense.cost ? 'On Budget' : 'Over Budget'}
+                    </Badge>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 mb-3">
+                    <ColorChip color={getPeriodColor(expense.period)}>{expense.period}</ColorChip>
+                    <ColorChip color={getCategoryColor(expense.category)}>
+                      {expense.category}
+                    </ColorChip>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 mb-3">
+                    <div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mb-0.5">Budget</p>
+                      <p
+                        className={`font-semibold tabular-nums ${
+                          expense.budget === 0
+                            ? 'text-slate-400 dark:text-slate-500'
+                            : 'text-slate-900 dark:text-white'
+                        }`}
+                      >
+                        {formatCurrency(expense.budget)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mb-0.5">Actual</p>
+                      <p
+                        className={`font-semibold tabular-nums ${
+                          expense.cost === 0
+                            ? 'text-slate-400 dark:text-slate-500'
+                            : 'text-slate-900 dark:text-white'
+                        }`}
+                      >
+                        {formatCurrency(expense.cost)}
+                      </p>
+                    </div>
+                  </div>
+                  {((expense.purchases && expense.purchases.length > 0) || expense.notes) && (
+                    <button
+                      onClick={() => togglePurchases(expense.id)}
+                      className="w-full text-xs text-primary-600 hover:text-primary-700 dark:text-primary-400 font-medium mb-3"
+                    >
+                      {expense.purchases && expense.purchases.length > 0
+                        ? `${expense.purchases.length} ${expense.purchases.length === 1 ? 'purchase' : 'purchases'}`
+                        : 'View details'}
+                    </button>
+                  )}
+                  {((expense.purchases && expense.purchases.length > 0) || expense.notes) &&
+                    expandedPurchases.has(expense.id) && (
+                      <div className="text-xs space-y-2 pt-3 border-t border-slate-200 dark:border-slate-700 mb-3">
+                        {expense.purchases && expense.purchases.length > 0 && (
+                          <div className="space-y-1">
+                            {expense.purchases.map((purchase, idx) => (
+                              <div
+                                key={idx}
+                                className="flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 px-2 py-1.5 rounded-lg"
+                              >
+                                <span className="text-slate-600 dark:text-slate-400 truncate">
+                                  {purchase.name}
+                                </span>
+                                <span
+                                  className={`font-medium ml-2 tabular-nums ${
+                                    purchase.amount === 0
+                                      ? 'text-slate-400'
+                                      : 'text-slate-900 dark:text-white'
+                                  }`}
+                                >
+                                  {formatCurrency(purchase.amount)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {expense.notes && (
+                          <div className="bg-slate-50 dark:bg-slate-900/50 px-2 py-1.5 rounded-lg">
+                            <p className="text-slate-600 dark:text-slate-400 whitespace-pre-wrap">
+                              {expense.notes}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  <div className="flex gap-2 pt-3 border-t border-slate-200 dark:border-slate-700">
+                    <button
+                      onClick={() => handlePay(expense)}
+                      disabled={isMonthClosed}
+                      className="flex-1 text-sm px-3 py-2 rounded-lg border border-green-200 dark:border-green-800 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {expense.purchases && expense.purchases.length > 0 ? 'Add Purchase' : 'Pay'}
+                    </button>
+                    <button
+                      onClick={() => setEditingExpense(expense)}
+                      disabled={isMonthClosed}
+                      className="flex-1 text-sm px-3 py-2 rounded-lg border border-primary-200 dark:border-primary-800 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(expense.id)}
+                      disabled={isMonthClosed}
+                      className="flex-1 text-sm px-3 py-2 rounded-lg border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop: Table */}
+            <div className="hidden lg:block rounded-xl border border-slate-200/80 dark:border-slate-700/50 overflow-hidden">
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200/80 dark:border-slate-700/50">
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                        Expense
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                        Period
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                        Category
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                        Budget
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                        Actual
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                        Details
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <SortableContext
+                    items={expenses?.map((exp) => exp.id) || []}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <tbody className="divide-y divide-slate-200/80 dark:divide-slate-700/50">
+                      {expenses?.map((expense) => (
+                        <SortableExpenseRow
+                          key={expense.id}
+                          expense={expense}
+                          getCategoryColor={getCategoryColor}
+                          getPeriodColor={getPeriodColor}
+                          formatCurrency={formatCurrency}
+                          expandedPurchases={expandedPurchases}
+                          togglePurchases={togglePurchases}
+                          setEditingExpense={setEditingExpense}
+                          handleDelete={handleDelete}
+                          handlePay={handlePay}
+                          isMonthClosed={isMonthClosed}
+                        />
+                      ))}
+                    </tbody>
+                  </SortableContext>
+                </table>
+              </DndContext>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};

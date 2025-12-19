@@ -1,0 +1,61 @@
+name: TUI Lint and Format
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "tui/**"
+      - "VERSION"
+      - ".github/workflows/tui-lint-format.yml"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "tui/**"
+      - "VERSION"
+      - ".github/workflows/tui-lint-format.yml"
+
+jobs:
+  lint:
+    name: Lint TUI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            tui/target
+          key: ${{ runner.os }}-cargo-lint-${{ hashFiles('tui/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-lint-
+
+      - name: Run Clippy
+        working-directory: ./tui
+        run: cargo clippy --all-targets --all-features -- -W warnings
+
+  format:
+    name: Check Formatting
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
+      - name: Check formatting
+        working-directory: ./tui
+        run: cargo fmt --check

@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# Pre-commit hook to run verification before allowing commits
+# This ensures code quality, formatting, linting, and tests pass
+
+set -e
+
+# Get the directory where the hook is located (project root)
+PROJECT_ROOT="$(git rev-parse --show-toplevel)"
+cd "$PROJECT_ROOT"
+
+echo "=========================================="
+echo "Running pre-commit verification..."
+echo "=========================================="
+echo ""
+
+# Run the verify command
+if make verify; then
+    echo ""
+    echo "✅ Pre-commit checks passed!"
+    exit 0
+else
+    echo ""
+    echo "❌ Pre-commit checks failed!"
+    echo "Please fix the issues above before committing."
+    echo ""
+    echo "You can skip this hook with: git commit --no-verify"
+    exit 1
+fi
+
