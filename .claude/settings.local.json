@@ -47,7 +47,9 @@
       "Bash(make type-check-mobile:*)",
       "Bash(sips -g all:*)",
       "Bash(sips:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(make verify:*)",
+      "Bash(npm run format:*)"
     ],
     "deny": [],
     "ask": []

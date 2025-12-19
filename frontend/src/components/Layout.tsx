@@ -1,6 +1,7 @@
 import { useState, ReactNode } from 'react';
 import { Sidebar } from './Sidebar';
 import { MenuIcon } from './shared';
+import { TestBackendWarning } from './TestBackendWarning';
 
 type TabId = 'expenses' | 'reports' | 'backup' | 'import' | 'settings';
 
@@ -24,6 +25,9 @@ export const Layout = ({ children, activeTab, setActiveTab, filters }: LayoutPro
       />
 
       <div className="flex-1 flex flex-col overflow-hidden lg:ml-0">
+        {/* Test backend warning banner */}
+        <TestBackendWarning />
+
         {/* Mobile header with hamburger menu */}
         <header className="lg:hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800/80 px-4 py-4 flex items-center justify-between sticky top-0 z-30">
           <button
