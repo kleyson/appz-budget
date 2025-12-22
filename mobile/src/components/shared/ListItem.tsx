@@ -58,7 +58,7 @@ export const ListItem = ({
       opacity.value = withDelay(delay, withTiming(1, timingConfigs.normal));
       translateX.value = withDelay(delay, withSpring(0, springConfigs.gentle));
     }
-  }, [animated, animationIndex]);
+  }, [animated, animationIndex, opacity, translateX]);
 
   const entranceStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,

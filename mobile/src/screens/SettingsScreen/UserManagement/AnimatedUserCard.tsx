@@ -43,7 +43,7 @@ export const AnimatedUserCard = ({
     opacity.value = withDelay(delay, withTiming(1, { duration: 300 }));
     translateY.value = withDelay(delay, withSpring(0, springConfigs.gentle));
     scale.value = withDelay(delay, withSpring(1, springConfigs.gentle));
-  }, [index]);
+  }, [index, opacity, translateY, scale]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,

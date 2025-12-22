@@ -43,3 +43,5 @@ echo ""
 echo "The pre-commit hook will now run 'make verify' before each commit."
 echo "To skip the hook (not recommended), use: git commit --no-verify"
 
+
+

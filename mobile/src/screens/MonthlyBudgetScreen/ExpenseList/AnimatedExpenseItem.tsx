@@ -1,5 +1,5 @@
-import React, { useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import React, { useEffect, useState, useCallback } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, Pressable } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -7,12 +7,13 @@ import Animated, {
   withSpring,
   withTiming,
   Easing,
+  interpolate,
 } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { getThemeColors, getShadow, isDarkColor, radius } from "../../../utils/colors";
 import { formatCurrency } from "../../../utils/styles";
 import { springConfigs, getStaggerDelay } from "../../../utils/animations";
-import type { Expense } from "../../../types";
+import type { Expense, Purchase } from "../../../types";
 
 export interface AnimatedExpenseItemProps {
   expense: Expense;
@@ -25,6 +26,10 @@ export interface AnimatedExpenseItemProps {
   theme: ReturnType<typeof getThemeColors>;
   isDark: boolean;
 }
+
+const PURCHASE_ITEM_HEIGHT = 44;
+const PURCHASES_HEADER_HEIGHT = 32;
+const PURCHASES_PADDING = 12;
 
 export const AnimatedExpenseItem = ({
   expense,
@@ -44,10 +49,17 @@ export const AnimatedExpenseItem = ({
       ? Math.min((expense.cost / expense.budget) * 100, 100)
       : 0;
 
+  const hasPurchases = expense.purchases && expense.purchases.length > 0;
+  const purchaseCount = expense.purchases?.length || 0;
+
+  const [isExpanded, setIsExpanded] = useState(false);
+
   const opacity = useSharedValue(0);
   const translateX = useSharedValue(-30);
   const scale = useSharedValue(0.95);
   const progressWidth = useSharedValue(0);
+  const expandHeight = useSharedValue(0);
+  const chevronRotation = useSharedValue(0);
 
   useEffect(() => {
     const delay = getStaggerDelay(index, 60);
@@ -58,7 +70,19 @@ export const AnimatedExpenseItem = ({
       delay + 200,
       withTiming(progress, { duration: 500, easing: Easing.out(Easing.cubic) })
     );
-  }, [index, progress]);
+  }, [index, progress, opacity, translateX, scale, progressWidth]);
+
+  const toggleExpand = useCallback(() => {
+    if (!hasPurchases) return;
+
+    const targetHeight = isExpanded
+      ? 0
+      : PURCHASES_HEADER_HEIGHT + purchaseCount * PURCHASE_ITEM_HEIGHT + PURCHASES_PADDING;
+
+    expandHeight.value = withSpring(targetHeight, springConfigs.gentle);
+    chevronRotation.value = withSpring(isExpanded ? 0 : 180, springConfigs.gentle);
+    setIsExpanded(!isExpanded);
+  }, [isExpanded, hasPurchases, purchaseCount, expandHeight, chevronRotation]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
@@ -69,123 +93,187 @@ export const AnimatedExpenseItem = ({
     width: `${progressWidth.value}%`,
   }));
 
+  const expandedSectionStyle = useAnimatedStyle(() => ({
+    height: expandHeight.value,
+    opacity: interpolate(expandHeight.value, [0, 50], [0, 1]),
+  }));
+
+  const chevronStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${chevronRotation.value}deg` }],
+  }));
+
+  const formatPurchaseDate = (dateStr?: string | null) => {
+    if (!dateStr) return "";
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    } catch {
+      return "";
+    }
+  };
+
   return (
     <Animated.View style={[styles.listItem, animatedStyle]}>
       <View
         style={[styles.listItemAccent, { backgroundColor: categoryColor }]}
       />
-      <View style={styles.listItemContent}>
-        <View style={styles.listItemHeader}>
-          <Text style={styles.listItemTitle} numberOfLines={1}>
-            {expense.expense_name}
-          </Text>
-          <View
-            style={[
-              styles.statusBadge,
-              isOnBudget ? styles.statusSuccess : styles.statusDanger,
-            ]}
+      <View style={styles.listItemMainContainer}>
+        <View style={styles.listItemContent}>
+          <View style={styles.listItemHeader}>
+            <Text style={styles.listItemTitle} numberOfLines={1}>
+              {expense.expense_name}
+            </Text>
+            <View
+              style={[
+                styles.statusBadge,
+                isOnBudget ? styles.statusSuccess : styles.statusDanger,
+              ]}
+            >
+              <Ionicons
+                name={isOnBudget ? "checkmark" : "alert"}
+                size={10}
+                color={isOnBudget ? theme.success : theme.danger}
+              />
+            </View>
+          </View>
+
+          <View style={styles.chipsContainer}>
+            <View style={[styles.chip, { backgroundColor: categoryColor }]}>
+              <Text
+                style={[
+                  styles.chipText,
+                  {
+                    color: isDarkColor(categoryColor) ? "#fff" : "#0f172a",
+                  },
+                ]}
+              >
+                {expense.category}
+              </Text>
+            </View>
+            <View style={[styles.chip, { backgroundColor: periodColor }]}>
+              <Text
+                style={[
+                  styles.chipText,
+                  {
+                    color: isDarkColor(periodColor) ? "#fff" : "#0f172a",
+                  },
+                ]}
+              >
+                {expense.period}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.progressContainer}>
+            <View style={styles.progressBar}>
+              <Animated.View
+                style={[
+                  styles.progressFill,
+                  {
+                    backgroundColor: isOnBudget ? theme.success : theme.danger,
+                  },
+                  progressAnimatedStyle,
+                ]}
+              />
+            </View>
+            <Text style={styles.progressText}>{progress.toFixed(0)}%</Text>
+          </View>
+
+          <View style={styles.amountRow}>
+            <View>
+              <Text style={styles.amountLabel}>Spent</Text>
+              <Text
+                style={[
+                  styles.listItemAmount,
+                  { color: isOnBudget ? theme.text : theme.danger },
+                ]}
+              >
+                {formatCurrency(expense.cost)}
+              </Text>
+            </View>
+            <View style={styles.amountDivider} />
+            <View>
+              <Text style={styles.amountLabel}>Budget</Text>
+              <Text style={styles.listItemBudget}>
+                {formatCurrency(expense.budget)}
+              </Text>
+            </View>
+          </View>
+
+          {/* Purchases Toggle Row */}
+          {hasPurchases && (
+            <Pressable
+              style={styles.purchasesToggle}
+              onPress={toggleExpand}
+            >
+              <View style={styles.purchasesToggleLeft}>
+                <View style={[styles.purchasesIcon, { backgroundColor: theme.primaryBg }]}>
+                  <Ionicons name="receipt-outline" size={12} color={theme.primary} />
+                </View>
+                <Text style={styles.purchasesToggleText}>
+                  {purchaseCount} purchase{purchaseCount !== 1 ? "s" : ""}
+                </Text>
+              </View>
+              <Animated.View style={chevronStyle}>
+                <Ionicons name="chevron-down" size={16} color={theme.textMuted} />
+              </Animated.View>
+            </Pressable>
+          )}
+
+          {/* Expandable Purchases List */}
+          <Animated.View style={[styles.purchasesContainer, expandedSectionStyle]}>
+            <View style={styles.purchasesDivider} />
+            <Text style={styles.purchasesHeader}>Purchase History</Text>
+            {expense.purchases?.map((purchase: Purchase, idx: number) => (
+              <View key={idx} style={styles.purchaseItem}>
+                <View style={styles.purchaseItemLeft}>
+                  <View style={[styles.purchaseDot, { backgroundColor: categoryColor }]} />
+                  <Text style={styles.purchaseName} numberOfLines={1}>
+                    {purchase.name}
+                  </Text>
+                </View>
+                <View style={styles.purchaseItemRight}>
+                  {purchase.date && (
+                    <Text style={styles.purchaseDate}>
+                      {formatPurchaseDate(purchase.date)}
+                    </Text>
+                  )}
+                  <Text style={styles.purchaseAmount}>
+                    {formatCurrency(purchase.amount)}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </Animated.View>
+        </View>
+
+        <View style={styles.listItemActions}>
+          <TouchableOpacity
+            style={[styles.actionIcon, { backgroundColor: theme.successBg }]}
+            onPress={onPay}
+            activeOpacity={0.7}
           >
             <Ionicons
-              name={isOnBudget ? "checkmark" : "alert"}
-              size={10}
-              color={isOnBudget ? theme.success : theme.danger}
+              name={hasPurchases ? "add-circle-outline" : "card-outline"}
+              size={16}
+              color={theme.success}
             />
-          </View>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionIcon, { backgroundColor: theme.primaryBg }]}
+            onPress={onEdit}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="pencil" size={14} color={theme.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionIcon, { backgroundColor: theme.dangerBg }]}
+            onPress={onDelete}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="trash" size={14} color={theme.danger} />
+          </TouchableOpacity>
         </View>
-
-        <View style={styles.chipsContainer}>
-          <View style={[styles.chip, { backgroundColor: categoryColor }]}>
-            <Text
-              style={[
-                styles.chipText,
-                {
-                  color: isDarkColor(categoryColor) ? "#fff" : "#0f172a",
-                },
-              ]}
-            >
-              {expense.category}
-            </Text>
-          </View>
-          <View style={[styles.chip, { backgroundColor: periodColor }]}>
-            <Text
-              style={[
-                styles.chipText,
-                {
-                  color: isDarkColor(periodColor) ? "#fff" : "#0f172a",
-                },
-              ]}
-            >
-              {expense.period}
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.progressContainer}>
-          <View style={styles.progressBar}>
-            <Animated.View
-              style={[
-                styles.progressFill,
-                {
-                  backgroundColor: isOnBudget ? theme.success : theme.danger,
-                },
-                progressAnimatedStyle,
-              ]}
-            />
-          </View>
-          <Text style={styles.progressText}>{progress.toFixed(0)}%</Text>
-        </View>
-
-        <View style={styles.amountRow}>
-          <View>
-            <Text style={styles.amountLabel}>Spent</Text>
-            <Text
-              style={[
-                styles.listItemAmount,
-                { color: isOnBudget ? theme.text : theme.danger },
-              ]}
-            >
-              {formatCurrency(expense.cost)}
-            </Text>
-          </View>
-          <View style={styles.amountDivider} />
-          <View>
-            <Text style={styles.amountLabel}>Budget</Text>
-            <Text style={styles.listItemBudget}>
-              {formatCurrency(expense.budget)}
-            </Text>
-          </View>
-        </View>
-      </View>
-      <View style={styles.listItemActions}>
-        <TouchableOpacity
-          style={[styles.actionIcon, { backgroundColor: theme.successBg }]}
-          onPress={onPay}
-          activeOpacity={0.7}
-        >
-          <Ionicons
-            name={
-              expense.purchases && expense.purchases.length > 0
-                ? "add-circle-outline"
-                : "card-outline"
-            }
-            size={16}
-            color={theme.success}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionIcon, { backgroundColor: theme.primaryBg }]}
-          onPress={onEdit}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="pencil" size={14} color={theme.primary} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionIcon, { backgroundColor: theme.dangerBg }]}
-          onPress={onDelete}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="trash" size={14} color={theme.danger} />
-        </TouchableOpacity>
       </View>
     </Animated.View>
   );
@@ -205,6 +293,11 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
     },
     listItemAccent: {
       width: 4,
+    },
+    listItemMainContainer: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "flex-start",
     },
     listItemContent: {
       flex: 1,
@@ -304,7 +397,8 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       flexDirection: "column",
       gap: 6,
       padding: 10,
-      justifyContent: "center",
+      justifyContent: "flex-start",
+      paddingTop: 14,
     },
     actionIcon: {
       width: 32,
@@ -312,5 +406,89 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       borderRadius: radius.sm,
       alignItems: "center",
       justifyContent: "center",
+    },
+    // Purchases Toggle
+    purchasesToggle: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 8,
+      paddingHorizontal: 10,
+      backgroundColor: theme.surfaceSubtle,
+      borderRadius: radius.md,
+      marginTop: 2,
+    },
+    purchasesToggleLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    purchasesIcon: {
+      width: 24,
+      height: 24,
+      borderRadius: radius.sm,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    purchasesToggleText: {
+      fontSize: 13,
+      fontWeight: "500",
+      color: theme.textSecondary,
+    },
+    // Purchases List
+    purchasesContainer: {
+      overflow: "hidden",
+    },
+    purchasesDivider: {
+      height: 1,
+      backgroundColor: theme.divider,
+      marginBottom: 8,
+    },
+    purchasesHeader: {
+      fontSize: 11,
+      fontWeight: "600",
+      color: theme.textMuted,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+      marginBottom: 8,
+    },
+    purchaseItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      height: PURCHASE_ITEM_HEIGHT,
+      paddingVertical: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.divider,
+    },
+    purchaseItemLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+      flex: 1,
+      gap: 8,
+    },
+    purchaseDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+    },
+    purchaseName: {
+      fontSize: 14,
+      color: theme.text,
+      flex: 1,
+    },
+    purchaseItemRight: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    purchaseDate: {
+      fontSize: 12,
+      color: theme.textMuted,
+    },
+    purchaseAmount: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: theme.text,
     },
   });

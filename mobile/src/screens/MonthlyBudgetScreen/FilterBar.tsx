@@ -50,7 +50,7 @@ export const FilterBar = ({
 
   useEffect(() => {
     expandProgress.value = withSpring(showFilters ? 1 : 0, springConfigs.smooth);
-  }, [showFilters]);
+  }, [showFilters, expandProgress]);
 
   const containerAnimatedStyle = useAnimatedStyle(() => ({
     opacity: expandProgress.value,
@@ -181,7 +181,7 @@ export const FilterToggleButton = ({
 
   useEffect(() => {
     rotation.value = withSpring(showFilters ? 180 : 0, springConfigs.snappy);
-  }, [showFilters]);
+  }, [showFilters, rotation]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [

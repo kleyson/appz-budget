@@ -48,7 +48,7 @@ export const Card = ({
       translateY.value = withDelay(delay, withSpring(0, springConfigs.gentle));
       scale.value = withDelay(delay, withSpring(1, springConfigs.gentle));
     }
-  }, [animated, animationIndex]);
+  }, [animated, animationIndex, opacity, translateY, scale]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,

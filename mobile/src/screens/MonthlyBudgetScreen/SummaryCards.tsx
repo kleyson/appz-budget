@@ -53,7 +53,7 @@ const AnimatedCard = ({ card, index, totals, isDark, theme }: AnimatedCardProps)
     opacity.value = withDelay(delay, withTiming(1, { duration: 300 }));
     translateY.value = withDelay(delay, withSpring(0, springConfigs.gentle));
     scale.value = withDelay(delay, withSpring(1, springConfigs.gentle));
-  }, [index]);
+  }, [index, opacity, translateY, scale]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
@@ -117,6 +117,7 @@ interface AnimatedSectionProps {
   sectionIndex: number;
   isDark: boolean;
   theme: ReturnType<typeof getThemeColors>;
+  isHorizontal?: boolean;
 }
 
 const AnimatedSection = ({
@@ -129,13 +130,14 @@ const AnimatedSection = ({
   sectionIndex,
   isDark,
   theme,
+  isHorizontal = false,
 }: AnimatedSectionProps) => {
   const styles = getSectionStyles(theme);
   const baseIndex = sectionIndex * 2;
 
   return (
     <Animated.View
-      style={styles.section}
+      style={[styles.section, isHorizontal && styles.sectionHorizontal]}
       entering={FadeIn.delay(sectionIndex * 100).duration(300)}
     >
       <Animated.View
@@ -166,7 +168,7 @@ const AnimatedSection = ({
 export const SummaryCards = ({ totals }: SummaryCardsProps) => {
   const { isDark } = useTheme();
   const theme = getThemeColors(isDark);
-  const { isTablet, isLandscape } = useResponsive();
+  const { isTablet, isWideScreen, isUltraWide } = useResponsive();
   const styles = getStyles(isDark, theme, isTablet);
 
   // Loading spinner animation
@@ -179,7 +181,7 @@ export const SummaryCards = ({ totals }: SummaryCardsProps) => {
         easing: Easing.linear,
       });
     }
-  }, [totals]);
+  }, [totals, spinnerRotation]);
 
   const spinnerStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${spinnerRotation.value}deg` }],
@@ -245,45 +247,51 @@ export const SummaryCards = ({ totals }: SummaryCardsProps) => {
     },
   ];
 
-  // On landscape tablets, show all sections in one row
-  const showHorizontalLayout = isTablet && isLandscape;
+  // Show horizontal layout on wide screens (tablets in landscape, Mac screens)
+  // But fall back to vertical on ultra-wide screens (large Mac displays)
+  const showHorizontalLayout = isWideScreen && !isUltraWide;
 
   if (showHorizontalLayout) {
     return (
-      <View style={styles.containerHorizontal}>
-        <AnimatedSection
-          title="Expenses"
-          iconName="trending-down"
-          iconBgColor={theme.dangerBg}
-          iconColor={theme.danger}
-          cards={expenseCards}
-          totals={totals}
-          sectionIndex={0}
-          isDark={isDark}
-          theme={theme}
-        />
-        <AnimatedSection
-          title="Income"
-          iconName="trending-up"
-          iconBgColor={theme.successBg}
-          iconColor={theme.success}
-          cards={incomeCards}
-          totals={totals}
-          sectionIndex={1}
-          isDark={isDark}
-          theme={theme}
-        />
-        <AnimatedSection
-          title="Balance"
-          iconName="wallet"
-          iconBgColor={theme.primaryBg}
-          iconColor={theme.primary}
-          cards={balanceCards}
-          totals={totals}
-          sectionIndex={2}
-          isDark={isDark}
-          theme={theme}
-        />
+      <View style={styles.containerHorizontalWrapper}>
+        <View style={styles.containerHorizontal}>
+          <AnimatedSection
+            title="Expenses"
+            iconName="trending-down"
+            iconBgColor={theme.dangerBg}
+            iconColor={theme.danger}
+            cards={expenseCards}
+            totals={totals}
+            sectionIndex={0}
+            isDark={isDark}
+            theme={theme}
+            isHorizontal
+          />
+          <AnimatedSection
+            title="Income"
+            iconName="trending-up"
+            iconBgColor={theme.successBg}
+            iconColor={theme.success}
+            cards={incomeCards}
+            totals={totals}
+            sectionIndex={1}
+            isDark={isDark}
+            theme={theme}
+            isHorizontal
+          />
+          <AnimatedSection
+            title="Balance"
+            iconName="wallet"
+            iconBgColor={theme.primaryBg}
+            iconColor={theme.primary}
+            cards={balanceCards}
+            totals={totals}
+            sectionIndex={2}
+            isDark={isDark}
+            theme={theme}
+            isHorizontal
+          />
+        </View>
       </View>
     );
   }
@@ -337,9 +345,14 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>, is
     container: {
       gap: isTablet ? 24 : 20,
     },
+    containerHorizontalWrapper: {
+      alignItems: "center",
+    },
     containerHorizontal: {
       flexDirection: "row",
       gap: 16,
+      maxWidth: 1200,
+      width: "100%",
     },
     loadingContainer: {
       padding: 48,
@@ -363,6 +376,11 @@ const getSectionStyles = (_theme: ReturnType<typeof getThemeColors>) =>
   StyleSheet.create({
     section: {
       gap: 12,
+    },
+    sectionHorizontal: {
+      flex: 1,
+      minWidth: 200,
+      maxWidth: 400,
     },
     sectionHeader: {
       flexDirection: 'row',

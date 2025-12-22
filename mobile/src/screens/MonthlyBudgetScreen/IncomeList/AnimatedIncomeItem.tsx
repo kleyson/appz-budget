@@ -57,7 +57,7 @@ export const AnimatedIncomeItem = ({
       delay + 200,
       withTiming(progress, { duration: 500, easing: Easing.out(Easing.cubic) })
     );
-  }, [index, progress]);
+  }, [index, progress, opacity, translateX, scale, progressWidth]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,

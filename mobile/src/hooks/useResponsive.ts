@@ -22,10 +22,16 @@ interface ResponsiveConfig {
   useMasterDetail: boolean;
   /** Spacing multiplier based on screen size */
   spacingMultiplier: number;
+  /** Whether screen is wide enough for horizontal layouts (Mac, wide tablets) */
+  isWideScreen: boolean;
+  /** Whether screen is ultra-wide (large Mac displays) - may need stacked layout */
+  isUltraWide: boolean;
 }
 
 const TABLET_BREAKPOINT = 768;
 const LARGE_TABLET_BREAKPOINT = 1024;
+const WIDE_SCREEN_BREAKPOINT = 900; // Wide enough for horizontal layouts (Mac, wide tablets)
+const ULTRA_WIDE_BREAKPOINT = 1600; // Very large screens (large Mac displays)
 const MAX_CONTENT_WIDTH = 1200;
 const MAX_MODAL_WIDTH = 600;
 
@@ -34,6 +40,8 @@ export const useResponsive = (): ResponsiveConfig => {
 
   const isTablet = width >= TABLET_BREAKPOINT;
   const isLargeTablet = width >= LARGE_TABLET_BREAKPOINT;
+  const isWideScreen = width >= WIDE_SCREEN_BREAKPOINT;
+  const isUltraWide = width >= ULTRA_WIDE_BREAKPOINT;
   const isLandscape = width > height;
   const isPortrait = !isLandscape;
   const deviceType: DeviceType = isTablet ? "tablet" : "phone";
@@ -74,6 +82,8 @@ export const useResponsive = (): ResponsiveConfig => {
     maxContentWidth,
     useMasterDetail,
     spacingMultiplier,
+    isWideScreen,
+    isUltraWide,
   };
 };
 
@@ -91,6 +101,8 @@ export const responsive = {
   breakpoints: {
     tablet: TABLET_BREAKPOINT,
     largeTablet: LARGE_TABLET_BREAKPOINT,
+    wideScreen: WIDE_SCREEN_BREAKPOINT,
+    ultraWide: ULTRA_WIDE_BREAKPOINT,
   },
   maxWidths: {
     content: MAX_CONTENT_WIDTH,

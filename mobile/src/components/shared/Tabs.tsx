@@ -54,7 +54,7 @@ function AnimatedTab<T extends string>({
 
   useEffect(() => {
     activeProgress.value = withTiming(isActive ? 1 : 0, { duration: 200 });
-  }, [isActive]);
+  }, [isActive, activeProgress]);
 
   const animatedContainerStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -134,7 +134,7 @@ export function Tabs<T extends string>({
   useEffect(() => {
     // Fade in indicator after initial render
     indicatorOpacity.value = withTiming(1, { duration: 300 });
-  }, []);
+  }, [indicatorOpacity]);
 
   const handleScroll = (event: any) => {
     if (!showScrollIndicators) return;

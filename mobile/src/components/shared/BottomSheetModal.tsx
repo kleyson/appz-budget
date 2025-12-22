@@ -96,7 +96,7 @@ export const BottomSheetModal = ({
       });
       contentScale.value = withTiming(isTablet ? 0.9 : 0.95, { duration: 150 });
     }
-  }, [visible, screenHeight, isTablet]);
+  }, [visible, screenHeight, isTablet, overlayOpacity, translateY, contentScale]);
 
   const handleCancel = () => {
     onCancel?.();

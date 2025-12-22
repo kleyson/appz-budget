@@ -56,7 +56,7 @@ export const ProgressBar = ({
     } else {
       animatedProgress.value = clampedProgress;
     }
-  }, [clampedProgress, animated, animationDelay]);
+  }, [clampedProgress, animated, animationDelay, animatedProgress]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     width: `${animatedProgress.value}%`,
