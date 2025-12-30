@@ -20,7 +20,10 @@ interface SummaryProps {
 export const Summary = ({ periodFilter = null, monthId = null }: SummaryProps) => {
   const { isDark } = useTheme();
   const theme = getThemeColors(isDark);
-  const { data: summary, isLoading } = useCategorySummary(periodFilter || null);
+  const { data: summary, isLoading } = useCategorySummary({
+    period: periodFilter,
+    month_id: monthId,
+  });
   const { data: categories } = useCategories();
   const { data: incomeTypeSummary, isLoading: isLoadingIncomeSummary } = useIncomeTypeSummary({
     period: periodFilter,

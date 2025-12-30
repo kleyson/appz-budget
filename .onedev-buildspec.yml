@@ -1,0 +1,280 @@
+version: 43
+
+jobs:
+  - name: "Build Mobile iOS"
+    triggers:
+      - type: TagCreateTrigger
+        tags: "v*"
+      - type: BranchUpdateTrigger
+        branches: "main"
+        paths: "mobile/**"
+    steps:
+      - type: CheckoutStep
+        cloneCredential:
+          type: DefaultCredential
+        withLfs: false
+        withSubmodules: false
+        condition: SUCCESSFUL
+      - type: CommandStep
+        name: "Setup Node.js"
+        runInContainer: false
+        interpreter:
+          type: DefaultInterpreter
+          commands: |
+            node --version
+            npm --version
+        condition: SUCCESSFUL
+      - type: CommandStep
+        name: "Install EAS CLI"
+        runInContainer: false
+        interpreter:
+          type: DefaultInterpreter
+          commands: |
+            npm install -g eas-cli@latest
+            eas --version
+        condition: SUCCESSFUL
+      - type: CommandStep
+        name: "Install Dependencies"
+        runInContainer: false
+        interpreter:
+          type: DefaultInterpreter
+          commands: |
+            cd mobile
+            npm ci
+        condition: SUCCESSFUL
+      - type: CommandStep
+        name: "Login to EAS"
+        runInContainer: false
+        envVars:
+          - name: EXPO_TOKEN
+            value: "@expo_token@"
+        interpreter:
+          type: DefaultInterpreter
+          commands: |
+            cd mobile
+            eas login --non-interactive
+        condition: SUCCESSFUL
+      - type: CommandStep
+        name: "Build iOS App"
+        runInContainer: false
+        envVars:
+          - name: EXPO_TOKEN
+            value: "@expo_token@"
+        interpreter:
+          type: DefaultInterpreter
+          commands: |
+            cd mobile
+            eas build --platform ios --profile production --non-interactive
+        condition: SUCCESSFUL
+      - type: PublishArtifactStep
+        name: "Publish Build Artifacts"
+        artifacts: "mobile/**"
+        condition: ALWAYS
+    timeout: 14400
+    retryCondition: never
+
+  - name: "Build Mobile Android"
+    triggers:
+      - type: TagCreateTrigger
+        tags: "v*"
+      - type: BranchUpdateTrigger
+        branches: "main"
+        paths: "mobile/**"
+    steps:
+      - type: CheckoutStep
+        cloneCredential:
+          type: DefaultCredential
+        withLfs: false
+        withSubmodules: false
+        condition: SUCCESSFUL
+      - type: CommandStep
+        name: "Setup Node.js"
+        runInContainer: false
+        interpreter:
+          type: DefaultInterpreter
+          commands: |
+            node --version
+            npm --version
+        condition: SUCCESSFUL
+      - type: CommandStep
+        name: "Install EAS CLI"
+        runInContainer: false
+        interpreter:
+          type: DefaultInterpreter
+          commands: |
+            npm install -g eas-cli@latest
+            eas --version
+        condition: SUCCESSFUL
+      - type: CommandStep
+        name: "Install Dependencies"
+        runInContainer: false
+        interpreter:
+          type: DefaultInterpreter
+          commands: |
+            cd mobile
+            npm ci
+        condition: SUCCESSFUL
+      - type: CommandStep
+        name: "Login to EAS"
+        runInContainer: false
+        envVars:
+          - name: EXPO_TOKEN
+            value: "@expo_token@"
+        interpreter:
+          type: DefaultInterpreter
+          commands: |
+            cd mobile
+            eas login --non-interactive
+        condition: SUCCESSFUL
+      - type: CommandStep
+        name: "Build Android App"
+        runInContainer: false
+        envVars:
+          - name: EXPO_TOKEN
+            value: "@expo_token@"
+        interpreter:
+          type: DefaultInterpreter
+          commands: |
+            cd mobile
+            eas build --platform android --profile production --non-interactive
+        condition: SUCCESSFUL
+      - type: PublishArtifactStep
+        name: "Publish Build Artifacts"
+        artifacts: "mobile/**"
+        condition: ALWAYS
+    timeout: 14400
+    retryCondition: never
+
+  - name: "Submit iOS to App Store"
+    triggers:
+      - type: TagCreateTrigger
+        tags: "v*"
+    jobDependencies:
+      - jobName: "Build Mobile iOS"
+        requireSuccessful: true
+    steps:
+      - type: CheckoutStep
+        cloneCredential:
+          type: DefaultCredential
+        withLfs: false
+        withSubmodules: false
+        condition: SUCCESSFUL
+      - type: CommandStep
+        name: "Setup Node.js"
+        runInContainer: false
+        interpreter:
+          type: DefaultInterpreter
+          commands: |
+            node --version
+            npm --version
+        condition: SUCCESSFUL
+      - type: CommandStep
+        name: "Install EAS CLI"
+        runInContainer: false
+        interpreter:
+          type: DefaultInterpreter
+          commands: |
+            npm install -g eas-cli@latest
+        condition: SUCCESSFUL
+      - type: CommandStep
+        name: "Install Dependencies"
+        runInContainer: false
+        interpreter:
+          type: DefaultInterpreter
+          commands: |
+            cd mobile
+            npm ci
+        condition: SUCCESSFUL
+      - type: CommandStep
+        name: "Login to EAS"
+        runInContainer: false
+        envVars:
+          - name: EXPO_TOKEN
+            value: "@expo_token@"
+        interpreter:
+          type: DefaultInterpreter
+          commands: |
+            cd mobile
+            eas login --non-interactive
+        condition: SUCCESSFUL
+      - type: CommandStep
+        name: "Submit to App Store"
+        runInContainer: false
+        envVars:
+          - name: EXPO_TOKEN
+            value: "@expo_token@"
+        interpreter:
+          type: DefaultInterpreter
+          commands: |
+            cd mobile
+            eas submit --platform ios --profile production --non-interactive
+        condition: SUCCESSFUL
+    timeout: 7200
+    retryCondition: never
+
+  - name: "Submit Android to Google Play"
+    triggers:
+      - type: TagCreateTrigger
+        tags: "v*"
+    jobDependencies:
+      - jobName: "Build Mobile Android"
+        requireSuccessful: true
+    steps:
+      - type: CheckoutStep
+        cloneCredential:
+          type: DefaultCredential
+        withLfs: false
+        withSubmodules: false
+        condition: SUCCESSFUL
+      - type: CommandStep
+        name: "Setup Node.js"
+        runInContainer: false
+        interpreter:
+          type: DefaultInterpreter
+          commands: |
+            node --version
+            npm --version
+        condition: SUCCESSFUL
+      - type: CommandStep
+        name: "Install EAS CLI"
+        runInContainer: false
+        interpreter:
+          type: DefaultInterpreter
+          commands: |
+            npm install -g eas-cli@latest
+        condition: SUCCESSFUL
+      - type: CommandStep
+        name: "Install Dependencies"
+        runInContainer: false
+        interpreter:
+          type: DefaultInterpreter
+          commands: |
+            cd mobile
+            npm ci
+        condition: SUCCESSFUL
+      - type: CommandStep
+        name: "Login to EAS"
+        runInContainer: false
+        envVars:
+          - name: EXPO_TOKEN
+            value: "@expo_token@"
+        interpreter:
+          type: DefaultInterpreter
+          commands: |
+            cd mobile
+            eas login --non-interactive
+        condition: SUCCESSFUL
+      - type: CommandStep
+        name: "Submit to Google Play"
+        runInContainer: false
+        envVars:
+          - name: EXPO_TOKEN
+            value: "@expo_token@"
+        interpreter:
+          type: DefaultInterpreter
+          commands: |
+            cd mobile
+            eas submit --platform android --profile production --non-interactive
+        condition: SUCCESSFUL
+    timeout: 7200
+    retryCondition: never

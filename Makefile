@@ -67,6 +67,9 @@ test-frontend: ## Run frontend tests only
 test-mobile: ## Run mobile tests only
 	cd mobile && npm run test:run
 
+mobile-dev: ## Start mobile Expo dev server
+	cd mobile && npm start
+
 lint-frontend: ## Lint frontend code
 	cd frontend && npm run lint
 

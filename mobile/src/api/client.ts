@@ -228,12 +228,19 @@ export const categoriesApi = {
     apiClient.put<Category>(`/api/v1/categories/${id}`, data),
   delete: (id: number): Promise<AxiosResponse<void>> =>
     apiClient.delete(`/api/v1/categories/${id}`),
-  getSummary: (
-    period: string | null = null
-  ): Promise<AxiosResponse<CategorySummary[]>> =>
-    apiClient.get<CategorySummary[]>("/api/v1/categories/summary", {
-      params: period ? { period } : {},
-    }),
+  getSummary: (params?: {
+    period?: string | null;
+    month_id?: number | null;
+  }): Promise<AxiosResponse<CategorySummary[]>> => {
+    const queryParams = new URLSearchParams();
+    if (params?.period) queryParams.append("period", params.period);
+    if (params?.month_id)
+      queryParams.append("month_id", params.month_id.toString());
+    const queryString = queryParams.toString();
+    return apiClient.get<CategorySummary[]>(
+      `/api/v1/categories/summary${queryString ? `?${queryString}` : ""}`
+    );
+  },
 };
 
 // Period endpoints

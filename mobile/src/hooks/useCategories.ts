@@ -15,10 +15,13 @@ export const useCategories = () => {
   });
 };
 
-export const useCategorySummary = (period: string | null = null) => {
+export const useCategorySummary = (params?: {
+  period?: string | null;
+  month_id?: number | null;
+}) => {
   return useQuery<CategorySummary[]>({
-    queryKey: ["categories", "summary", period],
-    queryFn: () => categoriesApi.getSummary(period).then((res) => res.data),
+    queryKey: ["categories", "summary", params?.period, params?.month_id],
+    queryFn: () => categoriesApi.getSummary(params).then((res) => res.data),
   });
 };
 

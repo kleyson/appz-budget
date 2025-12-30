@@ -99,14 +99,14 @@ describe("useCategorySummary", () => {
       data: mockSummary,
     } as any);
 
-    const { result } = renderHook(() => useCategorySummary("Period 1"), {
+    const { result } = renderHook(() => useCategorySummary({ period: "Period 1" }), {
       wrapper: createWrapper(),
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(result.current.data).toEqual(mockSummary);
-    expect(categoriesApi.getSummary).toHaveBeenCalledWith("Period 1");
+    expect(categoriesApi.getSummary).toHaveBeenCalledWith({ period: "Period 1" });
   });
 
   it("should fetch category summary without period", async () => {
@@ -122,7 +122,7 @@ describe("useCategorySummary", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(categoriesApi.getSummary).toHaveBeenCalledWith(null);
+    expect(categoriesApi.getSummary).toHaveBeenCalledWith(undefined);
   });
 });
 

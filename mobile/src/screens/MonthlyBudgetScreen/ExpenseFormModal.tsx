@@ -50,6 +50,7 @@ export const ExpenseFormModal = ({
   const [_cost, setCost] = useState("");
   const [notes, setNotes] = useState("");
   const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [purchaseAmountInputs, setPurchaseAmountInputs] = useState<Record<number, string>>({});
 
   useEffect(() => {
     if (expense) {
@@ -60,6 +61,12 @@ export const ExpenseFormModal = ({
       setCost(expense.cost.toString());
       setNotes(expense.notes || "");
       setPurchases(expense.purchases || []);
+      // Initialize raw input values for existing purchases
+      const inputs: Record<number, string> = {};
+      (expense.purchases || []).forEach((p, i) => {
+        inputs[i] = p.amount.toString();
+      });
+      setPurchaseAmountInputs(inputs);
     } else {
       setExpenseName("");
       setSelectedPeriod("");
@@ -68,6 +75,7 @@ export const ExpenseFormModal = ({
       setCost("");
       setNotes("");
       setPurchases([]);
+      setPurchaseAmountInputs({});
     }
   }, [expense, visible]);
 
@@ -80,11 +88,26 @@ export const ExpenseFormModal = ({
   }, [purchases]);
 
   const handleAddPurchase = () => {
+    const newIndex = purchases.length;
     setPurchases([...purchases, { name: "", amount: 0 }]);
+    setPurchaseAmountInputs((prev) => ({ ...prev, [newIndex]: "" }));
   };
 
   const handleRemovePurchase = (index: number) => {
     setPurchases(purchases.filter((_, i) => i !== index));
+    // Re-index the raw inputs after removal
+    setPurchaseAmountInputs((prev) => {
+      const newInputs: Record<number, string> = {};
+      Object.keys(prev).forEach((key) => {
+        const keyNum = parseInt(key);
+        if (keyNum < index) {
+          newInputs[keyNum] = prev[keyNum];
+        } else if (keyNum > index) {
+          newInputs[keyNum - 1] = prev[keyNum];
+        }
+      });
+      return newInputs;
+    });
   };
 
   const handlePurchaseChange = (
@@ -92,21 +115,23 @@ export const ExpenseFormModal = ({
     field: "name" | "amount",
     value: string | number
   ) => {
-    setPurchases(
-      purchases.map((item, i) =>
-        i === index
-          ? {
-              ...item,
-              [field]:
-                field === "amount"
-                  ? typeof value === "string"
-                    ? parseFloat(value) || 0
-                    : value
-                  : value,
-            }
-          : item
-      )
-    );
+    if (field === "amount" && typeof value === "string") {
+      // Store the raw input string for display
+      setPurchaseAmountInputs((prev) => ({ ...prev, [index]: value }));
+      // Parse for calculations (allow empty string and partial decimals)
+      const numValue = value === "" || value === "." ? 0 : parseFloat(value) || 0;
+      setPurchases(
+        purchases.map((item, i) =>
+          i === index ? { ...item, amount: numValue } : item
+        )
+      );
+    } else {
+      setPurchases(
+        purchases.map((item, i) =>
+          i === index ? { ...item, [field]: value } : item
+        )
+      );
+    }
   };
 
   const handleSubmit = async () => {
@@ -265,7 +290,7 @@ export const ExpenseFormModal = ({
                           style={styles.purchaseInput}
                           placeholder="0.00"
                           placeholderTextColor={theme.placeholder}
-                          value={purchase.amount.toString()}
+                          value={purchaseAmountInputs[index] ?? purchase.amount.toString()}
                           onChangeText={(value) => handlePurchaseChange(index, "amount", value)}
                           keyboardType="decimal-pad"
                         />
