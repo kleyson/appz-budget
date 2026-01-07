@@ -343,7 +343,7 @@ A demo server is available at `https://budget.appz.wtf/` for testing purposes.
 **Demo Credentials:**
 
 - Email: `admin@email.com`
-- Password: `admin`
+- Password: `admin1`
 - API Key: `your-secret-api-key-change-this`
 
 **Note**: For production use, users must deploy their own backend server.

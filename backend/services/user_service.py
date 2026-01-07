@@ -193,6 +193,20 @@ class UserService:
 
         return {"message": "Password changed successfully"}
 
+    def admin_set_password(self, user_id: int, new_password: str, admin_name: str):
+        """Set password for any user (admin only, no current password required)"""
+        user = self.repository.get_by_id(user_id)
+        if not user:
+            raise NotFoundError("User not found")
+
+        # Update password
+        hashed_password = get_password_hash(new_password)
+        self.repository.update(user, {"hashed_password": hashed_password}, admin_name)
+
+        logger.info(f"Admin {admin_name} set password for user: {user.email}")
+
+        return {"message": f"Password set successfully for {user.email}"}
+
     def update_user(self, user_id: int, user_update: dict, user_name: str | None = None):
         """Update a user"""
         user = self.repository.get_by_id(user_id)

@@ -88,7 +88,7 @@ def seed_admin_user():
         admin_user = user_repository.create(
             {
                 "email": "admin@email.com",
-                "hashed_password": get_password_hash("admin"),
+                "hashed_password": get_password_hash("admin1"),
                 "full_name": "Administrator",
                 "is_active": True,
                 "is_admin": True,
@@ -97,7 +97,7 @@ def seed_admin_user():
 
         print("✓ Admin user created successfully!")
         print("  Email: admin@email.com")
-        print("  Password: admin")
+        print("  Password: admin1")
         print(f"  User ID: {admin_user.id}")
 
     except Exception as e:

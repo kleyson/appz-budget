@@ -53,7 +53,7 @@
 
 **Contains:**
 - Email: `admin@email.com`
-- Password: `admin`
+- Password: `admin1`
 
 **Note:** This is documented as temporary, but still exposed. Consider:
 - Making it configurable via environment variables

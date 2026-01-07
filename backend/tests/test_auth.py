@@ -983,6 +983,160 @@ class TestPasswordResetAdminEndpoints:
         assert response.status_code == 404
 
 
+class TestAdminSetPassword:
+    """Tests for admin set password endpoint"""
+
+    def get_auth_token(
+        self, client, api_headers, email="test@example.com", password="testpassword123"
+    ):
+        """Helper to get authentication token"""
+        response = client.post(
+            "/api/v1/auth/login",
+            json={"email": email, "password": password},
+            headers=api_headers,
+        )
+        assert response.status_code == 200
+        return response.json()["access_token"]
+
+    def test_admin_set_password_success(self, client, test_db, sample_user, api_headers):
+        """Test admin can set password for any user"""
+        from repositories import UserRepository
+        from utils.auth import get_password_hash
+
+        # Create a target user to change password for
+        user_repo = UserRepository(test_db)
+        target_user = user_repo.create(
+            {
+                "email": "target@example.com",
+                "hashed_password": get_password_hash("oldpassword123"),
+                "full_name": "Target User",
+                "is_admin": False,
+            }
+        )
+
+        # Get admin token
+        token = self.get_auth_token(client, api_headers)
+
+        # Set new password
+        response = client.post(
+            f"/api/v1/auth/users/{target_user.id}/set-password",
+            json={"new_password": "newpassword123"},
+            headers={"Authorization": f"Bearer {token}", **api_headers},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "message" in data
+        assert "target@example.com" in data["message"]
+
+        # Verify new password works
+        login_response = client.post(
+            "/api/v1/auth/login",
+            json={"email": "target@example.com", "password": "newpassword123"},
+            headers=api_headers,
+        )
+        assert login_response.status_code == 200
+
+        # Verify old password no longer works
+        old_login_response = client.post(
+            "/api/v1/auth/login",
+            json={"email": "target@example.com", "password": "oldpassword123"},
+            headers=api_headers,
+        )
+        assert old_login_response.status_code == 401
+
+    def test_admin_set_own_password(self, client, sample_user, api_headers):
+        """Test admin can set their own password"""
+        # Get admin token
+        token = self.get_auth_token(client, api_headers)
+
+        # Set new password for self
+        response = client.post(
+            f"/api/v1/auth/users/{sample_user.id}/set-password",
+            json={"new_password": "mynewpassword123"},
+            headers={"Authorization": f"Bearer {token}", **api_headers},
+        )
+        assert response.status_code == 200
+
+        # Verify new password works
+        login_response = client.post(
+            "/api/v1/auth/login",
+            json={"email": "test@example.com", "password": "mynewpassword123"},
+            headers=api_headers,
+        )
+        assert login_response.status_code == 200
+
+    def test_non_admin_cannot_set_password(self, client, test_db, api_headers):
+        """Test non-admin cannot set password for other users"""
+        from repositories import UserRepository
+        from utils.auth import get_password_hash
+
+        # Create two non-admin users
+        user_repo = UserRepository(test_db)
+        _ = user_repo.create(
+            {
+                "email": "user1@example.com",
+                "hashed_password": get_password_hash("password123"),
+                "full_name": "User 1",
+                "is_admin": False,
+            }
+        )
+        user2 = user_repo.create(
+            {
+                "email": "user2@example.com",
+                "hashed_password": get_password_hash("password123"),
+                "full_name": "User 2",
+                "is_admin": False,
+            }
+        )
+
+        # Login as user1
+        login_response = client.post(
+            "/api/v1/auth/login",
+            json={"email": "user1@example.com", "password": "password123"},
+            headers=api_headers,
+        )
+        token = login_response.json()["access_token"]
+
+        # Try to set password for user2
+        response = client.post(
+            f"/api/v1/auth/users/{user2.id}/set-password",
+            json={"new_password": "hackedpassword"},
+            headers={"Authorization": f"Bearer {token}", **api_headers},
+        )
+        assert response.status_code == 403
+
+    def test_set_password_nonexistent_user(self, client, sample_user, api_headers):
+        """Test setting password for non-existent user returns 404"""
+        token = self.get_auth_token(client, api_headers)
+        response = client.post(
+            "/api/v1/auth/users/99999/set-password",
+            json={"new_password": "newpassword123"},
+            headers={"Authorization": f"Bearer {token}", **api_headers},
+        )
+        assert response.status_code == 404
+
+    def test_set_password_without_auth(self, client, sample_user, api_headers):
+        """Test setting password without authentication fails"""
+        response = client.post(
+            f"/api/v1/auth/users/{sample_user.id}/set-password",
+            json={"new_password": "newpassword123"},
+            headers=api_headers,
+        )
+        assert response.status_code == 401
+
+    def test_set_password_empty_password(self, client, sample_user, api_headers):
+        """Test setting empty password is handled"""
+        token = self.get_auth_token(client, api_headers)
+        response = client.post(
+            f"/api/v1/auth/users/{sample_user.id}/set-password",
+            json={"new_password": ""},
+            headers={"Authorization": f"Bearer {token}", **api_headers},
+        )
+        # Should still work at API level - validation is on frontend
+        # Backend accepts any string for flexibility
+        assert response.status_code == 200
+
+
 class TestPasswordResetRepository:
     """Tests for password reset repository methods"""
 

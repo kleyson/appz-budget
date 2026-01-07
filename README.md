@@ -9,7 +9,7 @@ You can try Appz Budget without installing anything:
 - **Demo URL**: [https://budget.appz.wtf/](https://budget.appz.wtf/)
 - **Demo Credentials**:
   - Email: `admin@email.com`
-  - Password: `admin`
+  - Password: `admin1`
 
 > **Note**: The demo is reset periodically. Any data you enter may be lost.
 
@@ -80,7 +80,7 @@ The easiest way to run Appz Budget is using Docker Compose. No need to clone the
      - ReDoc: `http://localhost:8000/redoc`
    - Default admin credentials (if seeded):
      - Email: `admin@email.com`
-     - Password: `admin`
+     - Password: `admin1`
 
 ### Environment Variables
 
@@ -348,7 +348,7 @@ make tui-format-check # Check TUI formatting
 ```bash
 make migrate          # Apply pending migrations
 make migrate-create MESSAGE="description"  # Create new migration
-make seed             # Seed admin user (admin@email.com / admin)
+make seed             # Seed admin user (admin@email.com / admin1)
 ```
 
 ### Building

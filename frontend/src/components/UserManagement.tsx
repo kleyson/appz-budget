@@ -4,6 +4,7 @@ import type { User, UserRegister } from '../types';
 import { AxiosError } from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { useDialog } from '../contexts/DialogContext';
+import { usersApi } from '../api/client';
 
 interface UserCreate extends UserRegister {
   is_active?: boolean;
@@ -22,6 +23,9 @@ export const UserManagement = () => {
     is_admin: false,
   });
   const [error, setError] = useState('');
+  const [passwordModal, setPasswordModal] = useState<{ user: User; password: string } | null>(null);
+  const [passwordError, setPasswordError] = useState('');
+  const [isSettingPassword, setIsSettingPassword] = useState(false);
 
   const { data: users, isLoading } = useUsers();
   const createMutation = useCreateUser();
@@ -119,6 +123,33 @@ export const UserManagement = () => {
     setEditingUser(null);
     setShowForm(false);
     setError('');
+  };
+
+  const handleSetPassword = async () => {
+    if (!passwordModal) return;
+
+    if (!passwordModal.password || passwordModal.password.length < 8) {
+      setPasswordError('Password must be at least 8 characters long');
+      return;
+    }
+
+    setIsSettingPassword(true);
+    setPasswordError('');
+
+    try {
+      await usersApi.setPassword(passwordModal.user.id, passwordModal.password);
+      await showAlert({
+        title: 'Success',
+        message: `Password set successfully for ${passwordModal.user.email}`,
+        type: 'success',
+      });
+      setPasswordModal(null);
+    } catch (err) {
+      const error = err as AxiosError<{ detail: string }>;
+      setPasswordError(error.response?.data?.detail || 'Failed to set password');
+    } finally {
+      setIsSettingPassword(false);
+    }
   };
 
   if (isLoading) {
@@ -349,6 +380,12 @@ export const UserManagement = () => {
                     >
                       Edit
                     </button>
+                    <button
+                      onClick={() => setPasswordModal({ user, password: '' })}
+                      className="flex-1 text-sm px-3 py-2 rounded-lg border border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 font-medium transition-colors"
+                    >
+                      Password
+                    </button>
                     {user.id !== currentUser?.id && (
                       <button
                         onClick={() => handleDelete(user.id, user.email)}
@@ -441,6 +478,25 @@ export const UserManagement = () => {
                               />
                             </svg>
                           </button>
+                          <button
+                            onClick={() => setPasswordModal({ user, password: '' })}
+                            className="p-2 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/20 text-amber-600 dark:text-amber-400 transition-colors"
+                            title="Set Password"
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+                              />
+                            </svg>
+                          </button>
                           {user.id !== currentUser?.id && (
                             <button
                               onClick={() => handleDelete(user.id, user.email)}
@@ -472,6 +528,71 @@ export const UserManagement = () => {
           </>
         )}
       </div>
+
+      {/* Set Password Modal */}
+      {passwordModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => {
+              setPasswordModal(null);
+              setPasswordError('');
+            }}
+          />
+          <div className="relative bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-md w-full mx-4 p-6">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+              Set Password
+            </h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+              Set a new password for <strong>{passwordModal.user.email}</strong>
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  New Password
+                </label>
+                <input
+                  type="password"
+                  value={passwordModal.password}
+                  onChange={(e) => setPasswordModal({ ...passwordModal, password: e.target.value })}
+                  placeholder="Minimum 8 characters"
+                  minLength={8}
+                  autoFocus
+                  className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
+                />
+              </div>
+
+              {passwordError && (
+                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400 text-sm">
+                  {passwordError}
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPasswordModal(null);
+                    setPasswordError('');
+                  }}
+                  className="flex-1 px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSetPassword}
+                  disabled={isSettingPassword}
+                  className="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSettingPassword ? 'Setting...' : 'Set Password'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

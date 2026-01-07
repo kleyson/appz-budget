@@ -13,6 +13,8 @@ from dependencies import (
 from exceptions import NotFoundError, ValidationError
 from repositories import UserRepository
 from schemas import (
+    AdminSetPasswordRequest,
+    AdminSetPasswordResponse,
     ChangePasswordRequest,
     ChangePasswordResponse,
     ForgotPasswordRequest,
@@ -230,6 +232,27 @@ def delete_user(
             raise ValidationError("Cannot delete your own account")
         user_repository.delete(user)
         return {"message": "User deleted successfully"}
+    except NotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from None
+    except ValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from None
+
+
+@router.post("/users/{user_id}/set-password", response_model=AdminSetPasswordResponse)
+def admin_set_password(
+    user_id: int,
+    request: AdminSetPasswordRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_admin_user),
+):
+    """Set password for any user (admin only, no current password required)"""
+    user_repository = UserRepository(db)
+    service = UserService(user_repository)
+    try:
+        result = service.admin_set_password(
+            user_id, request.new_password, current_user.full_name or current_user.email
+        )
+        return AdminSetPasswordResponse(message=result["message"])
     except NotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e)) from None
     except ValidationError as e:

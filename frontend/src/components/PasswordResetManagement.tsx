@@ -67,8 +67,12 @@ export const PasswordResetManagement = () => {
 
     try {
       const response = await authApi.generateResetLink(selectedUserId);
+      // Replace the hostname in the URL with the current browser hostname
+      const backendUrl = response.data.reset_url;
+      const urlPath = new URL(backendUrl).pathname + new URL(backendUrl).search;
+      const frontendUrl = window.location.origin + urlPath;
       setGeneratedLink({
-        url: response.data.reset_url,
+        url: frontendUrl,
         code: response.data.short_code,
         email: response.data.user_email,
       });

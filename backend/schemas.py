@@ -241,6 +241,14 @@ class ChangePasswordResponse(BaseModel):
     message: str
 
 
+class AdminSetPasswordRequest(BaseModel):
+    new_password: str
+
+
+class AdminSetPasswordResponse(BaseModel):
+    message: str
+
+
 class UserResponse(BaseModel):
     id: int
     email: str

@@ -372,6 +372,8 @@ export const usersApi = {
   ): Promise<AxiosResponse<User>> => apiClient.put<User>(`/api/v1/auth/users/${id}`, data),
   delete: (id: number): Promise<AxiosResponse<{ message: string }>> =>
     apiClient.delete(`/api/v1/auth/users/${id}`),
+  setPassword: (id: number, newPassword: string): Promise<AxiosResponse<{ message: string }>> =>
+    apiClient.post(`/api/v1/auth/users/${id}/set-password`, { new_password: newPassword }),
 };
 
 // Backup endpoints (admin only)
