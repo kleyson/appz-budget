@@ -1,14 +1,14 @@
 import React from "react";
 import { TouchableOpacity, StyleSheet, ViewStyle } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../contexts/ThemeContext";
 import { getThemeColors, radius } from "../../utils/colors";
+import { Icon } from "./Icon";
 
 type IconButtonVariant = "primary" | "success" | "danger" | "warning" | "info" | "muted";
 type IconButtonSize = "sm" | "md" | "lg";
 
 interface IconButtonProps {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: string;
   onPress: () => void;
   variant?: IconButtonVariant;
   size?: IconButtonSize;
@@ -61,7 +61,7 @@ export const IconButton = ({
       disabled={disabled}
       activeOpacity={0.7}
     >
-      <Ionicons name={icon} size={dimensions.icon} color={colors.color} />
+      <Icon name={icon} size={dimensions.icon} color={colors.color} />
     </TouchableOpacity>
   );
 };

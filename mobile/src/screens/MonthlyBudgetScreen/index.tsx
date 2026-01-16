@@ -8,6 +8,7 @@ import {
   ScrollView,
   RefreshControl,
 } from "react-native";
+import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../contexts/ThemeContext";
 import {
@@ -19,7 +20,6 @@ import {
   useExpenses,
   useDeleteExpense,
   useCloneExpensesToNextMonth,
-  usePayExpense,
   useRefreshBudgetData,
 } from "../../hooks/useExpenses";
 import { useIncomes, useDeleteIncome } from "../../hooks/useIncomes";
@@ -35,9 +35,9 @@ import { useCategories } from "../../hooks/useCategories";
 import { useIncomeTypes } from "../../hooks/useIncomeTypes";
 import { useSummaryTotals } from "../../hooks/useSummary";
 import { Ionicons } from "@expo/vector-icons";
-import { ExpenseFormModal } from "./ExpenseFormModal";
-import { IncomeFormModal } from "./IncomeFormModal";
-import { PayExpenseModal } from "./PayExpenseModal";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { TestBackendWarning } from "../../components/TestBackendWarning";
+import { HeaderRightButtons } from "../../components/HeaderButtons";
 import { MonthSelector } from "./MonthSelector";
 import { FilterBar } from "./FilterBar";
 import { SummaryCards } from "./SummaryCards";
@@ -50,18 +50,15 @@ import type { Expense, Income, Month } from "../../types";
 type TabId = "expenses" | "income" | "summary";
 
 export const MonthlyBudgetScreen = () => {
+  const router = useRouter();
   const { isDark } = useTheme();
   const theme = getThemeColors(isDark);
+  const insets = useSafeAreaInsets();
   const { refresh: refreshBudgetData, isRefreshing } = useRefreshBudgetData();
   const [activeTab, setActiveTab] = useState<TabId>("summary");
   const [selectedPeriod, setSelectedPeriod] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedMonthId, setSelectedMonthId] = useState<number | null>(null);
-  const [showExpenseForm, setShowExpenseForm] = useState(false);
-  const [showIncomeForm, setShowIncomeForm] = useState(false);
-  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
-  const [editingIncome, setEditingIncome] = useState<Income | null>(null);
-  const [payingExpense, setPayingExpense] = useState<Expense | null>(null);
   const [showFilters, setShowFilters] = useState(false);
 
   const { data: currentMonth } = useCurrentMonth();
@@ -71,7 +68,6 @@ export const MonthlyBudgetScreen = () => {
   const { data: months } = useMonths();
   const cloneMutation = useCloneExpensesToNextMonth();
   const deleteExpenseMutation = useDeleteExpense();
-  const payExpenseMutation = usePayExpense();
   const deleteIncomeMutation = useDeleteIncome();
   const deleteMonthMutation = useDeleteMonth();
   const closeMonthMutation = useCloseMonth();
@@ -266,37 +262,7 @@ export const MonthlyBudgetScreen = () => {
   };
 
   const handlePayExpense = (expense: Expense) => {
-    setPayingExpense(expense);
-  };
-
-  const handlePayConfirm = async (amount: number, purchaseName: string) => {
-    if (!payingExpense) return;
-
-    const hasPurchases =
-      payingExpense.purchases && payingExpense.purchases.length > 0;
-
-    try {
-      await payExpenseMutation.mutateAsync({
-        id: payingExpense.id,
-        data: { amount, name: purchaseName },
-      });
-      setPayingExpense(null);
-      Alert.alert(
-        hasPurchases ? "Purchase Added" : "Payment Added",
-        hasPurchases
-          ? `Purchase "${purchaseName}" of $${amount.toFixed(
-              2
-            )} has been added.`
-          : `Payment of $${amount.toFixed(2)} has been added.`
-      );
-    } catch (_error) {
-      Alert.alert(
-        "Error",
-        hasPurchases
-          ? "Failed to add purchase. Please try again."
-          : "Failed to pay expense. Please try again."
-      );
-    }
+    router.push(`/pay-expense?id=${expense.id}`);
   };
 
   const handleDeleteIncome = (id: number) => {
@@ -333,7 +299,7 @@ export const MonthlyBudgetScreen = () => {
     refreshBudgetData();
   }, [refreshBudgetData]);
 
-  const styles = getStyles(theme);
+  const styles = getStyles(theme, insets.top);
 
   return (
     <View style={styles.container}>
@@ -351,6 +317,15 @@ export const MonthlyBudgetScreen = () => {
           />
         }
       >
+        {/* Custom Header with Title and Buttons */}
+        <View style={styles.customHeader}>
+          <Text style={styles.customHeaderTitle}>Budget</Text>
+          <HeaderRightButtons />
+        </View>
+
+        {/* Demo Server Warning */}
+        <TestBackendWarning />
+
         {/* Header Section */}
         <View style={styles.headerSection}>
           {/* Row 1: Month Selector + Filter Button */}
@@ -386,8 +361,8 @@ export const MonthlyBudgetScreen = () => {
                 style={styles.actionButtonFull}
                 onPress={() =>
                   activeTab === "income"
-                    ? setShowIncomeForm(true)
-                    : setShowExpenseForm(true)
+                    ? router.push(`/income-form?monthId=${selectedMonthId}`)
+                    : router.push(`/expense-form?monthId=${selectedMonthId}`)
                 }
                 activeOpacity={0.7}
               >
@@ -551,12 +526,11 @@ export const MonthlyBudgetScreen = () => {
               categories={categories || []}
               periods={periods || []}
               onEdit={(expense: Expense) => {
-                setEditingExpense(expense);
-                setShowExpenseForm(true);
+                router.push(`/expense-form?id=${expense.id}&monthId=${selectedMonthId}`);
               }}
               onDelete={handleDeleteExpense}
               onPay={handlePayExpense}
-              onAdd={() => setShowExpenseForm(true)}
+              onAdd={() => router.push(`/expense-form?monthId=${selectedMonthId}`)}
               theme={theme}
               isDark={isDark}
             />
@@ -568,11 +542,10 @@ export const MonthlyBudgetScreen = () => {
               incomeTypes={incomeTypes || []}
               periods={periods || []}
               onEdit={(income: Income) => {
-                setEditingIncome(income);
-                setShowIncomeForm(true);
+                router.push(`/income-form?id=${income.id}&monthId=${selectedMonthId}`);
               }}
               onDelete={handleDeleteIncome}
-              onAdd={() => setShowIncomeForm(true)}
+              onAdd={() => router.push(`/income-form?monthId=${selectedMonthId}`)}
               theme={theme}
               isDark={isDark}
             />
@@ -588,43 +561,11 @@ export const MonthlyBudgetScreen = () => {
           )}
         </View>
       </ScrollView>
-
-      {showExpenseForm && (
-        <ExpenseFormModal
-          visible={showExpenseForm}
-          expense={editingExpense}
-          monthId={selectedMonthId}
-          onClose={() => {
-            setShowExpenseForm(false);
-            setEditingExpense(null);
-          }}
-        />
-      )}
-
-      {showIncomeForm && (
-        <IncomeFormModal
-          visible={showIncomeForm}
-          income={editingIncome}
-          monthId={selectedMonthId}
-          onClose={() => {
-            setShowIncomeForm(false);
-            setEditingIncome(null);
-          }}
-        />
-      )}
-
-      <PayExpenseModal
-        visible={!!payingExpense}
-        expense={payingExpense}
-        onClose={() => setPayingExpense(null)}
-        onConfirm={handlePayConfirm}
-        isLoading={payExpenseMutation.isPending}
-      />
     </View>
   );
 };
 
-const getStyles = (theme: ReturnType<typeof getThemeColors>) =>
+const getStyles = (theme: ReturnType<typeof getThemeColors>, topInset: number) =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -635,6 +576,21 @@ const getStyles = (theme: ReturnType<typeof getThemeColors>) =>
     },
     scrollContent: {
       paddingBottom: 200,
+    },
+    customHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingTop: topInset + 8,
+      paddingHorizontal: 16,
+      paddingBottom: 8,
+      backgroundColor: theme.background,
+    },
+    customHeaderTitle: {
+      fontSize: 34,
+      fontWeight: "700",
+      color: theme.text,
+      letterSpacing: -0.5,
     },
     headerSection: {
       padding: 16,
@@ -694,7 +650,7 @@ const getStyles = (theme: ReturnType<typeof getThemeColors>) =>
       paddingVertical: 12,
       gap: 6,
       borderRadius: radius.md,
-      borderWidth: 1,
+      borderCurve: "continuous",
     },
     actionButtonFullText: {
       fontSize: 14,

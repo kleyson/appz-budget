@@ -7,10 +7,11 @@ import {
   Modal,
   FlatList,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMonths } from "../../hooks/useMonths";
 import { useTheme } from "../../contexts/ThemeContext";
-import { Ionicons } from "@expo/vector-icons";
 import { getThemeColors, getShadow, radius, rgba } from "../../utils/colors";
+import { Icon } from "../../components/shared";
 
 interface MonthSelectorProps {
   selectedMonthId: number | null;
@@ -24,11 +25,12 @@ export const MonthSelector = ({
   const { isDark } = useTheme();
   const theme = getThemeColors(isDark);
   const { data: months } = useMonths();
+  const insets = useSafeAreaInsets();
   const [modalVisible, setModalVisible] = React.useState(false);
 
   const selectedMonth = months?.find((m) => m.id === selectedMonthId);
 
-  const styles = getStyles(isDark, theme);
+  const styles = getStyles(isDark, theme, insets.bottom);
 
   return (
     <View>
@@ -39,7 +41,7 @@ export const MonthSelector = ({
       >
         <View style={styles.selectorContent}>
           <View style={[styles.calendarIcon, selectedMonth?.is_closed && styles.calendarIconClosed]}>
-            <Ionicons
+            <Icon
               name={selectedMonth?.is_closed ? "lock-closed" : "calendar"}
               size={16}
               color={selectedMonth?.is_closed ? theme.warning : theme.primary}
@@ -59,7 +61,7 @@ export const MonthSelector = ({
             </View>
           </View>
         </View>
-        <Ionicons name="chevron-down" size={18} color={theme.textMuted} />
+        <Icon name="chevron-down" size={18} color={theme.textMuted} />
       </TouchableOpacity>
 
       <Modal
@@ -73,7 +75,7 @@ export const MonthSelector = ({
             <View style={styles.modalHeader}>
               <View style={styles.modalTitleRow}>
                 <View style={styles.modalIconWrapper}>
-                  <Ionicons name="calendar" size={20} color={theme.primary} />
+                  <Icon name="calendar" size={20} color={theme.primary} />
                 </View>
                 <Text style={styles.modalTitle}>Select Month</Text>
               </View>
@@ -82,7 +84,7 @@ export const MonthSelector = ({
                 onPress={() => setModalVisible(false)}
                 activeOpacity={0.7}
               >
-                <Ionicons name="close" size={20} color={theme.textSecondary} />
+                <Icon name="close" size={20} color={theme.textSecondary} />
               </TouchableOpacity>
             </View>
 
@@ -110,7 +112,7 @@ export const MonthSelector = ({
                           item.is_closed && !isSelected && styles.monthIconClosed,
                         ]}
                       >
-                        <Ionicons
+                        <Icon
                           name={item.is_closed ? "lock-closed-outline" : "calendar-outline"}
                           size={16}
                           color={isSelected ? "#ffffff" : item.is_closed ? theme.warning : theme.textMuted}
@@ -132,7 +134,7 @@ export const MonthSelector = ({
                     </View>
                     {isSelected && (
                       <View style={styles.checkIcon}>
-                        <Ionicons name="checkmark" size={16} color={theme.primary} />
+                        <Icon name="checkmark" size={16} color={theme.primary} />
                       </View>
                     )}
                   </TouchableOpacity>
@@ -146,7 +148,7 @@ export const MonthSelector = ({
   );
 };
 
-const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
+const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>, bottomInset: number) =>
   StyleSheet.create({
     selector: {
       flexDirection: "row",
@@ -255,6 +257,7 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
     },
     listContent: {
       padding: 12,
+      paddingBottom: Math.max(bottomInset, 24) + 12,
       gap: 6,
     },
     monthItem: {

@@ -13,10 +13,10 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../contexts/ThemeContext";
-import { getThemeColors, getShadow, gradientColors, radius } from "../../utils/colors";
+import { getThemeColors, gradientColors, radius } from "../../utils/colors";
 import { springConfigs } from "../../utils/animations";
+import { Icon } from "./Icon";
 
 type ButtonVariant = "primary" | "secondary" | "danger" | "success" | "ghost";
 type ButtonSize = "sm" | "md" | "lg";
@@ -28,7 +28,7 @@ interface ButtonProps {
   onPress: () => void;
   variant?: ButtonVariant;
   size?: ButtonSize;
-  icon?: keyof typeof Ionicons.glyphMap;
+  icon?: string;
   iconPosition?: "left" | "right";
   loading?: boolean;
   disabled?: boolean;
@@ -107,7 +107,7 @@ export const Button = ({
         ) : (
           <>
             {icon && iconPosition === "left" && (
-              <Ionicons name={icon} size={currentSize.iconSize} color={iconColor} />
+              <Icon name={icon} size={currentSize.iconSize} color={iconColor} />
             )}
             <Text
               style={[
@@ -118,7 +118,7 @@ export const Button = ({
               {label}
             </Text>
             {icon && iconPosition === "right" && (
-              <Ionicons name={icon} size={currentSize.iconSize} color={iconColor} />
+              <Icon name={icon} size={currentSize.iconSize} color={iconColor} />
             )}
           </>
         )}
@@ -186,10 +186,11 @@ export const Button = ({
   );
 };
 
-const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
+const getStyles = (_isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
   StyleSheet.create({
     button: {
       borderRadius: radius.md,
+      borderCurve: "continuous",
       alignItems: "center",
       justifyContent: "center",
     },
@@ -201,8 +202,9 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
     },
     gradientContainer: {
       borderRadius: radius.md,
+      borderCurve: "continuous",
       overflow: "hidden",
-      ...getShadow(isDark, "sm"),
+      boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
     },
     gradient: {
       alignItems: "center",

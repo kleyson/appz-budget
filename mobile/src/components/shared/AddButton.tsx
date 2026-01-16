@@ -1,8 +1,8 @@
 import React from "react";
 import { TouchableOpacity, View, Text, StyleSheet, ViewStyle } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../contexts/ThemeContext";
 import { getThemeColors, radius, spacing } from "../../utils/colors";
+import { Icon } from "./Icon";
 
 type AddButtonVariant = "primary" | "success" | "danger";
 
@@ -10,7 +10,7 @@ interface AddButtonProps {
   label: string;
   onPress: () => void;
   variant?: AddButtonVariant;
-  icon?: keyof typeof Ionicons.glyphMap;
+  icon?: string;
   style?: ViewStyle;
 }
 
@@ -59,7 +59,7 @@ export const AddButton = ({
       activeOpacity={0.7}
     >
       <View style={[styles.iconWrapper, { backgroundColor: colors.iconBg }]}>
-        <Ionicons name={icon} size={18} color={colors.color} />
+        <Icon name={icon} size={18} color={colors.color} />
       </View>
       <Text style={[styles.text, { color: colors.color }]}>{label}</Text>
     </TouchableOpacity>

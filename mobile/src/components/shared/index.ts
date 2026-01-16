@@ -1,4 +1,5 @@
 // Shared UI Components
+export { Icon } from "./Icon";
 export { BottomSheetModal } from "./BottomSheetModal";
 export { FormInput } from "./FormInput";
 export { ColorPicker } from "./ColorPicker";

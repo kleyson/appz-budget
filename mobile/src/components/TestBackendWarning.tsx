@@ -6,10 +6,11 @@ import {
   StyleSheet,
   Linking,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useApiConfig } from "../contexts/ApiConfigContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { colors, radius, spacing } from "../utils/colors";
+import { Icon } from "./shared/Icon";
 
 const GITHUB_REPO_URL =
   "https://github.com/kleyson/appz-budget#quick-start-with-docker";
@@ -36,6 +37,7 @@ const isTestBackend = (apiUrl: string | null): boolean => {
 export const TestBackendWarning = () => {
   const { apiUrl } = useApiConfig();
   const { isDark } = useTheme();
+  const insets = useSafeAreaInsets();
   const [isDismissed, setIsDismissed] = useState(false);
 
   // Don't render if not on test backend or if dismissed
@@ -47,16 +49,16 @@ export const TestBackendWarning = () => {
     Linking.openURL(GITHUB_REPO_URL);
   };
 
-  const styles = getStyles(isDark);
+  const styles = getStyles(isDark, insets.top);
 
   return (
     <View style={styles.container}>
       <View style={styles.content}>
         {/* Warning Icon */}
         <View style={styles.iconContainer}>
-          <Ionicons
+          <Icon
             name="warning"
-            size={20}
+            size={18}
             color={isDark ? colors.accent[400] : colors.accent[600]}
           />
         </View>
@@ -79,9 +81,9 @@ export const TestBackendWarning = () => {
           activeOpacity={0.7}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Ionicons
+          <Icon
             name="close"
-            size={18}
+            size={16}
             color={isDark ? colors.accent[400] : colors.accent[700]}
           />
         </TouchableOpacity>
@@ -90,23 +92,27 @@ export const TestBackendWarning = () => {
   );
 };
 
-const getStyles = (isDark: boolean) =>
+const getStyles = (isDark: boolean, _topInset: number) =>
   StyleSheet.create({
     container: {
+      marginHorizontal: spacing.md,
+      marginTop: spacing.sm,
       backgroundColor: isDark
         ? "rgba(245, 158, 11, 0.15)"
         : "rgba(254, 243, 199, 1)",
-      borderBottomWidth: 1,
-      borderBottomColor: isDark
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: isDark
         ? "rgba(245, 158, 11, 0.3)"
-        : "rgba(217, 119, 6, 0.2)",
+        : "rgba(217, 119, 6, 0.3)",
+      borderCurve: "continuous",
     },
     content: {
       flexDirection: "row",
       alignItems: "flex-start",
-      paddingHorizontal: spacing.lg,
-      paddingVertical: spacing.md,
-      gap: spacing.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      gap: spacing.sm,
     },
     iconContainer: {
       marginTop: 2,
