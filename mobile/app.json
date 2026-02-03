@@ -17,7 +17,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "wtf.appz.budget",
-      "buildNumber": "8",
+      "buildNumber": "9",
       "privacyManifests": {
         "NSPrivacyAccessedAPITypes": []
       },
@@ -30,7 +30,7 @@
     },
     "android": {
       "package": "wtf.appz.budget",
-      "versionCode": 8,
+      "versionCode": 9,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0d9488"

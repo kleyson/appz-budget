@@ -12,7 +12,11 @@
     "lint:fix": "eslint . --fix",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "bump:build": "node -e \"const fs=require('fs');const app=JSON.parse(fs.readFileSync('app.json'));const b=parseInt(app.expo.ios.buildNumber)+1;app.expo.ios.buildNumber=String(b);app.expo.android.versionCode=b;fs.writeFileSync('app.json',JSON.stringify(app,null,2));console.log('Build:',b)\"",
+    "bump:patch": "npm version patch --no-git-tag-version && node -e \"const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));const app=JSON.parse(fs.readFileSync('app.json'));app.expo.version=pkg.version;const b=parseInt(app.expo.ios.buildNumber)+1;app.expo.ios.buildNumber=String(b);app.expo.android.versionCode=b;fs.writeFileSync('app.json',JSON.stringify(app,null,2));console.log('Version:',pkg.version,'Build:',b)\"",
+    "bump:minor": "npm version minor --no-git-tag-version && node -e \"const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));const app=JSON.parse(fs.readFileSync('app.json'));app.expo.version=pkg.version;const b=parseInt(app.expo.ios.buildNumber)+1;app.expo.ios.buildNumber=String(b);app.expo.android.versionCode=b;fs.writeFileSync('app.json',JSON.stringify(app,null,2));console.log('Version:',pkg.version,'Build:',b)\"",
+    "bump:major": "npm version major --no-git-tag-version && node -e \"const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));const app=JSON.parse(fs.readFileSync('app.json'));app.expo.version=pkg.version;const b=parseInt(app.expo.ios.buildNumber)+1;app.expo.ios.buildNumber=String(b);app.expo.android.versionCode=b;fs.writeFileSync('app.json',JSON.stringify(app,null,2));console.log('Version:',pkg.version,'Build:',b)\""
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
