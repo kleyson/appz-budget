@@ -74,6 +74,14 @@ class CategorySummary(BaseModel):
     over_budget: bool
 
 
+class ExpensePeriodSummary(BaseModel):
+    period: str
+    color: str
+    budget: float
+    total: float
+    over_budget: bool
+
+
 class IncomeTypeSummary(BaseModel):
     income_type: str
     budget: float

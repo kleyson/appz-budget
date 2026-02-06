@@ -93,6 +93,32 @@ class SummaryService:
             "grand_total_difference": grand_total_income - grand_total_expenses,
         }
 
+    def get_expense_period_summary(self, month_id: int | None = None) -> list[dict]:
+        """Get expenses grouped by period with budget totals"""
+        if not self.period_repository:
+            raise ValueError("Period repository is required for expense period summary")
+
+        periods = self.period_repository.get_all()
+        period_summaries = []
+
+        for period in periods:
+            expenses = self.expense_repository.get_all(period=period.name, month_id=month_id)
+
+            budget = sum(expense.budget or 0.0 for expense in expenses)
+            total = sum(expense.cost or 0.0 for expense in expenses)
+
+            period_summaries.append(
+                {
+                    "period": period.name,
+                    "color": period.color,
+                    "budget": budget,
+                    "total": total,
+                    "over_budget": total > budget,
+                }
+            )
+
+        return period_summaries
+
     def get_monthly_trends(self, num_months: int = 12) -> dict:
         """Get monthly trends for income, expenses, and category breakdown"""
         if not self.month_repository or not self.category_repository:

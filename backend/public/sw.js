@@ -5,13 +5,13 @@ const STATIC_CACHE = 'appz-budget-static-v1';
 // Assets to cache immediately
 const STATIC_ASSETS = [
   '/',
-  '/public/favicon.ico',
-  '/public/favicon-16x16.png',
-  '/public/favicon-32x32.png',
-  '/public/apple-touch-icon.png',
-  '/public/android-chrome-192x192.png',
-  '/public/android-chrome-512x512.png',
-  '/public/site.webmanifest'
+  '/favicon.ico',
+  '/favicon-16x16.png',
+  '/favicon-32x32.png',
+  '/apple-touch-icon.png',
+  '/android-chrome-192x192.png',
+  '/android-chrome-512x512.png',
+  '/site.webmanifest'
 ];
 
 // Install event - cache static assets

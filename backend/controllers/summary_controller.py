@@ -11,7 +11,12 @@ from repositories import (
     MonthRepository,
     PeriodRepository,
 )
-from schemas import MonthlyTrendsResponse, PeriodSummaryResponse, SummaryTotals
+from schemas import (
+    ExpensePeriodSummary,
+    MonthlyTrendsResponse,
+    PeriodSummaryResponse,
+    SummaryTotals,
+)
 from services import SummaryService
 
 router = APIRouter(prefix="/api/v1/summary", tags=["summary"])
@@ -45,6 +50,23 @@ def get_period_summary(
     period_repository = PeriodRepository(db)
     service = SummaryService(expense_repository, income_repository, period_repository)
     return service.get_period_summary(month_id=month_id)
+
+
+@router.get("/expenses-by-period", response_model=list[ExpensePeriodSummary])
+def get_expenses_by_period(
+    month_id: int | None = None,
+    db: Session = Depends(get_db),
+    api_key: str = Security(get_api_key),
+    client_info: str | None = Depends(get_client_info),
+):
+    """Get expenses grouped by period with budget totals"""
+    expense_repository = ExpenseRepository(db)
+    income_repository = IncomeRepository(db)
+    period_repository = PeriodRepository(db)
+    service = SummaryService(
+        expense_repository, income_repository, period_repository=period_repository
+    )
+    return service.get_expense_period_summary(month_id=month_id)
 
 
 @router.get("/monthly-trends", response_model=MonthlyTrendsResponse)

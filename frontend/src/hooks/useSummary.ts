@@ -1,6 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { incomeTypesApi, summaryApi } from '../api/client';
-import type { IncomeTypeSummary, PeriodSummaryResponse, SummaryTotals } from '../types';
+import type {
+  ExpensePeriodSummary,
+  IncomeTypeSummary,
+  PeriodSummaryResponse,
+  SummaryTotals,
+} from '../types';
 
 export const useSummaryTotals = (filters?: {
   period?: string | null;
@@ -26,5 +31,12 @@ export const usePeriodSummary = (filters?: { month_id?: number | null }) => {
   return useQuery<PeriodSummaryResponse, Error>({
     queryKey: ['summary', 'by-period', filters],
     queryFn: () => summaryApi.getByPeriod(filters).then((res) => res.data),
+  });
+};
+
+export const useExpensePeriodSummary = (filters?: { month_id?: number | null }) => {
+  return useQuery<ExpensePeriodSummary[], Error>({
+    queryKey: ['summary', 'expenses-by-period', filters],
+    queryFn: () => summaryApi.getExpensesByPeriod(filters).then((res) => res.data),
   });
 };
