@@ -1,36 +1,40 @@
+import { useRef } from 'react';
 import {
   useBackups,
   useCreateBackup,
   useDeleteBackup,
-  useBackupDownloadUrl,
+  useDownloadBackup,
+  useRestoreBackup,
+  useUploadRestore,
 } from '../hooks/useReports';
 import { useAuth } from '../contexts/AuthContext';
 
 // Format file size
 const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return '0 Bytes';
+  if (!Number.isFinite(bytes) || bytes <= 0) return '0 Bytes';
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), sizes.length - 1);
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
 export const Backup = () => {
   const { user } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Backup hooks
   const { data: backupsData, isLoading: backupsLoading } = useBackups();
   const createBackup = useCreateBackup();
   const deleteBackup = useDeleteBackup();
-  const getDownloadUrl = useBackupDownloadUrl();
+  const downloadBackup = useDownloadBackup();
+  const restoreBackup = useRestoreBackup();
+  const uploadRestore = useUploadRestore();
 
   const handleDownload = async (filename: string) => {
     try {
-      const result = await getDownloadUrl.mutateAsync(filename);
-      // Open the signed URL in a new tab to trigger download
-      window.open(result.download_url, '_blank');
+      await downloadBackup.mutateAsync(filename);
     } catch {
-      console.error('Failed to get download URL');
+      console.error('Failed to download backup');
     }
   };
 
@@ -48,6 +52,49 @@ export const Backup = () => {
         await deleteBackup.mutateAsync(filename);
       } catch {
         console.error('Failed to delete backup');
+      }
+    }
+  };
+
+  const handleRestoreBackup = async (filename: string) => {
+    if (
+      window.confirm(
+        `Are you sure you want to restore from ${filename}?\n\nThis will replace the current database with the backup. This action cannot be undone.`
+      )
+    ) {
+      try {
+        await restoreBackup.mutateAsync(filename);
+        window.alert('Database restored successfully. The page will reload.');
+        window.location.reload();
+      } catch {
+        console.error('Failed to restore backup');
+      }
+    }
+  };
+
+  const handleUploadRestore = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Reset input so the same file can be selected again
+    if (fileInputRef.current) fileInputRef.current.value = '';
+
+    if (!file.name.endsWith('.db')) {
+      window.alert('Please select a .db SQLite database file.');
+      return;
+    }
+
+    if (
+      window.confirm(
+        `Are you sure you want to restore from "${file.name}"?\n\nThis will replace the current database with the uploaded file. This action cannot be undone.`
+      )
+    ) {
+      try {
+        await uploadRestore.mutateAsync(file);
+        window.alert('Database restored successfully. The page will reload.');
+        window.location.reload();
+      } catch {
+        console.error('Failed to restore from uploaded file');
       }
     }
   };
@@ -168,7 +215,7 @@ export const Backup = () => {
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => handleDownload(backup.filename)}
-                          disabled={getDownloadUrl.isPending}
+                          disabled={downloadBackup.isPending}
                           className="px-3 py-1.5 text-xs font-medium text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-md transition-colors"
                           title="Download backup"
                         >
@@ -183,6 +230,26 @@ export const Backup = () => {
                               strokeLinejoin="round"
                               strokeWidth={2}
                               d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                            />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => handleRestoreBackup(backup.filename)}
+                          disabled={restoreBackup.isPending}
+                          className="px-3 py-1.5 text-xs font-medium text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-md transition-colors"
+                          title="Restore from this backup"
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                             />
                           </svg>
                         </button>
@@ -218,6 +285,75 @@ export const Backup = () => {
             No backups available. Create your first backup using the button above.
           </div>
         )}
+      </div>
+
+      {/* Restore from file */}
+      <div className="bg-gray-50 dark:bg-gray-900/50 p-4 sm:p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Restore from File</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Upload a previously downloaded .db backup file to restore the database.
+          </p>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".db"
+            onChange={handleUploadRestore}
+            disabled={uploadRestore.isPending}
+            className="hidden"
+            id="backup-upload"
+          />
+          <label
+            htmlFor="backup-upload"
+            className={`
+              px-4 py-2 rounded-lg font-medium text-sm transition-colors flex items-center gap-2 cursor-pointer
+              ${
+                uploadRestore.isPending
+                  ? 'bg-amber-300 text-white cursor-not-allowed'
+                  : 'bg-amber-500 hover:bg-amber-600 text-white'
+              }
+            `}
+          >
+            {uploadRestore.isPending ? (
+              <>
+                <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+                Restoring...
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                  />
+                </svg>
+                Upload .db File
+              </>
+            )}
+          </label>
+          <p className="text-xs text-gray-400 dark:text-gray-500">
+            This will replace the current database. Make sure you have a backup first.
+          </p>
+        </div>
       </div>
     </div>
   );

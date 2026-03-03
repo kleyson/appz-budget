@@ -12,19 +12,19 @@ use crate::ui::{format_currency, hex_to_color};
 /// Render the charts tab
 pub fn render(app: &AppState, frame: &mut Frame, area: Rect) {
     let chunks = Layout::vertical([
-        Constraint::Percentage(50), // Budget vs Actual chart
+        Constraint::Percentage(50), // Projected vs Actual chart
         Constraint::Percentage(50), // Category distribution
     ])
     .split(area);
 
-    render_budget_vs_actual(app, frame, chunks[0]);
+    render_projected_vs_actual(app, frame, chunks[0]);
     render_expense_distribution(app, frame, chunks[1]);
 }
 
-/// Render budget vs actual bar chart
-fn render_budget_vs_actual(app: &AppState, frame: &mut Frame, area: Rect) {
+/// Render projected vs actual bar chart
+fn render_projected_vs_actual(app: &AppState, frame: &mut Frame, area: Rect) {
     let block = Block::default()
-        .title(" Budget vs Actual by Category ")
+        .title(" Projected vs Actual by Category ")
         .borders(Borders::ALL)
         .border_style(Style::default().fg(Color::DarkGray));
 
@@ -38,16 +38,17 @@ fn render_budget_vs_actual(app: &AppState, frame: &mut Frame, area: Rect) {
         return;
     }
 
-    // Find max budget for scaling
+    // Find max projected for scaling
     let max_value = app
         .data
         .category_summary
         .iter()
-        .map(|cs| cs.budget.max(cs.total))
+        .map(|cs| cs.projected.max(cs.total))
         .fold(0.0f64, |a, b| a.max(b));
 
     if max_value == 0.0 {
-        let no_data = Paragraph::new("No budget data").style(Style::default().fg(Color::DarkGray));
+        let no_data =
+            Paragraph::new("No projected data").style(Style::default().fg(Color::DarkGray));
         frame.render_widget(no_data, inner);
         return;
     }
@@ -68,7 +69,7 @@ fn render_budget_vs_actual(app: &AppState, frame: &mut Frame, area: Rect) {
         let bar_width = inner.width.saturating_sub(25); // Leave room for label and values
 
         // Calculate bar lengths
-        let budget_len = ((cs.budget / max_value) * bar_width as f64) as usize;
+        let projected_len = ((cs.projected / max_value) * bar_width as f64) as usize;
         let actual_len = ((cs.total / max_value) * bar_width as f64) as usize;
 
         // Get category color
@@ -89,16 +90,16 @@ fn render_budget_vs_actual(app: &AppState, frame: &mut Frame, area: Rect) {
 
         // Actual bar (filled)
         let actual_bar = "█".repeat(actual_len.min(bar_width as usize));
-        let actual_color = if cs.over_budget {
+        let actual_color = if cs.over_projected {
             Color::Red
         } else {
             Color::Green
         };
         bar_spans.push(Span::styled(actual_bar, Style::default().fg(actual_color)));
 
-        // Remaining budget (unfilled)
-        if budget_len > actual_len {
-            let remaining = "░".repeat(budget_len - actual_len);
+        // Remaining projected (unfilled)
+        if projected_len > actual_len {
+            let remaining = "░".repeat(projected_len - actual_len);
             bar_spans.push(Span::styled(
                 remaining,
                 Style::default().fg(Color::DarkGray),
@@ -109,17 +110,17 @@ fn render_budget_vs_actual(app: &AppState, frame: &mut Frame, area: Rect) {
         let values = format!(
             " {} / {}",
             format_currency(cs.total),
-            format_currency(cs.budget)
+            format_currency(cs.projected)
         );
-        let value_color = if cs.over_budget {
+        let value_color = if cs.over_projected {
             Color::Red
         } else {
             Color::White
         };
         bar_spans.push(Span::styled(values, Style::default().fg(value_color)));
 
-        // Over budget indicator
-        if cs.over_budget {
+        // Over projected indicator
+        if cs.over_projected {
             bar_spans.push(Span::styled(" ⚠", Style::default().fg(Color::Red)));
         }
 
@@ -143,9 +144,9 @@ fn render_budget_vs_actual(app: &AppState, frame: &mut Frame, area: Rect) {
             Span::styled("█", Style::default().fg(Color::Green)),
             Span::raw(" Actual  "),
             Span::styled("░", Style::default().fg(Color::DarkGray)),
-            Span::raw(" Budget  "),
+            Span::raw(" Projected  "),
             Span::styled("⚠", Style::default().fg(Color::Red)),
-            Span::raw(" Over Budget"),
+            Span::raw(" Over Projected"),
         ]);
         let legend_area = Rect {
             x: inner.x,

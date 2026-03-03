@@ -36,11 +36,11 @@ describe('useSummaryTotals', () => {
 
   it('should fetch summary totals successfully', async () => {
     const mockTotals: SummaryTotals = {
-      total_budgeted_expenses: 10000.0,
+      total_budget_expenses: 10000.0,
       total_current_expenses: 9500.0,
-      total_budgeted_income: 15000.0,
+      total_budget_income: 15000.0,
       total_current_income: 14500.0,
-      total_budgeted: 5000.0,
+      total_budget: 5000.0,
       total_current: 5000.0,
     };
 
@@ -60,11 +60,11 @@ describe('useSummaryTotals', () => {
 
   it('should fetch summary totals with filters', async () => {
     const mockTotals: SummaryTotals = {
-      total_budgeted_expenses: 5000.0,
+      total_budget_expenses: 5000.0,
       total_current_expenses: 4500.0,
-      total_budgeted_income: 7500.0,
+      total_budget_income: 7500.0,
       total_current_income: 7000.0,
-      total_budgeted: 2500.0,
+      total_budget: 2500.0,
       total_current: 2500.0,
     };
 

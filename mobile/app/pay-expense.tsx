@@ -97,7 +97,7 @@ export default function PayExpenseScreen() {
 
   const currentTotal =
     expense.purchases?.reduce((sum, p) => sum + p.amount, 0) || 0;
-  const remainingBudget = expense.budget - currentTotal;
+  const remainingProjected = expense.budget - currentTotal;
 
   return (
     <>
@@ -137,21 +137,21 @@ export default function PayExpenseScreen() {
         />
 
         <View style={styles.hintsContainer}>
-          <Text style={styles.budgetHint}>
-            Budgeted: {formatCurrency(expense.budget)}
+          <Text style={styles.projectedHint}>
+            Projected: {formatCurrency(expense.budget)}
           </Text>
           {isAddingPurchase && (
             <>
-              <Text style={styles.budgetHint}>
+              <Text style={styles.projectedHint}>
                 Current total: {formatCurrency(currentTotal)}
               </Text>
               <Text
                 style={[
-                  styles.budgetHint,
-                  remainingBudget < 0 && styles.overBudget,
+                  styles.projectedHint,
+                  remainingProjected < 0 && styles.overProjected,
                 ]}
               >
-                Remaining: {formatCurrency(remainingBudget)}
+                Remaining: {formatCurrency(remainingProjected)}
               </Text>
             </>
           )}
@@ -231,12 +231,12 @@ const getStyles = (theme: ReturnType<typeof getThemeColors>) =>
     hintsContainer: {
       marginTop: -spacing.sm,
     },
-    budgetHint: {
+    projectedHint: {
       fontSize: 12,
       color: theme.textMuted,
       marginBottom: 2,
     },
-    overBudget: {
+    overProjected: {
       color: theme.danger,
     },
     footer: {

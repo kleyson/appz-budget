@@ -130,7 +130,7 @@ export const AnimatedIncomeItem = ({
           <View style={styles.amountDivider} />
           <View>
             <Text style={styles.amountLabel}>Expected</Text>
-            <Text style={styles.listItemBudget}>
+            <Text style={styles.listItemProjected}>
               {formatCurrency(income.budget)}
             </Text>
           </View>
@@ -246,7 +246,7 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       fontSize: 16,
       fontWeight: "700",
     },
-    listItemBudget: {
+    listItemProjected: {
       fontSize: 14,
       color: theme.textSecondary,
       fontWeight: "500",

@@ -75,7 +75,7 @@ function SortableExpenseRow({
   handlePay,
   isMonthClosed,
 }: SortableExpenseRowProps) {
-  const isWithinBudget = expense.budget >= expense.cost;
+  const isOnTrack = expense.budget >= expense.cost;
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: expense.id,
   });
@@ -135,8 +135,8 @@ function SortableExpenseRow({
           {formatCurrency(expense.cost)}
         </td>
         <td className="px-4 py-4 text-sm">
-          <Badge variant={isWithinBudget ? 'success' : 'danger'}>
-            {isWithinBudget ? 'On Budget' : 'Over Budget'}
+          <Badge variant={isOnTrack ? 'success' : 'danger'}>
+            {isOnTrack ? 'On Track' : 'Over Budget'}
           </Badge>
         </td>
         <td className="px-4 py-4 text-sm">
@@ -449,7 +449,7 @@ export const ExpenseList = ({
           <EmptyState
             icon={<WalletIcon className="w-8 h-8" />}
             title="No expenses yet"
-            description="Add your first expense to start tracking your budget."
+            description="Add your first expense to start tracking your spending."
           />
         ) : (
           <>
@@ -466,7 +466,7 @@ export const ExpenseList = ({
                       {expense.expense_name}
                     </h4>
                     <Badge variant={expense.budget >= expense.cost ? 'success' : 'danger'}>
-                      {expense.budget >= expense.cost ? 'On Budget' : 'Over Budget'}
+                      {expense.budget >= expense.cost ? 'On Track' : 'Over Budget'}
                     </Badge>
                   </div>
                   <div className="flex flex-wrap gap-1.5 mb-3">
@@ -477,7 +477,7 @@ export const ExpenseList = ({
                   </div>
                   <div className="grid grid-cols-2 gap-3 mb-3">
                     <div>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mb-0.5">Budget</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mb-0.5">Budgeted</p>
                       <p
                         className={`font-semibold tabular-nums ${
                           expense.budget === 0
@@ -593,7 +593,7 @@ export const ExpenseList = ({
                         Category
                       </th>
                       <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                        Budget
+                        Budgeted
                       </th>
                       <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                         Actual

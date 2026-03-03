@@ -178,7 +178,12 @@ export const Reports = () => {
         </div>
         <div className="bg-gradient-to-br from-primary-500 to-primary-600 p-4 rounded-xl text-white">
           <p className="text-primary-100 text-sm font-medium">Avg. Savings Rate</p>
-          <p className="text-2xl font-bold mt-1">{trends.average_savings_rate.toFixed(1)}%</p>
+          <p className="text-2xl font-bold mt-1">
+            {Number.isFinite(trends.average_savings_rate)
+              ? trends.average_savings_rate.toFixed(1)
+              : '0.0'}
+            %
+          </p>
         </div>
       </div>
 
@@ -203,7 +208,11 @@ export const Reports = () => {
                 fontSize={11}
                 interval={0}
               />
-              <YAxis stroke={textColor} fontSize={11} tickFormatter={(v) => `$${v / 1000}k`} />
+              <YAxis
+                stroke={textColor}
+                fontSize={11}
+                tickFormatter={(v) => `$${Number.isFinite(v) ? v / 1000 : 0}k`}
+              />
               <Tooltip content={<CustomTooltip />} />
               <Legend wrapperStyle={{ color: textColor }} />
               <Line
@@ -261,7 +270,11 @@ export const Reports = () => {
                 fontSize={11}
                 interval={0}
               />
-              <YAxis stroke={textColor} fontSize={11} tickFormatter={(v) => `$${v / 1000}k`} />
+              <YAxis
+                stroke={textColor}
+                fontSize={11}
+                tickFormatter={(v) => `$${Number.isFinite(v) ? v / 1000 : 0}k`}
+              />
               <Tooltip content={<CustomTooltip />} />
               <Legend wrapperStyle={{ color: textColor }} />
               {Array.from(allCategories).map((category) => (

@@ -5,7 +5,6 @@ import {
   DollarIcon,
   BarChartIcon,
   DatabaseIcon,
-  UploadIcon,
   SettingsIcon,
   CloseIcon,
   SunIcon,
@@ -13,7 +12,7 @@ import {
   LogoutIcon,
 } from './shared';
 
-type TabId = 'expenses' | 'reports' | 'backup' | 'import' | 'settings';
+type TabId = 'expenses' | 'reports' | 'backup' | 'settings';
 
 interface MenuItem {
   id: TabId;
@@ -43,11 +42,6 @@ const menuItems: MenuItem[] = [
     id: 'backup',
     label: 'Backup',
     icon: <DatabaseIcon />,
-  },
-  {
-    id: 'import',
-    label: 'Import',
-    icon: <UploadIcon />,
   },
   {
     id: 'settings',

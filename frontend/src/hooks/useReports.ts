@@ -36,8 +36,39 @@ export const useDeleteBackup = () => {
   });
 };
 
-export const useBackupDownloadUrl = () => {
+export const useDownloadBackup = () => {
   return useMutation({
-    mutationFn: (filename: string) => backupsApi.getDownloadUrl(filename).then((res) => res.data),
+    mutationFn: async (filename: string) => {
+      const res = await backupsApi.download(filename);
+      // Create a blob URL and trigger download
+      const url = window.URL.createObjectURL(res.data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    },
+  });
+};
+
+export const useRestoreBackup = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (filename: string) => backupsApi.restore(filename).then((res) => res.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries();
+    },
+  });
+};
+
+export const useUploadRestore = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => backupsApi.uploadRestore(file).then((res) => res.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries();
+    },
   });
 };

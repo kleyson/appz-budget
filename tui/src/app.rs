@@ -793,11 +793,11 @@ impl App {
                     ExpenseField::Name => {
                         self.expense_form.name.push(c);
                     }
-                    ExpenseField::Budget => {
+                    ExpenseField::Projected => {
                         if c.is_ascii_digit()
-                            || (c == '.' && !self.expense_form.budget.contains('.'))
+                            || (c == '.' && !self.expense_form.projected.contains('.'))
                         {
-                            self.expense_form.budget.push(c);
+                            self.expense_form.projected.push(c);
                         }
                     }
                     ExpenseField::Notes => {
@@ -810,8 +810,8 @@ impl App {
                 ExpenseField::Name => {
                     self.expense_form.name.pop();
                 }
-                ExpenseField::Budget => {
-                    self.expense_form.budget.pop();
+                ExpenseField::Projected => {
+                    self.expense_form.projected.pop();
                 }
                 ExpenseField::Notes => {
                     self.expense_form.notes.pop();
@@ -914,9 +914,10 @@ impl App {
                 _ => {}
             },
             KeyCode::Char(c) => match self.income_form.focused_field {
-                IncomeField::Budget => {
-                    if c.is_ascii_digit() || (c == '.' && !self.income_form.budget.contains('.')) {
-                        self.income_form.budget.push(c);
+                IncomeField::Projected => {
+                    if c.is_ascii_digit() || (c == '.' && !self.income_form.projected.contains('.'))
+                    {
+                        self.income_form.projected.push(c);
                     }
                 }
                 IncomeField::Amount => {
@@ -927,8 +928,8 @@ impl App {
                 _ => {}
             },
             KeyCode::Backspace => match self.income_form.focused_field {
-                IncomeField::Budget => {
-                    self.income_form.budget.pop();
+                IncomeField::Projected => {
+                    self.income_form.projected.pop();
                 }
                 IncomeField::Amount => {
                     self.income_form.amount.pop();
@@ -1012,7 +1013,7 @@ impl App {
             return;
         }
 
-        let budget: f64 = self.income_form.budget.parse().unwrap_or(0.0);
+        let projected: f64 = self.income_form.projected.parse().unwrap_or(0.0);
         let amount: f64 = self.income_form.amount.parse().unwrap_or(0.0);
         let month_id = match self.state.selected_month_id() {
             Some(id) => id,
@@ -1029,7 +1030,7 @@ impl App {
             let update = crate::models::IncomeUpdate {
                 income_type_id: self.income_form.income_type_id,
                 period: Some(self.income_form.period.clone()),
-                budget: Some(budget),
+                projected: Some(projected),
                 amount: Some(amount),
                 ..Default::default()
             };
@@ -1039,7 +1040,7 @@ impl App {
             let create = crate::models::IncomeCreate {
                 income_type_id: self.income_form.income_type_id.unwrap(),
                 period: self.income_form.period.clone(),
-                budget,
+                projected,
                 amount,
                 month_id,
             };
@@ -1686,8 +1687,8 @@ impl App {
                 self.state.ui.modal = Some(Modal::ConfirmPay {
                     expense_name: expense.expense_name.clone(),
                     expense_id: expense.id,
-                    amount: expense.budget,
-                    amount_input: format!("{:.2}", expense.budget),
+                    amount: expense.projected,
+                    amount_input: format!("{:.2}", expense.projected),
                 });
             }
         }
@@ -1851,6 +1852,11 @@ impl App {
         // Load period summary
         if let Ok(summary) = self.api.summary().get_by_period(month_id).await {
             self.state.data.period_summary = Some(summary);
+        }
+
+        // Load insights
+        if let Ok(insights) = self.api.summary().get_insights(month_id).await {
+            self.state.data.insights = Some(insights);
         }
     }
 

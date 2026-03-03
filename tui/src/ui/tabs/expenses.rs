@@ -72,7 +72,7 @@ fn render_expense_table(app: &AppState, frame: &mut Frame, area: Rect) {
         .borders(Borders::ALL)
         .border_style(Style::default().fg(Color::DarkGray));
 
-    let header_cells = ["Name", "Period", "Category", "Budget", "Cost", "Status"]
+    let header_cells = ["Name", "Period", "Category", "Projected", "Cost", "Status"]
         .iter()
         .map(|h| {
             Cell::from(*h).style(
@@ -106,8 +106,8 @@ fn render_expense_table(app: &AppState, frame: &mut Frame, area: Rect) {
                 .unwrap_or(Color::White);
 
             // Status
-            let over_budget = expense.cost > expense.budget;
-            let status_cell = if over_budget {
+            let over_projected = expense.cost > expense.projected;
+            let status_cell = if over_projected {
                 Cell::from("Over").style(Style::default().fg(Color::Red))
             } else {
                 Cell::from("OK").style(Style::default().fg(Color::Green))
@@ -117,7 +117,7 @@ fn render_expense_table(app: &AppState, frame: &mut Frame, area: Rect) {
                 Cell::from(expense.expense_name.clone()),
                 Cell::from(expense.period.clone()).style(Style::default().fg(period_color)),
                 Cell::from(expense.category.clone()).style(Style::default().fg(category_color)),
-                Cell::from(format_currency(expense.budget)),
+                Cell::from(format_currency(expense.projected)),
                 Cell::from(format_currency(expense.cost)),
                 status_cell,
             ])

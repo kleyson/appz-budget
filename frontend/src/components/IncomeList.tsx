@@ -149,7 +149,9 @@ export const IncomeList = ({ periodFilter = null, monthId = null }: IncomeListPr
                     </div>
                     <div className="grid grid-cols-2 gap-3 mb-3">
                       <div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-0.5">Budget</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-0.5">
+                          Budgeted
+                        </p>
                         <p
                           className={`font-semibold tabular-nums ${
                             income.budget === 0
@@ -208,7 +210,7 @@ export const IncomeList = ({ periodFilter = null, monthId = null }: IncomeListPr
                       Period
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      Budget
+                      Budgeted
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                       Received

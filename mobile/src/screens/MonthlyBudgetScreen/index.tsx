@@ -20,7 +20,7 @@ import {
   useExpenses,
   useDeleteExpense,
   useCloneExpensesToNextMonth,
-  useRefreshBudgetData,
+  useRefreshProjectedData,
 } from "../../hooks/useExpenses";
 import { useIncomes, useDeleteIncome } from "../../hooks/useIncomes";
 import {
@@ -54,7 +54,7 @@ export const MonthlyBudgetScreen = () => {
   const { isDark } = useTheme();
   const theme = getThemeColors(isDark);
   const insets = useSafeAreaInsets();
-  const { refresh: refreshBudgetData, isRefreshing } = useRefreshBudgetData();
+  const { refresh: refreshProjectedData, isRefreshing } = useRefreshProjectedData();
   const [activeTab, setActiveTab] = useState<TabId>("summary");
   const [selectedPeriod, setSelectedPeriod] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
@@ -296,8 +296,8 @@ export const MonthlyBudgetScreen = () => {
   ];
 
   const handleRefresh = useCallback(() => {
-    refreshBudgetData();
-  }, [refreshBudgetData]);
+    refreshProjectedData();
+  }, [refreshProjectedData]);
 
   const styles = getStyles(theme, insets.top);
 

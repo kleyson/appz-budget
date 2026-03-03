@@ -12,6 +12,8 @@ venv/
 env/
 ENV/
 *.db
+*.db-wal
+*.db-shm
 *.sqlite
 *.sqlite3
 
@@ -133,6 +135,9 @@ cobertura.xml
 cross.log
 
 eas.json
+
+# Worktrees
+.worktrees/
 
 # AI
 .vscode/

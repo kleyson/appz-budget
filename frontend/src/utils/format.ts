@@ -34,12 +34,15 @@ const getCurrencyForLocale = (locale: string) => {
 };
 
 export const formatCurrency = (value: number) => {
+  const safeValue = Number.isFinite(value) ? value : 0;
   const locale = getLocale();
-  console.log(locale, getCurrencyForLocale(locale));
   return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: getCurrencyForLocale(locale),
-  }).format(value);
+  }).format(safeValue);
 };
 
-export const formatNumber = (value: number) => new Intl.NumberFormat(getLocale()).format(value);
+export const formatNumber = (value: number) => {
+  const safeValue = Number.isFinite(value) ? value : 0;
+  return new Intl.NumberFormat(getLocale()).format(safeValue);
+};

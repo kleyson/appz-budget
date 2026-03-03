@@ -6,7 +6,7 @@ services:
       - "${PORT:-8000}:8000"
     environment:
       - API_KEY=${API_KEY:-your-secret-api-key-change-this}
-      - DATABASE_URL=${DATABASE_URL:-sqlite:///./data/budget.db}
+      - DATABASE_URL=${DATABASE_URL:-file:./data/budget.db}
       # ENV defaults to production if not set
       # SMTP Configuration (optional - for password reset emails)
       - SMTP_HOST=${SMTP_HOST:-}

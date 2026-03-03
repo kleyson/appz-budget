@@ -5,7 +5,7 @@ pub struct Income {
     pub id: i32,
     pub income_type_id: i32,
     pub period: String,
-    pub budget: f64,
+    pub projected: f64,
     pub amount: f64,
     pub month_id: i32,
     pub created_at: String,
@@ -18,7 +18,7 @@ pub struct Income {
 pub struct IncomeCreate {
     pub income_type_id: i32,
     pub period: String,
-    pub budget: f64,
+    pub projected: f64,
     pub amount: f64,
     pub month_id: i32,
 }
@@ -30,7 +30,7 @@ pub struct IncomeUpdate {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub period: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub budget: Option<f64>,
+    pub projected: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub amount: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]

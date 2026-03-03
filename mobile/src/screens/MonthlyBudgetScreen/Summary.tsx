@@ -10,6 +10,9 @@ import { useIncomeTypes } from '../../hooks/useIncomeTypes';
 import { getThemeColors, getShadow, isDarkColor, radius, gradientColors, colors } from '../../utils/colors';
 import { formatCurrency } from '../../utils/styles';
 import { ProgressBar, SectionTitle } from '../../components/shared';
+import { InsightsBar } from '../../components/summary/InsightsBar';
+import { ExpenseDonutChart } from '../../components/summary/ExpenseDonutChart';
+import { TrendSparkline } from '../../components/summary/TrendSparkline';
 import type { CategorySummary, IncomeTypeSummary, PeriodSummary, Category, IncomeType } from '../../types';
 
 interface SummaryProps {
@@ -56,6 +59,15 @@ export const Summary = ({ periodFilter = null, monthId = null }: SummaryProps) =
 
   return (
     <View style={styles.container}>
+      {/* Insights Bar */}
+      <InsightsBar monthId={monthId} />
+
+      {/* Charts Section */}
+      <View style={styles.chartsSection}>
+        <ExpenseDonutChart monthId={monthId} periodFilter={periodFilter} />
+        <TrendSparkline />
+      </View>
+
       {/* Period Summary Section */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
@@ -186,7 +198,7 @@ export const Summary = ({ periodFilter = null, monthId = null }: SummaryProps) =
           <View style={styles.cardsContainer}>
             {summary.map((item: CategorySummary) => {
               const difference = item.budget - item.total;
-              const isWithinBudget = !item.over_budget;
+              const isWithinProjected = !item.over_budget;
               const categoryColor = getCategoryColor(item.category);
               const progress = item.budget > 0 ? Math.min((item.total / item.budget) * 100, 100) : 0;
 
@@ -211,28 +223,28 @@ export const Summary = ({ periodFilter = null, monthId = null }: SummaryProps) =
                     <View
                       style={[
                         styles.statusChip,
-                        isWithinBudget ? styles.statusSuccess : styles.statusDanger,
+                        isWithinProjected ? styles.statusSuccess : styles.statusDanger,
                       ]}
                     >
                       <Ionicons
-                        name={isWithinBudget ? 'checkmark-circle' : 'alert-circle'}
+                        name={isWithinProjected ? 'checkmark-circle' : 'alert-circle'}
                         size={12}
-                        color={isWithinBudget ? theme.success : theme.danger}
+                        color={isWithinProjected ? theme.success : theme.danger}
                       />
                       <Text
                         style={[
                           styles.statusText,
-                          { color: isWithinBudget ? theme.success : theme.danger },
+                          { color: isWithinProjected ? theme.success : theme.danger },
                         ]}
                       >
-                        {isWithinBudget ? 'On Budget' : 'Over'}
+                        {isWithinProjected ? 'On Track' : 'Over'}
                       </Text>
                     </View>
                   </View>
 
                   <ProgressBar
                     progress={progress}
-                    color={isWithinBudget ? theme.success : theme.danger}
+                    color={isWithinProjected ? theme.success : theme.danger}
                   />
 
                   <View style={styles.cardBottomRow}>
@@ -241,7 +253,7 @@ export const Summary = ({ periodFilter = null, monthId = null }: SummaryProps) =
                       <Text style={styles.valueAmount}>{formatCurrency(item.total)}</Text>
                     </View>
                     <View style={styles.valueContainer}>
-                      <Text style={styles.valueLabel}>Budget</Text>
+                      <Text style={styles.valueLabel}>Projected</Text>
                       <Text style={styles.valueAmount}>{formatCurrency(item.budget)}</Text>
                     </View>
                     <View style={styles.valueContainer}>
@@ -261,19 +273,19 @@ export const Summary = ({ periodFilter = null, monthId = null }: SummaryProps) =
               );
             })}
 
-            {/* Budget Control Total Card */}
+            {/* Projected Control Total Card */}
             {(() => {
-              const totalBudget = summary.reduce((acc: number, item: CategorySummary) => acc + item.budget, 0);
+              const totalProjected = summary.reduce((acc: number, item: CategorySummary) => acc + item.budget, 0);
               const totalPaidCapped = summary.reduce(
                 (acc: number, item: CategorySummary) => acc + Math.min(item.total, item.budget),
                 0
               );
-              const diffWithoutOver = totalBudget - totalPaidCapped;
+              const diffWithoutOver = totalProjected - totalPaidCapped;
 
               return (
                 <View style={[styles.card, styles.summaryCard]}>
                   <View style={styles.cardTopRow}>
-                    <Text style={styles.summaryCardTitle}>Budget Control</Text>
+                    <Text style={styles.summaryCardTitle}>Projected Control</Text>
                   </View>
                   <View style={styles.cardBottomRow}>
                     <View style={styles.valueContainer}>
@@ -281,8 +293,8 @@ export const Summary = ({ periodFilter = null, monthId = null }: SummaryProps) =
                       <Text style={styles.valueAmount}>{formatCurrency(totalPaidCapped)}</Text>
                     </View>
                     <View style={styles.valueContainer}>
-                      <Text style={styles.valueLabel}>Budget</Text>
-                      <Text style={styles.valueAmount}>{formatCurrency(totalBudget)}</Text>
+                      <Text style={styles.valueLabel}>Projected</Text>
+                      <Text style={styles.valueAmount}>{formatCurrency(totalProjected)}</Text>
                     </View>
                     <View style={styles.valueContainer}>
                       <Text style={styles.valueLabel}>Left</Text>
@@ -310,9 +322,9 @@ export const Summary = ({ periodFilter = null, monthId = null }: SummaryProps) =
                 end={{ x: 1, y: 1 }}
               >
                 {(() => {
-                  const totalBudget = summary.reduce((acc: number, item: CategorySummary) => acc + item.budget, 0);
+                  const totalProjected = summary.reduce((acc: number, item: CategorySummary) => acc + item.budget, 0);
                   const totalActual = summary.reduce((acc: number, item: CategorySummary) => acc + item.total, 0);
-                  const diffWithOver = totalBudget - totalActual;
+                  const diffWithOver = totalProjected - totalActual;
 
                   return (
                     <View style={styles.totalContent}>
@@ -320,9 +332,9 @@ export const Summary = ({ periodFilter = null, monthId = null }: SummaryProps) =
                         <Text style={styles.totalLabel}>Total (with over)</Text>
                         <View style={styles.totalValueContainer}>
                           <Ionicons name="wallet" size={14} color="rgba(255,255,255,0.8)" />
-                          <Text style={styles.totalValueLabel}>Budget</Text>
+                          <Text style={styles.totalValueLabel}>Projected</Text>
                           <Text style={styles.totalValue}>
-                            {formatCurrency(totalBudget)}
+                            {formatCurrency(totalProjected)}
                           </Text>
                         </View>
                       </View>
@@ -443,6 +455,9 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
     container: {
       flex: 1,
       gap: 24,
+    },
+    chartsSection: {
+      gap: 12,
     },
     loadingContainer: {
       padding: 48,

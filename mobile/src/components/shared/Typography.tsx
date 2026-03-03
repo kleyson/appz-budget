@@ -57,7 +57,7 @@ export const HintText = ({ children, variant = "default", style }: HintTextProps
   );
 };
 
-// Value Label - Small label above values (e.g., "Spent", "Budget")
+// Value Label - Small label above values (e.g., "Spent", "Projected")
 interface ValueLabelProps {
   children: React.ReactNode;
   style?: TextStyle;

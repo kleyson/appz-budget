@@ -25,6 +25,8 @@ import type {
   PayExpenseRequest,
   SummaryTotals,
   PeriodSummaryResponse,
+  SummaryInsights,
+  MonthlyTrendsResponse,
   UserRegister,
   UserLogin,
   TokenResponse,
@@ -205,7 +207,7 @@ export const expensesApi = {
       cloned_income_count: number;
       next_month_id: number;
       next_month_name: string;
-    }>(`/api/v1/expenses/clone-to-next-month/${monthId}`),
+    }>(`/api/v1/months/${monthId}/clone`),
   pay: (
     id: number,
     data?: PayExpenseRequest
@@ -364,6 +366,28 @@ export const summaryApi = {
     const queryString = queryParams.toString();
     return apiClient.get<PeriodSummaryResponse>(
       `/api/v1/summary/by-period${queryString ? `?${queryString}` : ""}`
+    );
+  },
+  getMonthlyTrends: (params?: {
+    num_months?: number;
+  }): Promise<AxiosResponse<MonthlyTrendsResponse>> => {
+    const queryParams = new URLSearchParams();
+    if (params?.num_months)
+      queryParams.append("num_months", params.num_months.toString());
+    const queryString = queryParams.toString();
+    return apiClient.get<MonthlyTrendsResponse>(
+      `/api/v1/summary/monthly-trends${queryString ? `?${queryString}` : ""}`
+    );
+  },
+  getInsights: (params?: {
+    month_id?: number | null;
+  }): Promise<AxiosResponse<SummaryInsights>> => {
+    const queryParams = new URLSearchParams();
+    if (params?.month_id)
+      queryParams.append("month_id", params.month_id.toString());
+    const queryString = queryParams.toString();
+    return apiClient.get<SummaryInsights>(
+      `/api/v1/summary/insights${queryString ? `?${queryString}` : ""}`
     );
   },
 };

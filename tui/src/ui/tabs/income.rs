@@ -61,7 +61,7 @@ fn render_income_table(app: &AppState, frame: &mut Frame, area: Rect) {
         .borders(Borders::ALL)
         .border_style(Style::default().fg(Color::DarkGray));
 
-    let header_cells = ["Income Type", "Period", "Budget", "Amount", "Status"]
+    let header_cells = ["Income Type", "Period", "Projected", "Amount", "Status"]
         .iter()
         .map(|h| {
             Cell::from(*h).style(
@@ -95,8 +95,8 @@ fn render_income_table(app: &AppState, frame: &mut Frame, area: Rect) {
                 .unwrap_or(Color::White);
 
             // Status
-            let pct = if income.budget > 0.0 {
-                (income.amount / income.budget * 100.0) as i32
+            let pct = if income.projected > 0.0 {
+                (income.amount / income.projected * 100.0) as i32
             } else {
                 0
             };
@@ -111,7 +111,7 @@ fn render_income_table(app: &AppState, frame: &mut Frame, area: Rect) {
             Row::new(vec![
                 Cell::from(type_name).style(Style::default().fg(type_color)),
                 Cell::from(income.period.clone()).style(Style::default().fg(period_color)),
-                Cell::from(format_currency(income.budget)),
+                Cell::from(format_currency(income.projected)),
                 Cell::from(format_currency(income.amount)),
                 status_cell,
             ])

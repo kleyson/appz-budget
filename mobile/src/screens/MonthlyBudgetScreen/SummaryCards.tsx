@@ -63,9 +63,9 @@ const AnimatedCard = ({ card, index, totals, isDark, theme }: AnimatedCardProps)
     ],
   }));
 
-  const percentage = totals.total_budgeted_income === 0
+  const percentage = totals.total_budget_income === 0
     ? null
-    : ((card.value / totals.total_budgeted_income) * 100).toFixed(0);
+    : ((card.value / totals.total_budget_income) * 100).toFixed(0);
   const isPositive = card.value >= 0;
 
   return (
@@ -198,8 +198,8 @@ export const SummaryCards = ({ totals }: SummaryCardsProps) => {
 
   const expenseCards: CardConfig[] = [
     {
-      title: "Budgeted",
-      value: totals.total_budgeted_expenses,
+      title: "Projected",
+      value: totals.total_budget_expenses,
       gradientColors: gradientColors.blue,
       iconName: "clipboard-outline",
       type: 'expense',
@@ -215,8 +215,8 @@ export const SummaryCards = ({ totals }: SummaryCardsProps) => {
 
   const incomeCards: CardConfig[] = [
     {
-      title: "Budgeted",
-      value: totals.total_budgeted_income,
+      title: "Projected",
+      value: totals.total_budget_income,
       gradientColors: gradientColors.cyan,
       iconName: "document-text-outline",
       type: 'income',
@@ -232,9 +232,9 @@ export const SummaryCards = ({ totals }: SummaryCardsProps) => {
 
   const balanceCards: CardConfig[] = [
     {
-      title: "Budgeted",
-      value: totals.total_budgeted,
-      gradientColors: totals.total_budgeted >= 0 ? gradientColors.teal : gradientColors.red,
+      title: "Projected",
+      value: totals.total_budget,
+      gradientColors: totals.total_budget >= 0 ? gradientColors.teal : gradientColors.red,
       iconName: "scale-outline",
       type: 'balance',
     },

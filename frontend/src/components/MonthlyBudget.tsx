@@ -81,7 +81,7 @@ export const MonthlyBudget = () => {
     const confirmed = await showConfirm({
       title: 'Clone to Next Month',
       message:
-        'This will clone all expenses and incomes from the selected month to the following month. Only budget values will be cloned (costs, purchases, and income amounts will be reset). Continue?',
+        'This will clone all expenses and incomes from the selected month to the following month. Only budgeted values will be cloned (costs, purchases, and income amounts will be reset). Continue?',
       type: 'info',
       confirmText: 'Clone',
       cancelText: 'Cancel',

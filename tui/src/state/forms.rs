@@ -11,7 +11,7 @@ pub enum ExpenseField {
     Name,
     Period,
     Category,
-    Budget,
+    Projected,
     Purchases,
     Notes,
 }
@@ -22,7 +22,7 @@ impl ExpenseField {
             ExpenseField::Name,
             ExpenseField::Period,
             ExpenseField::Category,
-            ExpenseField::Budget,
+            ExpenseField::Projected,
             ExpenseField::Purchases,
             ExpenseField::Notes,
         ]
@@ -33,7 +33,7 @@ impl ExpenseField {
             ExpenseField::Name => 0,
             ExpenseField::Period => 1,
             ExpenseField::Category => 2,
-            ExpenseField::Budget => 3,
+            ExpenseField::Projected => 3,
             ExpenseField::Purchases => 4,
             ExpenseField::Notes => 5,
         }
@@ -44,7 +44,7 @@ impl ExpenseField {
             0 => ExpenseField::Name,
             1 => ExpenseField::Period,
             2 => ExpenseField::Category,
-            3 => ExpenseField::Budget,
+            3 => ExpenseField::Projected,
             4 => ExpenseField::Purchases,
             5 => ExpenseField::Notes,
             _ => ExpenseField::Name,
@@ -82,7 +82,7 @@ pub struct ExpenseFormState {
     pub name: String,
     pub period: String,
     pub category: String,
-    pub budget: String,
+    pub projected: String,
     pub cost: String,
     pub notes: String,
     pub purchases: Vec<Purchase>,
@@ -102,7 +102,7 @@ impl Default for ExpenseFormState {
             name: String::new(),
             period: String::new(),
             category: String::new(),
-            budget: String::new(),
+            projected: String::new(),
             cost: "0".to_string(),
             notes: String::new(),
             purchases: Vec::new(),
@@ -132,7 +132,7 @@ impl ExpenseFormState {
             name: expense.expense_name.clone(),
             period: expense.period.clone(),
             category: expense.category.clone(),
-            budget: expense.budget.to_string(),
+            projected: expense.projected.to_string(),
             cost: expense.cost.to_string(),
             notes: expense.notes.clone().unwrap_or_default(),
             purchases,
@@ -212,14 +212,14 @@ impl ExpenseFormState {
     }
 
     pub fn to_create(&self, month_id: i32) -> Option<ExpenseCreate> {
-        let budget = self.budget.parse().ok()?;
+        let projected = self.projected.parse().ok()?;
         let purchases = self.build_purchases();
         let cost: f64 = purchases.iter().map(|p| p.amount).sum();
         Some(ExpenseCreate {
             expense_name: self.name.clone(),
             period: self.period.clone(),
             category: self.category.clone(),
-            budget,
+            projected,
             cost,
             notes: if self.notes.is_empty() {
                 None
@@ -237,14 +237,14 @@ impl ExpenseFormState {
     }
 
     pub fn to_update(&self) -> Option<ExpenseUpdate> {
-        let budget = self.budget.parse().ok()?;
+        let projected = self.projected.parse().ok()?;
         let purchases = self.build_purchases();
         let cost: f64 = purchases.iter().map(|p| p.amount).sum();
         Some(ExpenseUpdate {
             expense_name: Some(self.name.clone()),
             period: Some(self.period.clone()),
             category: Some(self.category.clone()),
-            budget: Some(budget),
+            projected: Some(projected),
             cost: Some(cost),
             notes: Some(self.notes.clone()),
             purchases: Some(purchases),
@@ -263,8 +263,8 @@ impl ExpenseFormState {
         if self.category.trim().is_empty() {
             errors.push("Category is required".to_string());
         }
-        if self.budget.parse::<f64>().is_err() {
-            errors.push("Budget must be a valid number".to_string());
+        if self.projected.parse::<f64>().is_err() {
+            errors.push("Projected must be a valid number".to_string());
         }
         // Purchases are optional - no validation required
         errors
@@ -276,7 +276,7 @@ impl ExpenseFormState {
 pub enum IncomeField {
     IncomeType,
     Period,
-    Budget,
+    Projected,
     Amount,
 }
 
@@ -285,7 +285,7 @@ impl IncomeField {
         &[
             IncomeField::IncomeType,
             IncomeField::Period,
-            IncomeField::Budget,
+            IncomeField::Projected,
             IncomeField::Amount,
         ]
     }
@@ -294,7 +294,7 @@ impl IncomeField {
         match self {
             IncomeField::IncomeType => 0,
             IncomeField::Period => 1,
-            IncomeField::Budget => 2,
+            IncomeField::Projected => 2,
             IncomeField::Amount => 3,
         }
     }
@@ -303,7 +303,7 @@ impl IncomeField {
         match index {
             0 => IncomeField::IncomeType,
             1 => IncomeField::Period,
-            2 => IncomeField::Budget,
+            2 => IncomeField::Projected,
             3 => IncomeField::Amount,
             _ => IncomeField::IncomeType,
         }
@@ -332,7 +332,7 @@ pub struct IncomeFormState {
     pub editing_id: Option<i32>,
     pub income_type_id: Option<i32>,
     pub period: String,
-    pub budget: String,
+    pub projected: String,
     pub amount: String,
     pub focused_field: IncomeField,
 }
@@ -343,7 +343,7 @@ impl Default for IncomeFormState {
             editing_id: None,
             income_type_id: None,
             period: String::new(),
-            budget: String::new(),
+            projected: String::new(),
             amount: "0".to_string(),
             focused_field: IncomeField::IncomeType,
         }
@@ -356,7 +356,7 @@ impl IncomeFormState {
             editing_id: Some(income.id),
             income_type_id: Some(income.income_type_id),
             period: income.period.clone(),
-            budget: income.budget.to_string(),
+            projected: income.projected.to_string(),
             amount: income.amount.to_string(),
             focused_field: IncomeField::IncomeType,
         }
@@ -364,24 +364,24 @@ impl IncomeFormState {
 
     pub fn to_create(&self, month_id: i32) -> Option<IncomeCreate> {
         let income_type_id = self.income_type_id?;
-        let budget = self.budget.parse().ok()?;
+        let projected = self.projected.parse().ok()?;
         let amount = self.amount.parse().ok()?;
         Some(IncomeCreate {
             income_type_id,
             period: self.period.clone(),
-            budget,
+            projected,
             amount,
             month_id,
         })
     }
 
     pub fn to_update(&self) -> Option<IncomeUpdate> {
-        let budget = self.budget.parse().ok()?;
+        let projected = self.projected.parse().ok()?;
         let amount = self.amount.parse().ok()?;
         Some(IncomeUpdate {
             income_type_id: self.income_type_id,
             period: Some(self.period.clone()),
-            budget: Some(budget),
+            projected: Some(projected),
             amount: Some(amount),
             ..Default::default()
         })
@@ -395,8 +395,8 @@ impl IncomeFormState {
         if self.period.trim().is_empty() {
             errors.push("Period is required".to_string());
         }
-        if self.budget.parse::<f64>().is_err() {
-            errors.push("Budget must be a valid number".to_string());
+        if self.projected.parse::<f64>().is_err() {
+            errors.push("Projected must be a valid number".to_string());
         }
         if self.amount.parse::<f64>().is_err() {
             errors.push("Amount must be a valid number".to_string());

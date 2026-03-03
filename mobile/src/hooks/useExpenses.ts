@@ -99,7 +99,7 @@ export const usePayExpense = () => {
   });
 };
 
-export const useRefreshBudgetData = () => {
+export const useRefreshProjectedData = () => {
   const queryClient = useQueryClient();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -135,7 +135,7 @@ export const useRefreshBudgetData = () => {
         new Promise((resolve) => setTimeout(resolve, 500)), // Minimum 500ms delay
       ]);
     } catch (error) {
-      console.error("Error refreshing budget data:", error);
+      console.error("Error refreshing projected data:", error);
     } finally {
       setIsRefreshing(false);
     }

@@ -46,7 +46,7 @@ export default function ExpenseFormScreen() {
   const [expenseName, setExpenseName] = useState("");
   const [selectedPeriod, setSelectedPeriod] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
-  const [budget, setBudget] = useState("");
+  const [projected, setProjected] = useState("");
   const [notes, setNotes] = useState("");
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [purchaseAmountInputs, setPurchaseAmountInputs] = useState<
@@ -60,7 +60,7 @@ export default function ExpenseFormScreen() {
       setExpenseName(existingExpense.expense_name);
       setSelectedPeriod(existingExpense.period);
       setSelectedCategory(existingExpense.category);
-      setBudget(existingExpense.budget.toString());
+      setProjected(existingExpense.budget.toString());
       setNotes(existingExpense.notes || "");
       setPurchases(existingExpense.purchases || []);
       const inputs: Record<number, string> = {};
@@ -127,7 +127,7 @@ export default function ExpenseFormScreen() {
       !expenseName ||
       !selectedPeriod ||
       !selectedCategory ||
-      !budget ||
+      !projected ||
       !monthId
     ) {
       Alert.alert("Error", "Please fill in all required fields");
@@ -143,7 +143,7 @@ export default function ExpenseFormScreen() {
       expense_name: expenseName,
       period: selectedPeriod,
       category: selectedCategory,
-      budget: parseFloat(budget),
+      budget: parseFloat(projected),
       cost: calculatedCost,
       notes: notes || null,
       month_id: monthId,
@@ -219,12 +219,12 @@ export default function ExpenseFormScreen() {
           />
         </View>
 
-        {/* Budget Input */}
+        {/* Projected Input */}
         <FormInput
-          label="Budget"
+          label="Projected"
           placeholder="0.00"
-          value={budget}
-          onChangeText={setBudget}
+          value={projected}
+          onChangeText={setProjected}
           keyboardType="decimal-pad"
           icon="wallet-outline"
         />

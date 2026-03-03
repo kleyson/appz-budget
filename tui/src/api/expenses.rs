@@ -54,7 +54,7 @@ impl<'a> ExpensesApi<'a> {
             .await
     }
 
-    /// Pay an expense (adds a payment entry with the budget amount)
+    /// Pay an expense (adds a payment entry with the projected amount)
     pub async fn pay(
         &self,
         id: i32,

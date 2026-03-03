@@ -25,7 +25,7 @@ export const ProgressBar = ({
   showPercentage = false,
   className = '',
 }: ProgressBarProps) => {
-  const clampedProgress = Math.min(Math.max(progress, 0), 100);
+  const clampedProgress = Number.isFinite(progress) ? Math.min(Math.max(progress, 0), 100) : 0;
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>

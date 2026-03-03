@@ -261,7 +261,7 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>, is
       backgroundColor: rgba.overlay,
     },
     keyboardView: {
-      flex: isTablet ? 1 : undefined,
+      flex: 1,
       justifyContent: isTablet ? "center" : "flex-end",
     },
     contentWrapper: {

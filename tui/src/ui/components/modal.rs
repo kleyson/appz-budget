@@ -96,7 +96,7 @@ fn render_expense_form(frame: &mut Frame, form: &ExpenseFormState, data: &DataSt
         Constraint::Length(2),                       // Name
         Constraint::Length(2),                       // Period
         Constraint::Length(2),                       // Category
-        Constraint::Length(2),                       // Budget
+        Constraint::Length(2),                       // Projected
         Constraint::Length(purchases_height.min(8)), // Purchases
         Constraint::Length(2),                       // Notes
         Constraint::Min(1),                          // Spacer
@@ -196,16 +196,16 @@ fn render_expense_form(frame: &mut Frame, form: &ExpenseFormState, data: &DataSt
     render_field(
         frame,
         chunks[3],
-        "Budget:",
+        "Projected:",
         &format!(
             "${}",
-            if form.budget.is_empty() {
+            if form.projected.is_empty() {
                 "0.00"
             } else {
-                &form.budget
+                &form.projected
             }
         ),
-        form.focused_field == ExpenseField::Budget,
+        form.focused_field == ExpenseField::Projected,
         false,
     );
 
@@ -390,7 +390,7 @@ fn render_income_form_with_state(frame: &mut Frame, form: &IncomeFormState, data
     let chunks = Layout::vertical([
         Constraint::Length(2), // Income Type
         Constraint::Length(2), // Period
-        Constraint::Length(2), // Budget
+        Constraint::Length(2), // Projected
         Constraint::Length(2), // Amount
         Constraint::Min(2),    // Spacer
         Constraint::Length(1), // Instructions
@@ -481,16 +481,16 @@ fn render_income_form_with_state(frame: &mut Frame, form: &IncomeFormState, data
     render_field(
         frame,
         chunks[2],
-        "Budget:",
+        "Projected:",
         &format!(
             "${}",
-            if form.budget.is_empty() {
+            if form.projected.is_empty() {
                 "0.00"
             } else {
-                &form.budget
+                &form.projected
             }
         ),
-        form.focused_field == IncomeField::Budget,
+        form.focused_field == IncomeField::Projected,
         false,
     );
 
@@ -798,7 +798,7 @@ fn render_confirm_delete(frame: &mut Frame, message: &str, _entity_type: EntityT
 }
 
 /// Render pay confirmation dialog with editable amount
-fn render_confirm_pay(frame: &mut Frame, expense_name: &str, budget: f64, amount_input: &str) {
+fn render_confirm_pay(frame: &mut Frame, expense_name: &str, projected: f64, amount_input: &str) {
     let area = centered_rect_fixed(50, 11, frame.area());
 
     let block = Block::default()
@@ -815,7 +815,7 @@ fn render_confirm_pay(frame: &mut Frame, expense_name: &str, budget: f64, amount
     let chunks = Layout::vertical([
         Constraint::Length(2), // Expense name
         Constraint::Length(2), // Amount input
-        Constraint::Length(1), // Budget hint
+        Constraint::Length(1), // Projected hint
         Constraint::Min(1),    // Spacer
         Constraint::Length(1), // Instructions
     ])
@@ -845,8 +845,8 @@ fn render_confirm_pay(frame: &mut Frame, expense_name: &str, budget: f64, amount
     let amount_para = Paragraph::new(amount_line).alignment(Alignment::Center);
     frame.render_widget(amount_para, chunks[1]);
 
-    // Budget hint
-    let hint_para = Paragraph::new(format!("Budgeted: ${:.2}", budget))
+    // Projected hint
+    let hint_para = Paragraph::new(format!("Projected: ${:.2}", projected))
         .style(Style::default().fg(Color::DarkGray))
         .alignment(Alignment::Center);
     frame.render_widget(hint_para, chunks[2]);

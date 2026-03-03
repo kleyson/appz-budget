@@ -13,7 +13,7 @@ pub struct Expense {
     pub expense_name: String,
     pub period: String,
     pub category: String,
-    pub budget: f64,
+    pub projected: f64,
     pub cost: f64,
     pub notes: Option<String>,
     pub month_id: i32,
@@ -27,7 +27,7 @@ pub struct ExpenseCreate {
     pub expense_name: String,
     pub period: String,
     pub category: String,
-    pub budget: f64,
+    pub projected: f64,
     pub cost: f64,
     pub notes: Option<String>,
     pub month_id: i32,
@@ -44,7 +44,7 @@ pub struct ExpenseUpdate {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub category: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub budget: Option<f64>,
+    pub projected: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cost: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]

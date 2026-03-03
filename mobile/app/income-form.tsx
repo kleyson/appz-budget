@@ -46,7 +46,7 @@ export default function IncomeFormScreen() {
     number | null
   >(null);
   const [selectedPeriod, setSelectedPeriod] = useState("");
-  const [budget, setBudget] = useState("");
+  const [projected, setProjected] = useState("");
   const [amount, setAmount] = useState("");
 
   const isEditing = incomeId > 0;
@@ -55,7 +55,7 @@ export default function IncomeFormScreen() {
     if (existingIncome) {
       setSelectedIncomeTypeId(existingIncome.income_type_id);
       setSelectedPeriod(existingIncome.period);
-      setBudget(existingIncome.budget.toString());
+      setProjected(existingIncome.budget.toString());
       setAmount(existingIncome.amount.toString());
     }
   }, [existingIncome]);
@@ -64,7 +64,7 @@ export default function IncomeFormScreen() {
     if (
       !selectedIncomeTypeId ||
       !selectedPeriod ||
-      !budget ||
+      !projected ||
       !amount ||
       !monthId
     ) {
@@ -75,7 +75,7 @@ export default function IncomeFormScreen() {
     const data: IncomeCreate = {
       income_type_id: selectedIncomeTypeId,
       period: selectedPeriod,
-      budget: parseFloat(budget),
+      budget: parseFloat(projected),
       amount: parseFloat(amount),
       month_id: monthId,
     };
@@ -151,13 +151,13 @@ export default function IncomeFormScreen() {
           showAllOption={false}
         />
 
-        {/* Budget Input */}
+        {/* Projected Input */}
         <View style={styles.inputSpacing}>
           <FormInput
-            label="Budget"
+            label="Projected"
             placeholder="0.00"
-            value={budget}
-            onChangeText={setBudget}
+            value={projected}
+            onChangeText={setProjected}
             keyboardType="decimal-pad"
             icon="wallet-outline"
           />

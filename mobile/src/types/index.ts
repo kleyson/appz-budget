@@ -14,6 +14,7 @@ export interface Expense {
   notes?: string | null;
   month_id: number;
   purchases?: Purchase[] | null;
+  order: number;
   expense_date?: string | null;
 }
 
@@ -71,11 +72,11 @@ export interface IncomeTypeSummary {
 }
 
 export interface SummaryTotals {
-  total_budgeted_expenses: number;
+  total_budget_expenses: number;
   total_current_expenses: number;
-  total_budgeted_income: number;
+  total_budget_income: number;
   total_current_income: number;
-  total_budgeted: number;
+  total_budget: number;
   total_current: number;
 }
 
@@ -245,5 +246,47 @@ export interface MonthCloseResponse {
   closed_at?: string | null;
   closed_by?: string | null;
   message: string;
+}
+
+// Summary insights types
+export interface SummaryInsight {
+  type: 'warning' | 'positive' | 'neutral';
+  icon: string;
+  message: string;
+  category?: string;
+}
+
+export interface SummaryInsights {
+  insights: SummaryInsight[];
+  savings_projection: number;
+  budget_health: 'good' | 'warning' | 'critical';
+  over_budget_count: number;
+  total_categories: number;
+}
+
+// Monthly trends types
+export interface CategoryTrendItem {
+  category: string;
+  amount: number;
+  color: string;
+}
+
+export interface MonthlyTrendData {
+  month_id: number;
+  month_name: string;
+  year: number;
+  month: number;
+  total_income: number;
+  total_expenses: number;
+  net_savings: number;
+  savings_rate: number;
+  categories: CategoryTrendItem[];
+}
+
+export interface MonthlyTrendsResponse {
+  months: MonthlyTrendData[];
+  average_income: number;
+  average_expenses: number;
+  average_savings_rate: number;
 }
 

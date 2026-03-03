@@ -3,7 +3,9 @@ import { incomeTypesApi, summaryApi } from '../api/client';
 import type {
   ExpensePeriodSummary,
   IncomeTypeSummary,
+  MonthlyTrendsResponse,
   PeriodSummaryResponse,
+  SummaryInsights,
   SummaryTotals,
 } from '../types';
 
@@ -38,5 +40,19 @@ export const useExpensePeriodSummary = (filters?: { month_id?: number | null }) 
   return useQuery<ExpensePeriodSummary[], Error>({
     queryKey: ['summary', 'expenses-by-period', filters],
     queryFn: () => summaryApi.getExpensesByPeriod(filters).then((res) => res.data),
+  });
+};
+
+export const useInsights = (filters?: { month_id?: number | null }) => {
+  return useQuery<SummaryInsights, Error>({
+    queryKey: ['summary', 'insights', filters],
+    queryFn: () => summaryApi.getInsights(filters).then((res) => res.data),
+  });
+};
+
+export const useMonthlyTrends = (params?: { num_months?: number }) => {
+  return useQuery<MonthlyTrendsResponse, Error>({
+    queryKey: ['summary', 'monthly-trends', params],
+    queryFn: () => summaryApi.getMonthlyTrends(params).then((res) => res.data),
   });
 };

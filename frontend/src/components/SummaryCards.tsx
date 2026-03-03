@@ -28,21 +28,21 @@ export const SummaryCards = ({ periodFilter = null, monthId = null }: SummaryCar
   const cards = [
     {
       title: 'Income',
-      budgetValue: totals.total_budgeted_income,
+      budgetValue: totals.total_budget_income,
       actualValue: totals.total_current_income,
       accentColor: 'success' as const,
       icon: <IncomeUpIcon />,
     },
     {
       title: 'Expenses',
-      budgetValue: totals.total_budgeted_expenses,
+      budgetValue: totals.total_budget_expenses,
       actualValue: totals.total_current_expenses,
       accentColor: 'danger' as const,
       icon: <ExpenseDownIcon />,
     },
     {
       title: 'Balance',
-      budgetValue: totals.total_budgeted,
+      budgetValue: totals.total_budget,
       actualValue: totals.total_current,
       accentColor: (totals.total_current >= 0 ? 'success' : 'danger') as 'success' | 'danger',
       icon: <BalanceIcon />,

@@ -25,7 +25,7 @@ export const CurrencyInput = ({
 
   // Format number to currency display (2 decimal places)
   const formatDisplay = (num: number): string => {
-    if (num === 0) return '';
+    if (!Number.isFinite(num) || num === 0) return '';
     return num.toFixed(2);
   };
 

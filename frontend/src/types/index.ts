@@ -80,11 +80,11 @@ export interface IncomeTypeSummary {
 }
 
 export interface SummaryTotals {
-  total_budgeted_expenses: number;
+  total_budget_expenses: number;
   total_current_expenses: number;
-  total_budgeted_income: number;
+  total_budget_income: number;
   total_current_income: number;
-  total_budgeted: number;
+  total_budget: number;
   total_current: number;
 }
 
@@ -314,4 +314,20 @@ export interface BackupCreateResponse {
   filename: string;
   size: number;
   created_at: string;
+}
+
+// Summary insights types
+export interface SummaryInsight {
+  type: 'warning' | 'positive' | 'neutral';
+  icon: string;
+  message: string;
+  category?: string;
+}
+
+export interface SummaryInsights {
+  insights: SummaryInsight[];
+  savings_projection: number;
+  budget_health: 'good' | 'warning' | 'critical';
+  over_budget_count: number;
+  total_categories: number;
 }

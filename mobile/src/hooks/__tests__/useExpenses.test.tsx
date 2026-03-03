@@ -10,7 +10,7 @@ import {
   useDeleteExpense,
   useCloneExpensesToNextMonth,
   usePayExpense,
-  useRefreshBudgetData,
+  useRefreshProjectedData,
 } from "../useExpenses";
 import { expensesApi } from "../../api/client";
 import type {
@@ -63,6 +63,7 @@ describe("useExpenses", () => {
         notes: "Weekly shopping",
         month_id: 1,
         purchases: null,
+        order: 0,
       },
     ];
 
@@ -92,6 +93,7 @@ describe("useExpenses", () => {
         notes: null,
         month_id: 1,
         purchases: null,
+        order: 0,
       },
     ];
 
@@ -145,6 +147,7 @@ describe("useExpense", () => {
       notes: "Weekly shopping",
       month_id: 1,
       purchases: null,
+      order: 0,
     };
 
     vi.mocked(expensesApi.getById).mockResolvedValue({
@@ -207,6 +210,7 @@ describe("useCreateExpense", () => {
     const createdExpense: Expense = {
       id: 2,
       ...newExpense,
+      order: 0,
     };
 
     vi.mocked(expensesApi.create).mockResolvedValue({
@@ -271,6 +275,7 @@ describe("useUpdateExpense", () => {
       notes: null,
       month_id: 1,
       purchases: null,
+      order: 0,
     };
 
     vi.mocked(expensesApi.update).mockResolvedValue({
@@ -410,6 +415,7 @@ describe("usePayExpense", () => {
       notes: null,
       month_id: 1,
       purchases: null,
+      order: 0,
     };
 
     vi.mocked(expensesApi.pay).mockResolvedValue({
@@ -439,6 +445,7 @@ describe("usePayExpense", () => {
       notes: null,
       month_id: 1,
       purchases: null,
+      order: 0,
     };
 
     vi.mocked(expensesApi.pay).mockResolvedValue({
@@ -477,7 +484,7 @@ describe("usePayExpense", () => {
   });
 });
 
-describe("useRefreshBudgetData", () => {
+describe("useRefreshProjectedData", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
@@ -488,7 +495,7 @@ describe("useRefreshBudgetData", () => {
   });
 
   it("should return refresh function and isRefreshing state", () => {
-    const { result } = renderHook(() => useRefreshBudgetData(), {
+    const { result } = renderHook(() => useRefreshProjectedData(), {
       wrapper: createWrapper(),
     });
 
@@ -499,7 +506,7 @@ describe("useRefreshBudgetData", () => {
   });
 
   it("should set isRefreshing to true when refresh starts", async () => {
-    const { result } = renderHook(() => useRefreshBudgetData(), {
+    const { result } = renderHook(() => useRefreshProjectedData(), {
       wrapper: createWrapper(),
     });
 
@@ -513,7 +520,7 @@ describe("useRefreshBudgetData", () => {
   });
 
   it("should invalidate and refetch all query keys", async () => {
-    const { result } = renderHook(() => useRefreshBudgetData(), {
+    const { result } = renderHook(() => useRefreshProjectedData(), {
       wrapper: createWrapper(),
     });
 
@@ -531,7 +538,7 @@ describe("useRefreshBudgetData", () => {
       .spyOn(console, "error")
       .mockImplementation(() => {});
 
-    const { result } = renderHook(() => useRefreshBudgetData(), {
+    const { result } = renderHook(() => useRefreshProjectedData(), {
       wrapper: createWrapper(),
     });
 
@@ -547,7 +554,7 @@ describe("useRefreshBudgetData", () => {
   });
 
   it("should wait minimum 500ms before completing", async () => {
-    const { result } = renderHook(() => useRefreshBudgetData(), {
+    const { result } = renderHook(() => useRefreshProjectedData(), {
       wrapper: createWrapper(),
     });
 

@@ -26,8 +26,8 @@ import type {
   SummaryTotals,
   PeriodSummaryResponse,
   MonthlyTrendsResponse,
+  SummaryInsights,
   BackupListResponse,
-  BackupDownloadUrlResponse,
   BackupCreateResponse,
   UserRegister,
   UserLogin,
@@ -168,7 +168,7 @@ export const expensesApi = {
       cloned_income_count: number;
       next_month_id: number;
       next_month_name: string;
-    }>(`/api/v1/expenses/clone-to-next-month/${monthId}`),
+    }>(`/api/v1/months/${monthId}/clone`),
   pay: (id: number, data?: PayExpenseRequest): Promise<AxiosResponse<Expense>> =>
     apiClient.post<Expense>(`/api/v1/expenses/${id}/pay`, data || {}),
 };
@@ -184,10 +184,18 @@ export const categoriesApi = {
     apiClient.put<Category>(`/api/v1/categories/${id}`, data),
   delete: (id: number): Promise<AxiosResponse<void>> =>
     apiClient.delete(`/api/v1/categories/${id}`),
-  getSummary: (params?: { month_id?: number | null }): Promise<AxiosResponse<CategorySummary[]>> =>
-    apiClient.get<CategorySummary[]>('/api/v1/categories/summary', {
-      params: params ? { month_id: params.month_id } : {},
-    }),
+  getSummary: (params?: {
+    period?: string | null;
+    month_id?: number | null;
+  }): Promise<AxiosResponse<CategorySummary[]>> => {
+    const queryParams = new URLSearchParams();
+    if (params?.period) queryParams.append('period', params.period);
+    if (params?.month_id) queryParams.append('month_id', params.month_id.toString());
+    const queryString = queryParams.toString();
+    return apiClient.get<CategorySummary[]>(
+      `/api/v1/categories/summary${queryString ? `?${queryString}` : ''}`
+    );
+  },
 };
 
 // Period endpoints
@@ -315,23 +323,29 @@ export const summaryApi = {
       `/api/v1/summary/expenses-by-period${queryString ? `?${queryString}` : ''}`
     );
   },
+  getInsights: (params?: { month_id?: number | null }): Promise<AxiosResponse<SummaryInsights>> => {
+    const queryParams = new URLSearchParams();
+    if (params?.month_id) queryParams.append('month_id', params.month_id.toString());
+    const queryString = queryParams.toString();
+    return apiClient.get<SummaryInsights>(
+      `/api/v1/summary/insights${queryString ? `?${queryString}` : ''}`
+    );
+  },
 };
 
-// Import endpoint
-export const importApi = {
-  importExcel: (
-    file: File,
-    monthId: number | null
-  ): Promise<AxiosResponse<{ message: string; imported: number }>> => {
-    const formData = new FormData();
-    formData.append('file', file);
-    const url = monthId ? `/api/v1/import/excel?month_id=${monthId}` : '/api/v1/import/excel';
-    return apiClient.post<{ message: string; imported: number }>(url, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-  },
+// JSON backup & restore endpoints (legacy)
+export const backupRestoreApi = {
+  getBackup: (): Promise<AxiosResponse<Record<string, unknown[]>>> =>
+    apiClient.get<Record<string, unknown[]>>('/api/v1/backup'),
+  downloadBackup: (): Promise<AxiosResponse<Record<string, unknown[]>>> =>
+    apiClient.get<Record<string, unknown[]>>('/api/v1/backup/download'),
+  restore: (
+    data: Record<string, unknown[]>
+  ): Promise<AxiosResponse<{ message: string; restored: Record<string, number> }>> =>
+    apiClient.post<{ message: string; restored: Record<string, number> }>(
+      '/api/v1/backup/restore',
+      data
+    ),
 };
 
 // Auth endpoints
@@ -387,14 +401,23 @@ export const usersApi = {
     apiClient.post(`/api/v1/auth/users/${id}/set-password`, { new_password: newPassword }),
 };
 
-// Backup endpoints (admin only)
+// Backup endpoints (admin only) — SQLite file backups
 export const backupsApi = {
   getAll: (): Promise<AxiosResponse<BackupListResponse>> =>
     apiClient.get<BackupListResponse>('/api/v1/backups'),
   create: (): Promise<AxiosResponse<BackupCreateResponse>> =>
     apiClient.post<BackupCreateResponse>('/api/v1/backups/create'),
-  getDownloadUrl: (filename: string): Promise<AxiosResponse<BackupDownloadUrlResponse>> =>
-    apiClient.get<BackupDownloadUrlResponse>(`/api/v1/backups/${filename}/download-url`),
+  download: (filename: string): Promise<AxiosResponse<Blob>> =>
+    apiClient.get(`/api/v1/backups/${filename}/download`, { responseType: 'blob' }),
   delete: (filename: string): Promise<AxiosResponse<{ message: string }>> =>
     apiClient.delete(`/api/v1/backups/${filename}`),
+  restore: (filename: string): Promise<AxiosResponse<{ message: string }>> =>
+    apiClient.post(`/api/v1/backups/${filename}/restore`),
+  uploadRestore: (file: File): Promise<AxiosResponse<{ message: string }>> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return apiClient.post('/api/v1/backups/upload-restore', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
 };

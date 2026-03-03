@@ -3,7 +3,7 @@ import { Sidebar } from './Sidebar';
 import { MenuIcon } from './shared';
 import { TestBackendWarning } from './TestBackendWarning';
 
-type TabId = 'expenses' | 'reports' | 'backup' | 'import' | 'settings';
+type TabId = 'expenses' | 'reports' | 'backup' | 'settings';
 
 interface LayoutProps {
   children: ReactNode;

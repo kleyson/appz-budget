@@ -104,7 +104,7 @@ export const Charts = ({}: ChartsProps) => {
       <div className="flex flex-col gap-4 sm:gap-6">
         <div className="bg-gray-50 dark:bg-gray-900/50 p-3 sm:p-6 rounded-lg border border-gray-200 dark:border-gray-700">
           <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">
-            Budget vs Actual by Category
+            Budgeted vs Actual by Category
           </h3>
           <div className="w-full overflow-x-auto">
             <ResponsiveContainer width="100%" height={300} minHeight={250}>
@@ -122,7 +122,7 @@ export const Charts = ({}: ChartsProps) => {
                 <YAxis stroke={textColor} fontSize={11} />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend wrapperStyle={{ color: textColor }} />
-                <Bar dataKey="budget" fill="#8b5cf6" name="Budget" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="budget" fill="#8b5cf6" name="Budgeted" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="total" fill="#10b981" name="Actual" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>

@@ -13,7 +13,7 @@ fn test_expense_serialization() {
         expense_name: "Groceries".to_string(),
         period: "Monthly".to_string(),
         category: "Food".to_string(),
-        budget: 500.0,
+        projected: 500.0,
         cost: 450.0,
         notes: Some("Weekly shopping".to_string()),
         month_id: 1,
@@ -31,7 +31,7 @@ fn test_expense_serialization() {
 
     assert_eq!(expense.id, deserialized.id);
     assert_eq!(expense.expense_name, deserialized.expense_name);
-    assert_eq!(expense.budget, deserialized.budget);
+    assert_eq!(expense.projected, deserialized.projected);
     assert_eq!(expense.cost, deserialized.cost);
     assert_eq!(expense.notes, deserialized.notes);
 }
@@ -42,7 +42,7 @@ fn test_expense_create_serialization() {
         expense_name: "Rent".to_string(),
         period: "Monthly".to_string(),
         category: "Housing".to_string(),
-        budget: 1500.0,
+        projected: 1500.0,
         cost: 1500.0,
         notes: None,
         month_id: 1,
@@ -52,7 +52,7 @@ fn test_expense_create_serialization() {
 
     let json = serde_json::to_string(&create).unwrap();
     assert!(json.contains("\"expense_name\":\"Rent\""));
-    assert!(json.contains("\"budget\":1500"));
+    assert!(json.contains("\"projected\":1500"));
 }
 
 #[test]
@@ -67,7 +67,7 @@ fn test_expense_update_skip_none() {
     assert!(json.contains("\"expense_name\":\"Updated Name\""));
     assert!(json.contains("\"cost\":200"));
     // None fields should not be included
-    assert!(!json.contains("\"budget\""));
+    assert!(!json.contains("\"projected\""));
     assert!(!json.contains("\"period\""));
 }
 
@@ -99,7 +99,7 @@ fn test_income_serialization() {
         id: 1,
         income_type_id: 1,
         period: "Monthly".to_string(),
-        budget: 5000.0,
+        projected: 5000.0,
         amount: 4800.0,
         month_id: 1,
         created_at: "2024-01-01".to_string(),
@@ -112,7 +112,7 @@ fn test_income_serialization() {
     let deserialized: Income = serde_json::from_str(&json).unwrap();
 
     assert_eq!(income.id, deserialized.id);
-    assert_eq!(income.budget, deserialized.budget);
+    assert_eq!(income.projected, deserialized.projected);
     assert_eq!(income.amount, deserialized.amount);
 }
 
@@ -238,14 +238,14 @@ fn test_income_create_serialization() {
     let create = IncomeCreate {
         income_type_id: 1,
         period: "Monthly".to_string(),
-        budget: 5000.0,
+        projected: 5000.0,
         amount: 4800.0,
         month_id: 1,
     };
 
     let json = serde_json::to_string(&create).unwrap();
     assert!(json.contains("\"income_type_id\":1"));
-    assert!(json.contains("\"budget\":5000"));
+    assert!(json.contains("\"projected\":5000"));
 }
 
 #[test]
@@ -257,7 +257,7 @@ fn test_income_update_skip_none() {
 
     let json = serde_json::to_string(&update).unwrap();
     assert!(json.contains("\"amount\":5200"));
-    assert!(!json.contains("\"budget\""));
+    assert!(!json.contains("\"projected\""));
     assert!(!json.contains("\"period\""));
 }
 

@@ -11,30 +11,116 @@ use crate::ui::format_currency;
 
 /// Render the summary tab
 pub fn render(app: &AppState, frame: &mut Frame, area: Rect) {
+    // Calculate insights height based on content
+    let insights_height = if let Some(ref insights) = app.data.insights {
+        // 2 for border + 1 for health label + insights count (min 3 lines inside)
+        let content_lines = insights.insights.len().max(1) as u16 + 1; // +1 for health indicator
+        content_lines + 2 // +2 for borders
+    } else {
+        0
+    };
+
     let chunks = Layout::vertical([
-        Constraint::Length(7),  // Summary cards
-        Constraint::Length(1),  // Spacer
-        Constraint::Length(10), // Period summary table
-        Constraint::Length(1),  // Spacer
-        Constraint::Min(8),     // Category and Income tables
+        Constraint::Length(insights_height), // Insights panel
+        Constraint::Length(if insights_height > 0 { 1 } else { 0 }), // Spacer (only if insights shown)
+        Constraint::Length(7),                                       // Summary cards
+        Constraint::Length(1),                                       // Spacer
+        Constraint::Length(10),                                      // Period summary table
+        Constraint::Length(1),                                       // Spacer
+        Constraint::Min(8),                                          // Category and Income tables
     ])
     .split(area);
 
+    // Render insights panel
+    if app.data.insights.is_some() {
+        render_insights(app, frame, chunks[0]);
+    }
+
     // Render summary cards
-    render_summary_cards(app, frame, chunks[0]);
+    render_summary_cards(app, frame, chunks[2]);
 
     // Render period summary table
-    render_period_summary(app, frame, chunks[2]);
+    render_period_summary(app, frame, chunks[4]);
 
     // Split tables area horizontally
     let table_chunks = Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)])
-        .split(chunks[4]);
+        .split(chunks[6]);
 
     // Render category summary table
     render_category_summary(app, frame, table_chunks[0]);
 
     // Render income type summary table
     render_income_summary(app, frame, table_chunks[1]);
+}
+
+/// Render the insights panel
+fn render_insights(app: &AppState, frame: &mut Frame, area: Rect) {
+    if let Some(ref insights) = app.data.insights {
+        let health_color = match insights.budget_health.as_str() {
+            "good" => Color::Green,
+            "warning" => Color::Yellow,
+            "critical" => Color::Red,
+            _ => Color::DarkGray,
+        };
+
+        let health_label = match insights.budget_health.as_str() {
+            "good" => "Good",
+            "warning" => "Warning",
+            "critical" => "Critical",
+            _ => "Unknown",
+        };
+
+        let block = Block::default()
+            .title(" Insights ")
+            .borders(Borders::ALL)
+            .border_style(Style::default().fg(Color::DarkGray));
+
+        let inner = block.inner(area);
+        frame.render_widget(block, area);
+
+        // Build lines: health indicator first, then each insight
+        let mut lines: Vec<Line> = Vec::new();
+
+        // Budget health line
+        lines.push(Line::from(vec![
+            Span::styled(
+                "Budget Health: ",
+                Style::default().add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                health_label,
+                Style::default()
+                    .fg(health_color)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::raw("  "),
+            Span::styled(
+                format!(
+                    "{}/{} categories over projected",
+                    insights.over_projected_count, insights.total_categories
+                ),
+                Style::default().fg(Color::DarkGray),
+            ),
+        ]));
+
+        // Each insight as a colored line
+        for insight in &insights.insights {
+            let color = match insight.insight_type.as_str() {
+                "positive" => Color::Green,
+                "warning" => Color::Yellow,
+                "neutral" => Color::DarkGray,
+                _ => Color::DarkGray,
+            };
+
+            lines.push(Line::from(vec![
+                Span::styled(format!("{} ", insight.icon), Style::default().fg(color)),
+                Span::styled(insight.message.clone(), Style::default().fg(color)),
+            ]));
+        }
+
+        let paragraph = Paragraph::new(lines);
+        frame.render_widget(paragraph, inner);
+    }
 }
 
 /// Render the summary cards (income, expenses, balance)
@@ -48,8 +134,8 @@ fn render_summary_cards(app: &AppState, frame: &mut Frame, area: Rect) {
 
     if let Some(ref totals) = app.data.summary_totals {
         // Income card
-        let income_pct = if totals.total_budgeted_income > 0.0 {
-            (totals.total_current_income / totals.total_budgeted_income * 100.0).min(100.0)
+        let income_pct = if totals.total_projected_income > 0.0 {
+            (totals.total_current_income / totals.total_projected_income * 100.0).min(100.0)
         } else {
             0.0
         };
@@ -58,18 +144,18 @@ fn render_summary_cards(app: &AppState, frame: &mut Frame, area: Rect) {
             card_chunks[0],
             "Income",
             &format_currency(totals.total_current_income),
-            &format!("of {}", format_currency(totals.total_budgeted_income)),
+            &format!("of {}", format_currency(totals.total_projected_income)),
             income_pct,
             Color::Green,
         );
 
         // Expenses card
-        let expense_pct = if totals.total_budgeted_expenses > 0.0 {
-            (totals.total_current_expenses / totals.total_budgeted_expenses * 100.0).min(100.0)
+        let expense_pct = if totals.total_projected_expenses > 0.0 {
+            (totals.total_current_expenses / totals.total_projected_expenses * 100.0).min(100.0)
         } else {
             0.0
         };
-        let expense_color = if totals.expenses_over_budget() {
+        let expense_color = if totals.expenses_over_projected() {
             Color::Red
         } else {
             Color::Yellow
@@ -79,7 +165,7 @@ fn render_summary_cards(app: &AppState, frame: &mut Frame, area: Rect) {
             card_chunks[1],
             "Expenses",
             &format_currency(totals.total_current_expenses),
-            &format!("of {}", format_currency(totals.total_budgeted_expenses)),
+            &format!("of {}", format_currency(totals.total_projected_expenses)),
             expense_pct,
             expense_color,
         );
@@ -91,9 +177,9 @@ fn render_summary_cards(app: &AppState, frame: &mut Frame, area: Rect) {
         } else {
             Color::Red
         };
-        let budgeted_balance = totals.balance_budgeted();
-        let balance_pct = if budgeted_balance > 0.0 {
-            (balance / budgeted_balance * 100.0).clamp(0.0, 100.0)
+        let projected_balance = totals.balance_projected();
+        let balance_pct = if projected_balance > 0.0 {
+            (balance / projected_balance * 100.0).clamp(0.0, 100.0)
         } else {
             0.0
         };
@@ -102,7 +188,7 @@ fn render_summary_cards(app: &AppState, frame: &mut Frame, area: Rect) {
             card_chunks[2],
             "Balance",
             &format_currency(balance),
-            &format!("of {}", format_currency(budgeted_balance)),
+            &format!("of {}", format_currency(projected_balance)),
             balance_pct,
             balance_color,
         );
@@ -255,13 +341,15 @@ fn render_category_summary(app: &AppState, frame: &mut Frame, area: Rect) {
         .borders(Borders::ALL)
         .border_style(Style::default().fg(Color::DarkGray));
 
-    let header_cells = ["Category", "Budget", "Total", "Status"].iter().map(|h| {
-        Cell::from(*h).style(
-            Style::default()
-                .fg(Color::Cyan)
-                .add_modifier(Modifier::BOLD),
-        )
-    });
+    let header_cells = ["Category", "Projected", "Total", "Status"]
+        .iter()
+        .map(|h| {
+            Cell::from(*h).style(
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            )
+        });
     let header = Row::new(header_cells).height(1);
 
     let mut rows: Vec<Row> = app
@@ -269,14 +357,14 @@ fn render_category_summary(app: &AppState, frame: &mut Frame, area: Rect) {
         .category_summary
         .iter()
         .map(|cs| {
-            let status = if cs.over_budget {
-                Cell::from("Over Budget").style(Style::default().fg(Color::Red))
+            let status = if cs.over_projected {
+                Cell::from("Over").style(Style::default().fg(Color::Red))
             } else {
-                Cell::from("On Budget").style(Style::default().fg(Color::Green))
+                Cell::from("On Track").style(Style::default().fg(Color::Green))
             };
             Row::new(vec![
                 Cell::from(cs.category.clone()),
-                Cell::from(format_currency(cs.budget)),
+                Cell::from(format_currency(cs.projected)),
                 Cell::from(format_currency(cs.total)),
                 status,
             ])
@@ -284,31 +372,36 @@ fn render_category_summary(app: &AppState, frame: &mut Frame, area: Rect) {
         .collect();
 
     // Calculate totals
-    let total_budget: f64 = app.data.category_summary.iter().map(|cs| cs.budget).sum();
+    let total_projected: f64 = app
+        .data
+        .category_summary
+        .iter()
+        .map(|cs| cs.projected)
+        .sum();
     let total_actual: f64 = app.data.category_summary.iter().map(|cs| cs.total).sum();
     let total_paid_capped: f64 = app
         .data
         .category_summary
         .iter()
-        .map(|cs| cs.total.min(cs.budget))
+        .map(|cs| cs.total.min(cs.projected))
         .sum();
-    let diff_without_over = total_budget - total_paid_capped;
-    let diff_with_over = total_budget - total_actual;
+    let diff_without_over = total_projected - total_paid_capped;
+    let diff_with_over = total_projected - total_actual;
 
-    // Add Budget Control row (without over amounts)
-    let budget_control_diff_color = if diff_without_over >= 0.0 {
+    // Add Projected Control row (without over amounts)
+    let projected_control_diff_color = if diff_without_over >= 0.0 {
         Color::Green
     } else {
         Color::Red
     };
-    let budget_control_row = Row::new(vec![
-        Cell::from("Budget Control").style(Style::default().fg(Color::DarkGray)),
-        Cell::from(format_currency(total_budget)).style(Style::default().fg(Color::White)),
+    let projected_control_row = Row::new(vec![
+        Cell::from("Projected Control").style(Style::default().fg(Color::DarkGray)),
+        Cell::from(format_currency(total_projected)).style(Style::default().fg(Color::White)),
         Cell::from(format_currency(total_paid_capped)).style(Style::default().fg(Color::White)),
         Cell::from(format_currency(diff_without_over))
-            .style(Style::default().fg(budget_control_diff_color)),
+            .style(Style::default().fg(projected_control_diff_color)),
     ]);
-    rows.push(budget_control_row);
+    rows.push(projected_control_row);
 
     // Add Total (with over) row
     let total_diff_color = if diff_with_over >= 0.0 {
@@ -318,7 +411,7 @@ fn render_category_summary(app: &AppState, frame: &mut Frame, area: Rect) {
     };
     let total_row = Row::new(vec![
         Cell::from("Total (with over)").style(Style::default().add_modifier(Modifier::BOLD)),
-        Cell::from(format_currency(total_budget)).style(
+        Cell::from(format_currency(total_projected)).style(
             Style::default()
                 .fg(Color::White)
                 .add_modifier(Modifier::BOLD),
@@ -358,7 +451,7 @@ fn render_income_summary(app: &AppState, frame: &mut Frame, area: Rect) {
         .borders(Borders::ALL)
         .border_style(Style::default().fg(Color::DarkGray));
 
-    let header_cells = ["Income Type", "Budget", "Total"].iter().map(|h| {
+    let header_cells = ["Income Type", "Projected", "Total"].iter().map(|h| {
         Cell::from(*h).style(
             Style::default()
                 .fg(Color::Cyan)
@@ -374,7 +467,7 @@ fn render_income_summary(app: &AppState, frame: &mut Frame, area: Rect) {
         .map(|its| {
             Row::new(vec![
                 Cell::from(its.income_type.clone()),
-                Cell::from(format_currency(its.budget)),
+                Cell::from(format_currency(its.projected)),
                 Cell::from(format_currency(its.total)),
             ])
         })

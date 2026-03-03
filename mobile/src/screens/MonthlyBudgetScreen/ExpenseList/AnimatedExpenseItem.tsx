@@ -43,7 +43,7 @@ export const AnimatedExpenseItem = ({
   isDark,
 }: AnimatedExpenseItemProps) => {
   const styles = getStyles(isDark, theme);
-  const isOnBudget = expense.cost <= expense.budget;
+  const isOnTrack = expense.cost <= expense.budget;
   const progress =
     expense.budget > 0
       ? Math.min((expense.cost / expense.budget) * 100, 100)
@@ -126,13 +126,13 @@ export const AnimatedExpenseItem = ({
             <View
               style={[
                 styles.statusBadge,
-                isOnBudget ? styles.statusSuccess : styles.statusDanger,
+                isOnTrack ? styles.statusSuccess : styles.statusDanger,
               ]}
             >
               <Ionicons
-                name={isOnBudget ? "checkmark" : "alert"}
+                name={isOnTrack ? "checkmark" : "alert"}
                 size={10}
-                color={isOnBudget ? theme.success : theme.danger}
+                color={isOnTrack ? theme.success : theme.danger}
               />
             </View>
           </View>
@@ -170,7 +170,7 @@ export const AnimatedExpenseItem = ({
                 style={[
                   styles.progressFill,
                   {
-                    backgroundColor: isOnBudget ? theme.success : theme.danger,
+                    backgroundColor: isOnTrack ? theme.success : theme.danger,
                   },
                   progressAnimatedStyle,
                 ]}
@@ -185,7 +185,7 @@ export const AnimatedExpenseItem = ({
               <Text
                 style={[
                   styles.listItemAmount,
-                  { color: isOnBudget ? theme.text : theme.danger },
+                  { color: isOnTrack ? theme.text : theme.danger },
                 ]}
               >
                 {formatCurrency(expense.cost)}
@@ -193,8 +193,8 @@ export const AnimatedExpenseItem = ({
             </View>
             <View style={styles.amountDivider} />
             <View>
-              <Text style={styles.amountLabel}>Budget</Text>
-              <Text style={styles.listItemBudget}>
+              <Text style={styles.amountLabel}>Projected</Text>
+              <Text style={styles.listItemProjected}>
                 {formatCurrency(expense.budget)}
               </Text>
             </View>
@@ -388,7 +388,7 @@ const getStyles = (isDark: boolean, theme: ReturnType<typeof getThemeColors>) =>
       fontSize: 16,
       fontWeight: "700",
     },
-    listItemBudget: {
+    listItemProjected: {
       fontSize: 14,
       color: theme.textSecondary,
       fontWeight: "500",

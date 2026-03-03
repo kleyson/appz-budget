@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -7,7 +7,8 @@ import {
   useBackups,
   useCreateBackup,
   useDeleteBackup,
-  useBackupDownloadUrl,
+  useDownloadBackup,
+  useRestoreBackup,
 } from '../useReports';
 import { summaryApi, backupsApi } from '../../api/client';
 import type { MonthlyTrendsResponse, BackupListResponse } from '../../types';
@@ -21,7 +22,8 @@ vi.mock('../../api/client', () => ({
     getAll: vi.fn(),
     create: vi.fn(),
     delete: vi.fn(),
-    getDownloadUrl: vi.fn(),
+    download: vi.fn(),
+    restore: vi.fn(),
   },
 }));
 
@@ -270,21 +272,68 @@ describe('useDeleteBackup', () => {
   });
 });
 
-describe('useBackupDownloadUrl', () => {
+describe('useDownloadBackup', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should get backup download URL successfully', async () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('should download backup successfully', async () => {
+    const mockBlob = new Blob(['test data'], { type: 'application/octet-stream' });
+
+    vi.mocked(backupsApi.download).mockResolvedValue({
+      data: mockBlob,
+    } as any);
+
+    // Mock DOM APIs for download trigger
+    const mockCreateObjectURL = vi.fn(() => 'blob:test-url');
+    const mockRevokeObjectURL = vi.fn();
+    const mockClick = vi.fn();
+
+    global.URL.createObjectURL = mockCreateObjectURL;
+    global.URL.revokeObjectURL = mockRevokeObjectURL;
+
+    const originalCreateElement = document.createElement.bind(document);
+    vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+      if (tag === 'a') {
+        return { href: '', download: '', click: mockClick } as any;
+      }
+      return originalCreateElement(tag);
+    });
+    vi.spyOn(document.body, 'appendChild').mockImplementation((node) => node);
+    vi.spyOn(document.body, 'removeChild').mockImplementation((node) => node);
+
+    const { result } = renderHook(() => useDownloadBackup(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate('backup_2024-01-01.db');
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(backupsApi.download).toHaveBeenCalledWith('backup_2024-01-01.db');
+    expect(mockClick).toHaveBeenCalled();
+  });
+});
+
+describe('useRestoreBackup', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should restore backup successfully', async () => {
     const mockResponse = {
-      download_url: 'https://example.com/backups/backup_2024-01-01.db',
+      message: 'Database restored from backup_2024-01-01.db',
     };
 
-    vi.mocked(backupsApi.getDownloadUrl).mockResolvedValue({
+    vi.mocked(backupsApi.restore).mockResolvedValue({
       data: mockResponse,
     } as any);
 
-    const { result } = renderHook(() => useBackupDownloadUrl(), {
+    const { result } = renderHook(() => useRestoreBackup(), {
       wrapper: createWrapper(),
     });
 
@@ -293,14 +342,14 @@ describe('useBackupDownloadUrl', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(result.current.data).toEqual(mockResponse);
-    expect(backupsApi.getDownloadUrl).toHaveBeenCalledWith('backup_2024-01-01.db');
+    expect(backupsApi.restore).toHaveBeenCalledWith('backup_2024-01-01.db');
   });
 
-  it('should handle error when getting backup download URL', async () => {
-    const error = new Error('Failed to get download URL');
-    vi.mocked(backupsApi.getDownloadUrl).mockRejectedValue(error);
+  it('should handle error when restoring backup', async () => {
+    const error = new Error('Failed to restore backup');
+    vi.mocked(backupsApi.restore).mockRejectedValue(error);
 
-    const { result } = renderHook(() => useBackupDownloadUrl(), {
+    const { result } = renderHook(() => useRestoreBackup(), {
       wrapper: createWrapper(),
     });
 
