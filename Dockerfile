@@ -62,8 +62,13 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh /usr/local/bin/backup.sh
 
 WORKDIR /app/backend
 
-# Create non-root user for security
-RUN useradd -m -u 1000 appuser && \
+# Create non-root user for security. Recent oven/bun:1 images ship a
+# pre-existing `bun` user at UID 1000, so remove it first; keeping UID
+# 1000 matters for host-mounted volumes under ./data.
+RUN if getent passwd 1000 >/dev/null; then \
+      userdel -r "$(getent passwd 1000 | cut -d: -f1)" 2>/dev/null || true; \
+    fi && \
+    useradd -m -u 1000 appuser && \
     mkdir -p /app/backend/data /app/backend/data/backups && \
     chown -R appuser:appuser /app
 
