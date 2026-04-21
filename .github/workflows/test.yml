@@ -9,6 +9,7 @@ on:
       - "frontend/**"
       - "mobile/**"
       - "tui/**"
+      - "e2e/**"
       - ".github/workflows/test.yml"
   push:
     branches:
@@ -18,6 +19,7 @@ on:
       - "frontend/**"
       - "mobile/**"
       - "tui/**"
+      - "e2e/**"
       - ".github/workflows/test.yml"
 
 jobs:
@@ -30,27 +32,27 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          version: "latest"
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+          bun-version: latest
 
       - name: Install backend dependencies
         working-directory: ./backend
-        run: |
-          uv sync --extra test
+        run: bun install --frozen-lockfile
 
-      - name: Run backend tests
+      - name: Type check backend
         working-directory: ./backend
+        run: bunx tsc --noEmit
+
+      - name: Run e2e tests
+        working-directory: ./e2e
         env:
-          API_KEY: test-api-key-12345
-        run: |
-          uv run python -m pytest tests/ --cov=. --cov-report=xml --cov-report=term || exit 1
+          DATABASE_PATH: ./test.db
+          API_KEY: test-api-key
+          JWT_SECRET_KEY: test-jwt-secret
+          ENV: test
+        run: bun test
 
       - name: Install Node.js
         uses: actions/setup-node@v4
