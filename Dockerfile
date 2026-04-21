@@ -50,8 +50,10 @@ COPY backend/drizzle ./backend/drizzle
 COPY backend/drizzle.config.ts ./backend/
 COPY backend/tsconfig.json ./backend/
 
-# Copy built frontend
-COPY --from=frontend-builder /app/frontend/dist ./backend/public
+# Copy built frontend. Vite's build.outDir is '../backend/public', so in
+# the frontend-builder stage the bundle lands at /app/backend/public —
+# not /app/frontend/dist.
+COPY --from=frontend-builder /app/backend/public ./backend/public
 
 # Copy startup script and backup script
 COPY docker-entrypoint.sh /usr/local/bin/
