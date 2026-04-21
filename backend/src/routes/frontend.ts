@@ -13,6 +13,7 @@ import { join } from 'path';
 
 const frontendRoute = new Hono();
 
+const backendRoot = join(import.meta.dir, '../..');
 const publicDir = join(import.meta.dir, '../../public');
 
 /**
@@ -34,6 +35,7 @@ async function serveIndexHtml(c: Context) {
 
 // Serve static assets (JS, CSS, images, etc.) from public/
 // This must come before the catch-all so that real files are served as-is.
+frontendRoute.use('/public/*', serveStatic({ root: backendRoot }));
 frontendRoute.use('/assets/*', serveStatic({ root: './public' }));
 frontendRoute.use('/favicon.ico', serveStatic({ root: './public' }));
 frontendRoute.use('/vite.svg', serveStatic({ root: './public' }));
