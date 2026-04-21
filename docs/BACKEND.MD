@@ -428,7 +428,7 @@ docker run -d -p 8000:8000 -e API_KEY=your-secret-api-key appz-budget:latest
 ### Docker Features
 
 - Multi-stage build for optimized image size (~400-500MB)
-- Runs as non-root user (`appuser`, UID 1000)
+- Runs as non-root user (`bun`, UID 1000)
 - Automatic database migrations on startup
 - Health checks configured
 - Daily automated backups (runs at 2 AM)

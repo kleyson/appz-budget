@@ -62,22 +62,18 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh /usr/local/bin/backup.sh
 
 WORKDIR /app/backend
 
-# Create non-root user for security. Recent oven/bun:1 images ship a
-# pre-existing `bun` user at UID 1000, so remove it first; keeping UID
-# 1000 matters for host-mounted volumes under ./data.
-RUN if getent passwd 1000 >/dev/null; then \
-      userdel -r "$(getent passwd 1000 | cut -d: -f1)" 2>/dev/null || true; \
-    fi && \
-    useradd -m -u 1000 appuser && \
-    mkdir -p /app/backend/data /app/backend/data/backups && \
-    chown -R appuser:appuser /app
+# Use the non-root `bun` user that the oven/bun image already provides
+# (UID 1000). Keeping UID 1000 matters for host-mounted volumes under
+# ./data.
+RUN mkdir -p /app/backend/data /app/backend/data/backups && \
+    chown -R bun:bun /app
 
-# Set up cron job for daily backups (runs at 2 AM as appuser)
-RUN echo "0 2 * * * appuser /usr/local/bin/backup.sh >> /var/log/backup.log 2>&1" > /etc/cron.d/backup-cron && \
+# Set up cron job for daily backups (runs at 2 AM as bun)
+RUN echo "0 2 * * * bun /usr/local/bin/backup.sh >> /var/log/backup.log 2>&1" > /etc/cron.d/backup-cron && \
     chmod 0644 /etc/cron.d/backup-cron && \
-    crontab -u appuser /etc/cron.d/backup-cron && \
+    crontab -u bun /etc/cron.d/backup-cron && \
     touch /var/log/backup.log && \
-    chown appuser:appuser /var/log/backup.log
+    chown bun:bun /var/log/backup.log
 
 # Expose port
 EXPOSE 8000
