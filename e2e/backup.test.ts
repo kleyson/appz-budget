@@ -13,7 +13,7 @@ import {
 } from './helpers';
 import type { Hono } from 'hono';
 import { Database } from 'bun:sqlite';
-import { readFileSync, unlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 
 let app: Hono;
 let adminToken: string;
@@ -33,6 +33,18 @@ async function getAdminToken(app: Hono): Promise<string> {
   const loginRes = await loginUser(app, email, password);
   const data = (await loginRes.json()) as { access_token: string };
   return data.access_token;
+}
+
+function expectDatabaseIntegrityOk(dbPath: string): void {
+  const sqlite = new Database(dbPath, { readonly: true });
+  try {
+    const checks = sqlite
+      .query<{ integrity_check: string }, []>('PRAGMA integrity_check')
+      .all();
+    expect(checks).toEqual([{ integrity_check: 'ok' }]);
+  } finally {
+    sqlite.close();
+  }
 }
 
 beforeAll(async () => {
@@ -145,6 +157,33 @@ describe('SQLite Backups (Hono client)', () => {
     expect(data.message).toContain('restored');
   });
 
+  test('POST /api/v1/backups/:filename/restore clears stale WAL sidecars', async () => {
+    const dbPath = process.env.DATABASE_PATH!;
+    // Sentinels let us distinguish stale data from fresh sidecars that
+    // WAL-mode reopen will legitimately recreate.
+    const STALE_WAL = 'STALE_WAL_SENTINEL_DO_NOT_REPLAY';
+    const STALE_SHM = 'STALE_SHM_SENTINEL_DO_NOT_REPLAY';
+    writeFileSync(`${dbPath}-wal`, STALE_WAL);
+    writeFileSync(`${dbPath}-shm`, STALE_SHM);
+
+    const res = await app.request(`/api/v1/backups/${createdFilename}/restore`, {
+      method: 'POST',
+      headers: apiHeaders(adminToken),
+    });
+    expect(res.status).toBe(200);
+
+    // Sidecars may exist again after reopen in WAL mode. What matters is
+    // that any stale content from before the restore is gone.
+    for (const sidecar of [`${dbPath}-wal`, `${dbPath}-shm`]) {
+      if (existsSync(sidecar)) {
+        const contents = readFileSync(sidecar).toString('utf8');
+        expect(contents).not.toContain(STALE_WAL);
+        expect(contents).not.toContain(STALE_SHM);
+      }
+    }
+    expectDatabaseIntegrityOk(dbPath);
+  });
+
   test('POST /api/v1/backups/upload-restore restores from uploaded file', async () => {
     // Download the backup we created earlier
     const dlRes = await app.request(`/api/v1/backups/${createdFilename}/download`, {
@@ -169,6 +208,31 @@ describe('SQLite Backups (Hono client)', () => {
     expect(res.status).toBe(200);
     const data = (await res.json()) as { message: string };
     expect(data.message).toContain('restored');
+  });
+
+  test('POST /api/v1/backups/upload-restore rejects corrupt SQLite files', async () => {
+    const dlRes = await app.request(`/api/v1/backups/${createdFilename}/download`, {
+      headers: apiHeaders(adminToken),
+    });
+    expect(dlRes.status).toBe(200);
+
+    const corruptBytes = new Uint8Array(await dlRes.arrayBuffer());
+    corruptBytes.fill(0, Math.max(0, corruptBytes.length - 2048));
+
+    const formData = new FormData();
+    formData.append('file', new File([corruptBytes], 'corrupt-backup.db'));
+
+    const headers = apiHeaders(adminToken);
+    delete headers['Content-Type'];
+
+    const res = await app.request('/api/v1/backups/upload-restore', {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+    expect(res.status).toBe(400);
+    const data = (await res.json()) as { detail: string };
+    expect(data.detail).toContain('Restore failed');
   });
 
   test('POST /api/v1/backups/upload-restore migrates legacy database without journal', async () => {

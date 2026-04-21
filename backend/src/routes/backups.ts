@@ -107,7 +107,7 @@ backupsRoute.post('/api/v1/backups/upload-restore', ...auth, async (c) => {
     }
 
     const data = await file.arrayBuffer();
-    restoreFromUpload(data);
+    await restoreFromUpload(data);
     return c.json({ message: `Database restored from uploaded file: ${file.name}` });
   } catch (e) {
     const detail = e instanceof Error ? e.message : String(e);
@@ -117,10 +117,10 @@ backupsRoute.post('/api/v1/backups/upload-restore', ...auth, async (c) => {
 
 // ─── POST /api/v1/backups/:filename/restore ─────────────────────────────────
 
-backupsRoute.post('/api/v1/backups/:filename/restore', ...auth, (c) => {
+backupsRoute.post('/api/v1/backups/:filename/restore', ...auth, async (c) => {
   try {
     const filename = c.req.param('filename');
-    restoreBackup(filename);
+    await restoreBackup(filename);
     return c.json({ message: `Database restored from ${filename}` });
   } catch (e) {
     const detail = e instanceof Error ? e.message : String(e);
