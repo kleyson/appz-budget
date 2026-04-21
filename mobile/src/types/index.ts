@@ -65,6 +65,14 @@ export interface CategorySummary {
   over_budget: boolean;
 }
 
+export interface ExpensePeriodSummary {
+  period: string;
+  color: string;
+  budget: number;
+  total: number;
+  over_budget: boolean;
+}
+
 export interface IncomeTypeSummary {
   income_type: string;
   budget: number;
@@ -289,4 +297,3 @@ export interface MonthlyTrendsResponse {
   average_expenses: number;
   average_savings_rate: number;
 }
-

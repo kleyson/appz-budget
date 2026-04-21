@@ -17,6 +17,7 @@ import type {
   PeriodCreate,
   PeriodUpdate,
   CategorySummary,
+  ExpensePeriodSummary,
   IncomeTypeSummary,
   Month,
   MonthCreate,
@@ -366,6 +367,17 @@ export const summaryApi = {
     const queryString = queryParams.toString();
     return apiClient.get<PeriodSummaryResponse>(
       `/api/v1/summary/by-period${queryString ? `?${queryString}` : ""}`
+    );
+  },
+  getExpensesByPeriod: (params?: {
+    month_id?: number | null;
+  }): Promise<AxiosResponse<ExpensePeriodSummary[]>> => {
+    const queryParams = new URLSearchParams();
+    if (params?.month_id)
+      queryParams.append("month_id", params.month_id.toString());
+    const queryString = queryParams.toString();
+    return apiClient.get<ExpensePeriodSummary[]>(
+      `/api/v1/summary/expenses-by-period${queryString ? `?${queryString}` : ""}`
     );
   },
   getMonthlyTrends: (params?: {

@@ -57,7 +57,6 @@ Located in `exceptions.py`:
 - `sqlalchemy==2.0.36` - ORM
 - `pydantic>=2.10.0` - Data validation
 - `python-multipart==0.0.12` - File upload support
-- `openpyxl==3.1.5` - Excel file reading
 - `pandas==2.3.3` - Data processing
 - `jose` - JWT token handling
 - `bcrypt` - Password hashing
@@ -289,10 +288,6 @@ The documentation is automatically updated when you modify API endpoints, schema
 - `GET /api/v1/summary/totals` - Get summary totals (query params: `period`, `month_id`)
 - `GET /api/v1/summary/by-period` - Get period summary (query param: `month_id`)
 - `GET /api/v1/summary/monthly-trends` - Get monthly trends data
-
-### Import Endpoint
-
-- `POST /api/v1/import/excel` - Import expenses from Excel file (multipart/form-data, query param: `month_id`)
 
 ### Backup Endpoints (Admin Only)
 
@@ -545,15 +540,6 @@ backend/
 
 When updating a category/period name, all related expenses are automatically updated via the service layer. This ensures data consistency.
 
-### Excel Import
-
-Handled by `import_service.py`:
-
-- Required columns: `Expense details`, `Category`
-- Optional columns: `Period`, `Budget`, `Cost`, `Notes`
-- Auto-creates missing categories/periods
-- Handles column name variations
-- Skips invalid rows and reports errors
 
 ### Password Reset
 

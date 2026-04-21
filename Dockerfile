@@ -46,6 +46,7 @@ RUN cd backend && bun install --production
 
 # Copy backend source
 COPY backend/src ./backend/src
+COPY backend/drizzle ./backend/drizzle
 COPY backend/drizzle.config.ts ./backend/
 COPY backend/tsconfig.json ./backend/
 

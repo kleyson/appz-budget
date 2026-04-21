@@ -134,7 +134,6 @@ Use these to understand the API structure, test endpoints, and verify request/re
 - Monthly budget tracking
 - Category and period management
 - Summary and analytics
-- Excel import support
 
 ### User Interface
 
@@ -405,4 +404,3 @@ A demo server is available at `https://budget.appz.wtf/` for testing purposes.
 - API Key: `your-secret-api-key-change-this`
 
 **Note**: For production use, users must deploy their own backend server.
-

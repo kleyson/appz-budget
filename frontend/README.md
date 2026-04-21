@@ -7,7 +7,7 @@ React 19 + TypeScript + Tailwind CSS + Vite web application for budget managemen
 - 📊 Monthly budget tracking with expense and income management
 - 🎨 Custom categories and periods with color coding
 - 📈 Visual analytics with interactive charts
-- 💾 Excel import for easy data migration
+- 💾 Backup and restore for database migration
 - 🔐 Secure JWT-based authentication
 - 👥 User management (admin panel)
 - 🌙 Dark mode support
@@ -72,7 +72,6 @@ frontend/src/
 │   ├── ExpenseForm.tsx
 │   ├── CategorySummary.tsx
 │   ├── Charts.tsx
-│   ├── ExcelImport.tsx
 │   ├── CategoryManagement.tsx
 │   ├── PeriodManagement.tsx
 │   ├── Settings.tsx
@@ -86,7 +85,6 @@ frontend/src/
 │   ├── useMonths.ts
 │   ├── useSummary.ts
 │   ├── useUsers.ts
-│   └── useImport.ts
 ├── contexts/              # React context providers
 ├── App.tsx                # Main app component
 ├── main.tsx               # Entry point
@@ -167,10 +165,9 @@ For development, you can optionally set `VITE_API_KEY` in a `.env` file, but run
 - Monthly trends
 - Interactive charts
 
-### Data Import
-- Excel file import
-- Automatic category/period creation
-- Flexible column mapping
+### Data Management
+- Database backup download
+- Database restore from server-side or uploaded `.db` backups
 
 ## Browser Support
 

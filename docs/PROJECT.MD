@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Appz Budget is a multi-platform budget management application that helps track expenses, manage budgets by category, and visualize spending patterns. The application replicates Excel budget spreadsheet functionality across web, mobile, and terminal interfaces.
+Appz Budget is a multi-platform budget management application that helps track expenses, manage budgets by category, and visualize spending patterns across web, mobile, and terminal interfaces.
 
 ## Architecture
 
@@ -67,7 +67,6 @@ All components connect to the same backend API, allowing users to access their b
 ### Data Management
 
 - Full CRUD operations for expenses, categories, periods, and income
-- Excel spreadsheet import for easy data migration
 - Backup and restore functionality
 - Data persistence across sessions
 
@@ -281,10 +280,6 @@ See [DOCKER.md](./DOCKER.md) for detailed Docker documentation.
 #### When Updating Categories/Periods
 
 Names cascade to related expenses automatically via service layer. No manual updates needed.
-
-#### Excel Import
-
-Handled by `import_service.py`. Required columns: `Expense details`, `Category`. Auto-creates missing categories/periods.
 
 #### Error Handling
 

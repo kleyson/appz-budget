@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { incomeTypesApi, summaryApi } from '../api/client';
 import type {
+  ExpensePeriodSummary,
   IncomeTypeSummary,
   MonthlyTrendsResponse,
   PeriodSummaryResponse,
@@ -35,6 +36,13 @@ export const usePeriodSummary = (filters?: { month_id?: number | null }) => {
   });
 };
 
+export const useExpensePeriodSummary = (filters?: { month_id?: number | null }) => {
+  return useQuery<ExpensePeriodSummary[], Error>({
+    queryKey: ['summary', 'expenses-by-period', filters],
+    queryFn: () => summaryApi.getExpensesByPeriod(filters).then((res) => res.data),
+  });
+};
+
 export const useInsights = (filters?: { month_id?: number | null }) => {
   return useQuery<SummaryInsights, Error>({
     queryKey: ['summary', 'insights', filters],
@@ -48,4 +56,3 @@ export const useMonthlyTrends = (params?: { num_months?: number }) => {
     queryFn: () => summaryApi.getMonthlyTrends(params).then((res) => res.data),
   });
 };
-

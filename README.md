@@ -22,7 +22,6 @@ You can try Appz Budget without installing anything:
 - 📈 **Visual Analytics** - Interactive charts and summaries for better insights
 - 🎨 **Category & Period Management** - Organize expenses with custom categories (with colors) and periods
 - 💾 **Backup & Restore** - Export and import your entire budget database
-- 📥 **Excel Import** - Import expenses from Excel spreadsheets
 
 ### Authentication & Security
 

@@ -117,7 +117,6 @@ mobile/
 ✅ Summary and analytics
 ✅ Dark mode support
 ✅ User management (admin panel)
-✅ Excel import
 ✅ Backup and restore
 
 ## Notes

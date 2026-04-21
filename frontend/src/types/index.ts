@@ -303,12 +303,6 @@ export interface BackupListResponse {
   backup_dir: string;
 }
 
-export interface BackupDownloadUrlResponse {
-  download_url: string;
-  expires_at: string;
-  valid_for_seconds: number;
-}
-
 export interface BackupCreateResponse {
   message: string;
   filename: string;

@@ -13,6 +13,7 @@ import {
 } from './helpers';
 import type { Hono } from 'hono';
 import { Database } from 'bun:sqlite';
+import { readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 
 let app: Hono;
 let adminToken: string;
@@ -168,6 +169,55 @@ describe('SQLite Backups (Hono client)', () => {
     expect(res.status).toBe(200);
     const data = (await res.json()) as { message: string };
     expect(data.message).toContain('restored');
+  });
+
+  test('POST /api/v1/backups/upload-restore migrates legacy database without journal', async () => {
+    const dlRes = await app.request(`/api/v1/backups/${createdFilename}/download`, {
+      headers: apiHeaders(adminToken),
+    });
+    expect(dlRes.status).toBe(200);
+
+    const tempPath = `${process.env.DATABASE_PATH}.legacy-upload.db`;
+    writeFileSync(tempPath, Buffer.from(await dlRes.arrayBuffer()));
+
+    const legacyDb = new Database(tempPath);
+    try {
+      legacyDb.exec('DROP TABLE IF EXISTS __drizzle_migrations');
+    } finally {
+      legacyDb.close();
+    }
+
+    const formData = new FormData();
+    formData.append('file', new File([readFileSync(tempPath)], 'legacy-backup.db'));
+    try {
+      const headers = apiHeaders(adminToken);
+      delete headers['Content-Type'];
+
+      const res = await app.request('/api/v1/backups/upload-restore', {
+        method: 'POST',
+        headers,
+        body: formData,
+      });
+      expect(res.status).toBe(200);
+
+      const restoredDb = new Database(process.env.DATABASE_PATH!);
+      try {
+        const journal = restoredDb
+          .query(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='__drizzle_migrations'",
+          )
+          .get();
+        expect(journal).toBeTruthy();
+      } finally {
+        restoredDb.close();
+      }
+    } finally {
+      try {
+        unlinkSync(tempPath);
+      } catch {
+        // ignore cleanup failure
+      }
+    }
   });
 
   test('POST /api/v1/backups/upload-restore rejects non-.db files', async () => {

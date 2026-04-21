@@ -14,6 +14,18 @@ sqlite.exec('PRAGMA foreign_keys = ON');
 
 let db: BunSQLiteDatabase<typeof schema> = drizzle(sqlite, { schema });
 
+const initialMigrationTables = [
+  'categories',
+  'expenses',
+  'income_types',
+  'incomes',
+  'months',
+  'password_reset_tokens',
+  'periods',
+  'seed_records',
+  'users',
+];
+
 // Run migrations at startup
 const migrationsFolder = path.resolve(import.meta.dir, '../../drizzle');
 seedExistingDb(sqlite);
@@ -31,10 +43,12 @@ function seedExistingDb(sqliteDb: Database): void {
     .get();
   if (hasJournal) return;
 
-  const hasTables = sqliteDb
-    .query("SELECT name FROM sqlite_master WHERE type='table' AND name='categories'")
-    .get();
-  if (!hasTables) return;
+  const existingTables = sqliteDb
+    .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type='table'")
+    .all()
+    .map((row) => row.name);
+  const hasInitialSchema = initialMigrationTables.every((table) => existingTables.includes(table));
+  if (!hasInitialSchema) return;
 
   // Existing pre-migration database — seed the journal
   sqliteDb.exec(`
@@ -73,6 +87,7 @@ function resetConnection(): Database {
   sqlite.exec('PRAGMA journal_mode = WAL');
   sqlite.exec('PRAGMA foreign_keys = ON');
   db = drizzle(sqlite, { schema });
+  seedExistingDb(sqlite);
   migrate(db, { migrationsFolder });
   return sqlite;
 }

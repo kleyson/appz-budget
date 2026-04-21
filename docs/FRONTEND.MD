@@ -36,7 +36,6 @@ frontend/src/
 │   ├── ExpenseForm.tsx
 │   ├── CategorySummary.tsx
 │   ├── Charts.tsx
-│   ├── ExcelImport.tsx
 │   ├── CategoryManagement.tsx
 │   ├── PeriodManagement.tsx
 │   ├── Settings.tsx
@@ -96,7 +95,6 @@ All API endpoints are defined in the client:
 - Incomes CRUD
 - Months CRUD (create, close, open)
 - Summary (totals, by period, monthly trends)
-- Import (Excel)
 - Authentication (register, login, password reset, change password)
 - User management (admin)
 - Backups (admin)
@@ -125,7 +123,6 @@ const { mutate: deleteExpense } = useDeleteExpense();
 - `useMonths()` - Month data fetching and mutations
 - `useSummary()` - Summary data fetching
 - `useUsers()` - User management (admin)
-- `useImport()` - Excel import functionality
 
 ## Components
 
@@ -134,7 +131,7 @@ const { mutate: deleteExpense } = useDeleteExpense();
 1. **Expenses** - Main expense list with filters
 2. **Summary** - Category summary with budget comparisons
 3. **Charts** - Visual data representations
-4. **Import** - Excel file import
+4. **Backup** - Database backup and restore
 5. **Categories** - Category management
 6. **Periods** - Period management
 7. **Settings** - User settings, password management, admin panel
@@ -145,7 +142,6 @@ const { mutate: deleteExpense } = useDeleteExpense();
 - **ExpenseForm**: Form for creating/editing expenses
 - **CategorySummary**: Category budget vs actual summary
 - **Charts**: Visualizations (budget vs actual, distribution)
-- **ExcelImport**: Excel file import interface
 - **CategoryManagement**: CRUD for categories
 - **PeriodManagement**: CRUD for periods
 - **Settings**: User settings and admin panel
@@ -214,16 +210,8 @@ The frontend receives the API key at runtime via HTML injection. The backend inj
 ### Data Management
 
 - Full CRUD operations for expenses, categories, and periods
-- Excel import with flexible column mapping
+- Database backup and restore
 - Period and category filtering
-- Automatic creation of categories/periods during import
-
-### Excel Import
-
-- **Required Columns**: `Expense details`, `Category`
-- **Optional Columns**: `Period` (defaults to "1st Period"), `Budget`, `Cost`, `Notes`
-- **Column Mapping**: Handles variations like "expense", "expense name", "actual", "actual cost", etc.
-- **Error Handling**: Skips invalid rows, reports errors, continues processing
 - **Auto-creation**: Creates categories and periods if they don't exist
 
 ### Authentication
@@ -346,4 +334,3 @@ In production:
 - JWT tokens stored in HTTP-only cookies
 - Automatic token refresh
 - Logout clears cookies and cache
-
