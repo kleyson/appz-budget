@@ -1,5 +1,9 @@
 import { drizzle, type BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
+import { migrate } from 'drizzle-orm/bun-sqlite/migrator';
 import { Database } from 'bun:sqlite';
+import crypto from 'node:crypto';
+import fs from 'node:fs';
+import * as path from 'node:path';
 import * as schema from './schema';
 
 const dbPath = process.env.DATABASE_PATH || './data/budget.db';
@@ -9,6 +13,54 @@ sqlite.exec('PRAGMA journal_mode = WAL');
 sqlite.exec('PRAGMA foreign_keys = ON');
 
 let db: BunSQLiteDatabase<typeof schema> = drizzle(sqlite, { schema });
+
+// Run migrations at startup
+const migrationsFolder = path.resolve(import.meta.dir, '../../drizzle');
+seedExistingDb(sqlite);
+migrate(db, { migrationsFolder });
+console.log('[db] Migrations applied successfully');
+
+/**
+ * For databases created before Drizzle migrations were added:
+ * Create the journal table and mark all existing migrations as applied
+ * so migrate() doesn't try to re-create tables that already exist.
+ */
+function seedExistingDb(sqliteDb: Database): void {
+  const hasJournal = sqliteDb
+    .query("SELECT name FROM sqlite_master WHERE type='table' AND name='__drizzle_migrations'")
+    .get();
+  if (hasJournal) return;
+
+  const hasTables = sqliteDb
+    .query("SELECT name FROM sqlite_master WHERE type='table' AND name='categories'")
+    .get();
+  if (!hasTables) return;
+
+  // Existing pre-migration database — seed the journal
+  sqliteDb.exec(`
+    CREATE TABLE IF NOT EXISTS __drizzle_migrations (
+      id SERIAL PRIMARY KEY,
+      hash text NOT NULL,
+      created_at numeric
+    );
+  `);
+
+  const journalPath = path.resolve(migrationsFolder, 'meta/_journal.json');
+  const journal = JSON.parse(fs.readFileSync(journalPath, 'utf-8'));
+
+  for (const entry of journal.entries) {
+    const sqlContent = fs.readFileSync(
+      path.resolve(migrationsFolder, `${entry.tag}.sql`),
+      'utf-8',
+    );
+    const hash = crypto.createHash('sha256').update(sqlContent).digest('hex');
+    sqliteDb.exec(
+      `INSERT INTO __drizzle_migrations (hash, created_at) VALUES ('${hash}', ${entry.when})`,
+    );
+  }
+
+  console.log('[db] Existing database detected — marked migrations as applied');
+}
 
 /**
  * Re-open the database connection after a restore.
@@ -21,6 +73,7 @@ function resetConnection(): Database {
   sqlite.exec('PRAGMA journal_mode = WAL');
   sqlite.exec('PRAGMA foreign_keys = ON');
   db = drizzle(sqlite, { schema });
+  migrate(db, { migrationsFolder });
   return sqlite;
 }
 

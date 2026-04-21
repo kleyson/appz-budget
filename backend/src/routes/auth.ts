@@ -414,6 +414,19 @@ auth.post(
   },
 );
 
+// GET /api/v1/auth/users/:id
+auth.get('/api/v1/auth/users/:id', apiKeyAuth, jwtAuth, adminAuth, async (c) => {
+  const userId = parseInt(c.req.param('id'), 10);
+
+  const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+
+  if (!user) {
+    return c.json({ detail: 'User not found' }, 404);
+  }
+
+  return c.json(stripPassword(user));
+});
+
 // PUT /api/v1/auth/users/:id
 auth.put(
   '/api/v1/auth/users/:id',

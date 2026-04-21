@@ -632,20 +632,17 @@ impl App {
                     // Delete: Remove selected purchase
                     self.expense_form.remove_purchase();
                 }
-                KeyCode::Up => {
+                KeyCode::Up if self.expense_form.selected_purchase > 0 => {
                     // Navigate up in purchases
-                    if self.expense_form.selected_purchase > 0 {
-                        self.expense_form.selected_purchase -= 1;
-                    }
+                    self.expense_form.selected_purchase -= 1;
                 }
-                KeyCode::Down => {
-                    // Navigate down in purchases
+                KeyCode::Down
                     if !self.expense_form.purchases.is_empty()
                         && self.expense_form.selected_purchase
-                            < self.expense_form.purchases.len() - 1
-                    {
-                        self.expense_form.selected_purchase += 1;
-                    }
+                            < self.expense_form.purchases.len() - 1 =>
+                {
+                    // Navigate down in purchases
+                    self.expense_form.selected_purchase += 1;
                 }
                 KeyCode::Left | KeyCode::Right => {
                     // Toggle between name and amount
@@ -793,12 +790,11 @@ impl App {
                     ExpenseField::Name => {
                         self.expense_form.name.push(c);
                     }
-                    ExpenseField::Projected => {
+                    ExpenseField::Projected
                         if c.is_ascii_digit()
-                            || (c == '.' && !self.expense_form.projected.contains('.'))
-                        {
-                            self.expense_form.projected.push(c);
-                        }
+                            || (c == '.' && !self.expense_form.projected.contains('.')) =>
+                    {
+                        self.expense_form.projected.push(c);
                     }
                     ExpenseField::Notes => {
                         self.expense_form.notes.push(c);
@@ -914,16 +910,17 @@ impl App {
                 _ => {}
             },
             KeyCode::Char(c) => match self.income_form.focused_field {
-                IncomeField::Projected => {
-                    if c.is_ascii_digit() || (c == '.' && !self.income_form.projected.contains('.'))
-                    {
-                        self.income_form.projected.push(c);
-                    }
+                IncomeField::Projected
+                    if c.is_ascii_digit()
+                        || (c == '.' && !self.income_form.projected.contains('.')) =>
+                {
+                    self.income_form.projected.push(c);
                 }
-                IncomeField::Amount => {
-                    if c.is_ascii_digit() || (c == '.' && !self.income_form.amount.contains('.')) {
-                        self.income_form.amount.push(c);
-                    }
+                IncomeField::Amount
+                    if c.is_ascii_digit()
+                        || (c == '.' && !self.income_form.amount.contains('.')) =>
+                {
+                    self.income_form.amount.push(c);
                 }
                 _ => {}
             },
