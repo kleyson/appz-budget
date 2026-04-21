@@ -22,6 +22,12 @@ on:
       - "e2e/**"
       - ".github/workflows/test.yml"
 
+env:
+  # Opt JS actions into Node 24. Node 20 is deprecated and will be removed
+  # from runners in Sept 2026. Remove this once all used actions have Node 24
+  # releases.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   test:
     name: Run Tests

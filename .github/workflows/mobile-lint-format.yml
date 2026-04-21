@@ -12,6 +12,9 @@ on:
       - "mobile/**"
       - ".github/workflows/mobile-lint-format.yml"
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   lint:
     name: Lint Mobile
