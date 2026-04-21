@@ -101,8 +101,8 @@ migrate: ## Push database schema with Drizzle
 migrate-create: ## Generate a new Drizzle migration
 	cd backend && bunx drizzle-kit generate
 
-seed: ## Seed initial admin user (admin@email.com / admin)
-	@echo "Seed script not yet implemented for Bun backend"
+seed: ## Seed initial admin user (admin@email.com / admin1) and default data
+	cd backend && bun run src/seed.ts
 
 clean: ## Clean build artifacts and caches
 	@echo "Cleaning..."

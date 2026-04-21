@@ -176,7 +176,7 @@ make verify           # Runs all lint, format, type checks, and tests
 ```bash
 make migrate          # Apply pending migrations
 make migrate-create MESSAGE="description"  # Create new migration
-make seed             # Seed admin user (admin@email.com / admin)
+make seed             # Seed admin user (admin@email.com / admin1) + default data
 ```
 
 ### Build

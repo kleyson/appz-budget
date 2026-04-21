@@ -224,7 +224,7 @@ You'll be ready to build when:
 ## Notes
 
 - Demo server available at `https://budget.appz.wtf/` for testing
-- Demo credentials: `admin@email.com` / `admin`
+- Demo credentials: `admin@email.com` / `admin1`
 - All documentation is in the `docs/` directory
 - See individual guide files for detailed instructions
 

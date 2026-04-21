@@ -346,7 +346,7 @@ uv run python seed.py
 
 Creates:
 
-- Admin user: `admin@email.com` / `admin` (change immediately!)
+- Admin user: `admin@email.com` / `admin1` (change immediately!)
 - Current month
 - Default categories, income types, and periods
 
