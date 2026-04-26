@@ -2,7 +2,7 @@
   "expo": {
     "name": "Appz Budget",
     "slug": "appz-budget",
-    "version": "1.0.10",
+    "version": "1.0.11",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -17,7 +17,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "wtf.appz.budget",
-      "buildNumber": "10",
+      "buildNumber": "11",
       "privacyManifests": {
         "NSPrivacyAccessedAPITypes": []
       },
@@ -30,7 +30,7 @@
     },
     "android": {
       "package": "wtf.appz.budget",
-      "versionCode": 10,
+      "versionCode": 11,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0d9488"
