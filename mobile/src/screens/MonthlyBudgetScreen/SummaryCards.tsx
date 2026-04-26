@@ -63,9 +63,12 @@ const AnimatedCard = ({ card, index, totals, isDark, theme }: AnimatedCardProps)
     ],
   }));
 
-  const percentage = totals.total_budget_income === 0
-    ? null
-    : ((card.value / totals.total_budget_income) * 100).toFixed(0);
+  const percentage =
+    !Number.isFinite(totals.total_budget_income) ||
+    totals.total_budget_income === 0 ||
+    !Number.isFinite(card.value)
+      ? null
+      : ((card.value / totals.total_budget_income) * 100).toFixed(0);
   const isPositive = card.value >= 0;
 
   return (

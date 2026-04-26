@@ -18,7 +18,8 @@ export const colorOptions = [
 // Currency formatter utility
 // Uses Math.abs to return absolute value - callers should handle sign display separately
 export const formatCurrency = (value: number): string => {
-  return `$${Math.abs(value).toLocaleString("en-US", {
+  const safeValue = Number.isFinite(value) ? value : 0;
+  return `$${Math.abs(safeValue).toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;

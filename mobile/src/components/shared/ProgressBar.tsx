@@ -35,7 +35,9 @@ export const ProgressBar = ({
   const theme = getThemeColors(isDark);
   const styles = getStyles(theme);
 
-  const clampedProgress = Math.min(100, Math.max(0, progress));
+  const clampedProgress = Number.isFinite(progress)
+    ? Math.min(100, Math.max(0, progress))
+    : 0;
   const fillColor = color || theme.primary;
 
   const heights = { sm: 4, md: 6, lg: 8 };

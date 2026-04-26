@@ -176,7 +176,9 @@ export const AnimatedExpenseItem = ({
                 ]}
               />
             </View>
-            <Text style={styles.progressText}>{progress.toFixed(0)}%</Text>
+            <Text style={styles.progressText}>
+              {Number.isFinite(progress) ? progress.toFixed(0) : "0"}%
+            </Text>
           </View>
 
           <View style={styles.amountRow}>
